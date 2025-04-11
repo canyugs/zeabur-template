@@ -130,9 +130,9 @@ spec:
         icon: https://odoocdn.com/openerp_website/static/src/img/assets/svg/odoo_logo.svg
         template: PREBUILT
         domainKey: PUBLIC_DOMAIN
+        dependencies:
+          - PostgreSQL
         spec:
-          dependencies:
-            - PostgreSQL
           source:
             image: odoo:18.0
           ports:
