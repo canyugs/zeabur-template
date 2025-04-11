@@ -7,6 +7,11 @@ spec:
     description: |
       Odoo is a suite of open source business apps that cover all your company needs: CRM, eCommerce, accounting, inventory, point of sale, project management, etc.
     icon: https://odoocdn.com/openerp_website/static/src/img/assets/svg/odoo_logo.svg
+    variables:
+      - key: PUBLIC_DOMAIN
+        type: DOMAIN
+        name: 網域
+        description: 你想將 odoo 綁在哪個網域上？
     tags:
       - CRM
       - ERP
@@ -124,6 +129,7 @@ spec:
       - name: odoo
         icon: https://odoocdn.com/openerp_website/static/src/img/assets/svg/odoo_logo.svg
         template: PREBUILT
+        domainKey: PUBLIC_DOMAIN
         spec:
           dependencies:
             - PostgreSQL
@@ -132,7 +138,7 @@ spec:
           ports:
           - id: web
             port: 8069
-            type: TCP
+            type: HTTP
           env:
             ODOO_DATABASE_MASTER_PASSWORD:
               default: ${PASSWORD}
