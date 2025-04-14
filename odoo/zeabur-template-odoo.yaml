@@ -7,6 +7,7 @@ spec:
     description: |
       Odoo is a suite of open source business apps that cover all your company needs: CRM, eCommerce, accounting, inventory, point of sale, project management, etc.
     icon: https://odoocdn.com/openerp_website/static/src/img/assets/svg/odoo_logo.svg
+    coverImage: https://raw.githubusercontent.com/canyugs/zeabur-template/refs/heads/main/odoo/screenshot.webp
     variables:
       - key: PUBLIC_DOMAIN
         type: DOMAIN
@@ -25,9 +26,11 @@ spec:
 
       ## Usage
       - Open your browser and go to `https://${PUBLIC_DOMAIN}`
-      - Login with the username `admin` and `admin` as the password
-      - Change the password for the admin user
-      - Or create a new database and try the apps
+      - Login with the username `admin` and `admin` as the password, and change the password for the admin user
+      - Or create a new database to create a new admin user
+
+      ## Configuration
+      - See more configuration options in the [Odoo documentation](https://www.odoo.com/documentation/18.0/administration/on_premise/deploy.html)
 
     services:
       - name: postgresql
