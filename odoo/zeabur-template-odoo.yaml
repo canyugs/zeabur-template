@@ -188,8 +188,8 @@ spec:
                 db_name = ${POSTGRES_DATABASE}
                 db_user = ${POSTGRES_USERNAME}
                 db_password = ${POSTGRES_PASSWORD}
-                load_language = zh_TW
-
+                
+                ; load_language = zh_TW
                 ; csv_internal_sep = ,
                 ; db_maxconn = 64
                 ; db_template = template1
