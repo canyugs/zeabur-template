@@ -10,8 +10,8 @@ spec:
     variables:
       - key: PUBLIC_DOMAIN
         type: DOMAIN
-        name: 網域
-        description: 你想將 odoo 綁在哪個網域上？
+        name: Domain
+        description: What domain do you want to bind to?
     tags:
       - CRM
       - ERP
@@ -25,10 +25,12 @@ spec:
 
       ## Usage
       - Open your browser and go to `https://${PUBLIC_DOMAIN}`
-      - Login with the username `admin` and the password you set in the `ODOO_ADMIN_PASSWORD` variable
+      - Login with the username `admin` and `admin` as the password
+      - Change the password for the admin user
+      - Or create a new database and try the apps
 
     services:
-      - name: PostgreSQL
+      - name: postgresql
         icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
         template: PREBUILT
         spec:
@@ -131,8 +133,30 @@ spec:
         template: PREBUILT
         domainKey: PUBLIC_DOMAIN
         dependencies:
-          - PostgreSQL
+            - postgresql
         spec:
+          init:
+            - id: init-db
+              command:
+              - /bin/bash
+              - -c
+              - |
+
+                DB_ARGS=()
+                DB_ARGS+=("--db_host")
+                DB_ARGS+=("${POSTGRES_HOST}")
+                DB_ARGS+=("--db_port")
+                DB_ARGS+=("${POSTGRES_PORT}")
+                DB_ARGS+=("--db_user")
+                DB_ARGS+=("${POSTGRES_USERNAME}")
+                DB_ARGS+=("--db_password")
+                DB_ARGS+=("${POSTGRES_PASSWORD}")
+
+                if [ ! -f /var/lib/odoo/.initialized ]; then
+                  wait-for-psql.py ${DB_ARGS[@]} --timeout=30
+                  odoo -i base -d ${POSTGRES_DATABASE} --stop-after-init "${DB_ARGS[@]}"
+                  touch /var/lib/odoo/.initialized
+                fi
           source:
             image: odoo:18.0
           ports:
@@ -152,8 +176,6 @@ spec:
               title: Odoo Database Master Password
               content: ${ODOO_DATABASE_MASTER_PASSWORD}
               category: Credentials
-          depends_on:
-            - PostgreSQL
           configs:
             - path: /etc/odoo/odoo.conf
               template: |
