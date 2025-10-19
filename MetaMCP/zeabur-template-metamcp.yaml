@@ -1,0 +1,244 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: MetaMCP
+spec:
+    description: |
+      MetaMCP is an MCP Aggregator, Orchestrator, Middleware, and Gateway in one Docker container. It dynamically aggregates MCP servers into a unified MCP server and applies middlewares.
+    icon: https://raw.githubusercontent.com/canyugs/zeabur-template/refs/heads/main/MetaMCP/logo.ico
+    coverImage: https://raw.githubusercontent.com/metatool-ai/metamcp/refs/heads/main/metamcp.svg
+    variables:
+      - key: PUBLIC_DOMAIN
+        type: DOMAIN
+        name: Domain
+        description: What domain do you want to bind MetaMCP to?
+      - key: BETTER_AUTH_SECRET
+        type: STRING
+        name: Auth Secret
+        description: Secret key for Better Auth authentication (change this for production)
+    tags:
+      - MCP
+      - Middleware
+      - Gateway
+      - Orchestrator
+      - AI Tools
+
+    readme: |
+      # MetaMCP
+      MetaMCP is a powerful MCP proxy that lets you dynamically aggregate MCP servers into a unified MCP server and apply middlewares. It functions as an MCP Aggregator, Orchestrator, Middleware, and Gateway all in one Docker container.
+
+      ## Key Features
+      - **MCP Aggregation**: Group MCP servers into namespaces and host them as meta-MCPs
+      - **Public Endpoints**: Assign public endpoints (SSE or Streamable HTTP) with authentication
+      - **Tool Selection**: Pick only the tools you need when remixing MCP servers
+      - **Pluggable Middleware**: Apply middleware for observability and security
+      - **Enhanced Inspector**: Use as MCP inspector with saved server configs
+
+      ## Usage
+      - Open MetaMCP at `https://${PUBLIC_DOMAIN}`
+      - Login and configure your MCP servers
+      - The default PostgreSQL credentials are provided in the service instructions
+
+      ## Configuration
+      - `DATABASE_URL`: PostgreSQL connection string (auto-configured)
+      - `APP_URL`: Public URL of the application
+      - `BETTER_AUTH_SECRET`: Authentication secret key
+      - Optional OIDC configuration available through environment variables
+
+      ## Documentation
+      - Official docs: https://docs.metamcp.com
+      - GitHub: https://github.com/metatool-ai/metamcp
+
+    services:
+      - name: postgresql
+        icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+        template: PREBUILT
+        spec:
+          source:
+              image: postgres:16-alpine
+          ports:
+              - id: database
+                port: 5432
+                type: TCP
+          volumes:
+              - id: data
+                dir: /var/lib/postgresql/data
+          instructions:
+              - type: TEXT
+                title: Connection String
+                content: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DATABASE}
+              - type: TEXT
+                title: PostgreSQL Connect Command
+                content: psql "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DATABASE}"
+              - type: TEXT
+                title: PostgreSQL username
+                content: ${POSTGRES_USERNAME}
+                category: Credentials
+              - type: PASSWORD
+                title: PostgreSQL password
+                content: ${POSTGRES_PASSWORD}
+                category: Credentials
+              - type: TEXT
+                title: PostgreSQL database
+                content: ${POSTGRES_DATABASE}
+                category: Credentials
+              - type: TEXT
+                title: PostgreSQL host
+                content: ${PORT_FORWARDED_HOSTNAME}
+                category: Hostname & Port
+              - type: TEXT
+                title: PostgreSQL port
+                content: ${DATABASE_PORT_FORWARDED_PORT}
+                category: Hostname & Port
+          env:
+              POSTGRES_CONNECTION_STRING:
+                  default: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}
+                  expose: true
+                  readonly: true
+              POSTGRES_DATABASE:
+                  default: ${POSTGRES_DB}
+                  expose: true
+                  readonly: true
+              POSTGRES_DB:
+                  default: metamcp_db
+              POSTGRES_HOST:
+                  default: ${CONTAINER_HOSTNAME}
+                  expose: true
+                  readonly: true
+              POSTGRES_PASSWORD:
+                  default: ${PASSWORD}
+                  expose: true
+              POSTGRES_PORT:
+                  default: ${DATABASE_PORT}
+                  expose: true
+                  readonly: true
+              POSTGRES_URI:
+                  default: ${POSTGRES_CONNECTION_STRING}
+                  expose: true
+                  readonly: true
+              POSTGRES_USER:
+                  default: metamcp_user
+              POSTGRES_USERNAME:
+                  default: ${POSTGRES_USER}
+                  expose: true
+                  readonly: true
+      - name: metamcp
+        icon: https://raw.githubusercontent.com/metatool-ai/metamcp/main/public/logo.svg
+        template: PREBUILT
+        domainKey: PUBLIC_DOMAIN
+        dependencies:
+            - postgresql
+        spec:
+          source:
+            image: ghcr.io/metatool-ai/metamcp:latest
+          ports:
+          - id: web
+            port: 12008
+            type: HTTP
+          env:
+            NODE_ENV:
+              default: production
+              readonly: true
+            DATABASE_URL:
+              default: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}
+              readonly: true
+            APP_URL:
+              default: ${ZEABUR_WEB_URL}
+              readonly: true
+            NEXT_PUBLIC_APP_URL:
+              default: ${ZEABUR_WEB_URL}
+              readonly: true
+            BETTER_AUTH_SECRET:
+              default: ${BETTER_AUTH_SECRET}
+            TRANSFORM_LOCALHOST_TO_DOCKER_INTERNAL:
+              default: "true"
+              readonly: true
+          instructions:
+            - type: TEXT
+              title: Access MetaMCP
+              content: https://${PUBLIC_DOMAIN}
+            - type: TEXT
+              title: Auth Secret
+              content: ${BETTER_AUTH_SECRET}
+              category: Credentials
+            - type: TEXT
+              title: Database Connection
+              content: ${DATABASE_URL}
+              category: Database
+
+localization:
+    zh-TW:
+        description: |
+          MetaMCP 是一個集 MCP 聚合器、編排器、中介層和閘道於一體的 Docker 容器。它可以動態地將 MCP 伺服器聚合成統一的 MCP 伺服器並套用中介層。
+        variables:
+          - key: PUBLIC_DOMAIN
+            type: DOMAIN
+            name: 網域
+            description: 你想將 MetaMCP 綁定到哪個網域？
+          - key: BETTER_AUTH_SECRET
+            type: STRING
+            name: 身份驗證密鑰
+            description: Better Auth 身份驗證的密鑰（生產環境請務必修改此值）
+        readme: |
+          # MetaMCP
+          MetaMCP 是一個強大的 MCP 代理伺服器，讓你可以動態地將 MCP 伺服器聚合成統一的 MCP 伺服器並套用中介層。它集 MCP 聚合器、編排器、中介層和閘道功能於一身。
+
+          ## 主要功能
+          - **MCP 聚合**：將 MCP 伺服器分組到命名空間並託管為 meta-MCP
+          - **公開端點**：分配具有身份驗證的公開端點（SSE 或 Streamable HTTP）
+          - **工具選擇**：在混合 MCP 伺服器時只選擇你需要的工具
+          - **可插拔中介層**：套用用於可觀察性和安全性的中介層
+          - **增強檢查器**：用作具有已儲存伺服器配置的 MCP 檢查器
+
+          ## 使用方式
+          - 在 `https://${PUBLIC_DOMAIN}` 開啟 MetaMCP
+          - 登入並配置你的 MCP 伺服器
+          - 預設的 PostgreSQL 憑證在服務說明中提供
+
+          ## 配置選項
+          - `DATABASE_URL`：PostgreSQL 連線字串（自動配置）
+          - `APP_URL`：應用程式的公開 URL
+          - `BETTER_AUTH_SECRET`：身份驗證密鑰
+          - 可透過環境變數配置選用的 OIDC
+
+          ## 文件
+          - 官方文件：https://docs.metamcp.com
+          - GitHub：https://github.com/metatool-ai/metamcp
+    zh-CN:
+        description: |
+          MetaMCP 是一个集 MCP 聚合器、编排器、中间层和网关于一体的 Docker 容器。它可以动态地将 MCP 服务器聚合成统一的 MCP 服务器并应用中间层。
+        variables:
+          - key: PUBLIC_DOMAIN
+            type: DOMAIN
+            name: 域名
+            description: 你想将 MetaMCP 绑定到哪个域名？
+          - key: BETTER_AUTH_SECRET
+            type: STRING
+            name: 身份验证密钥
+            description: Better Auth 身份验证的密钥（生产环境请务必修改此值）
+        readme: |
+          # MetaMCP
+          MetaMCP 是一个强大的 MCP 代理服务器，让你可以动态地将 MCP 服务器聚合成统一的 MCP 服务器并应用中间层。它集 MCP 聚合器、编排器、中间层和网关功能于一身。
+
+          ## 主要功能
+          - **MCP 聚合**：将 MCP 服务器分组到命名空间并托管为 meta-MCP
+          - **公开端点**：分配具有身份验证的公开端点（SSE 或 Streamable HTTP）
+          - **工具选择**：在混合 MCP 服务器时只选择你需要的工具
+          - **可插拔中间层**：应用用于可观察性和安全性的中间层
+          - **增强检查器**：用作具有已保存服务器配置的 MCP 检查器
+
+          ## 使用方式
+          - 在 `https://${PUBLIC_DOMAIN}` 打开 MetaMCP
+          - 登录并配置你的 MCP 服务器
+          - 默认的 PostgreSQL 凭证在服务说明中提供
+
+          ## 配置选项
+          - `DATABASE_URL`：PostgreSQL 连接字符串（自动配置）
+          - `APP_URL`：应用程序的公开 URL
+          - `BETTER_AUTH_SECRET`：身份验证密钥
+          - 可通过环境变量配置可选的 OIDC
+
+          ## 文档
+          - 官方文档：https://docs.metamcp.com
+          - GitHub：https://github.com/metatool-ai/metamcp
