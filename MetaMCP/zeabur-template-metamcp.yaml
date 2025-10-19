@@ -124,7 +124,7 @@ spec:
                   expose: true
                   readonly: true
       - name: metamcp
-        icon: https://raw.githubusercontent.com/metatool-ai/metamcp/main/public/logo.svg
+        icon: https://raw.githubusercontent.com/canyugs/zeabur-template/refs/heads/main/MetaMCP/logo.ico
         template: PREBUILT
         domainKey: PUBLIC_DOMAIN
         dependencies:
@@ -242,3 +242,114 @@ localization:
           ## 文档
           - 官方文档：https://docs.metamcp.com
           - GitHub：https://github.com/metatool-ai/metamcp
+    ja-JP:
+        description: |
+          MetaMCPは、MCPアグリゲーター、オーケストレーター、ミドルウェア、ゲートウェイを1つのDockerコンテナに統合したツールです。MCPサーバーを動的に統合し、統一されたMCPサーバーとして提供し、ミドルウェアを適用できます。
+        variables:
+          - key: PUBLIC_DOMAIN
+            type: DOMAIN
+            name: ドメイン
+            description: MetaMCPをバインドするドメインを指定してください
+          - key: BETTER_AUTH_SECRET
+            type: STRING
+            name: 認証シークレット
+            description: Better Auth認証のシークレットキー（本番環境では必ず変更してください）
+        readme: |
+          # MetaMCP
+          MetaMCPは、MCPサーバーを動的に統合し、統一されたMCPサーバーとして提供できる強力なMCPプロキシです。ミドルウェアを適用し、MCPアグリゲーター、オーケストレーター、ミドルウェア、ゲートウェイの機能を1つのDockerコンテナで提供します。
+
+          ## 主な機能
+          - **MCP統合**：MCPサーバーを名前空間にグループ化し、meta-MCPとしてホスト
+          - **パブリックエンドポイント**：認証付きのパブリックエンドポイント（SSEまたはStreamable HTTP）を割り当て
+          - **ツール選択**：MCPサーバーをリミックスする際に必要なツールのみを選択
+          - **プラガブルミドルウェア**：可観測性とセキュリティのためのミドルウェアを適用
+          - **拡張インスペクター**：保存されたサーバー構成を持つMCPインスペクターとして使用
+
+          ## 使用方法
+          - `https://${PUBLIC_DOMAIN}` でMetaMCPを開く
+          - ログインしてMCPサーバーを設定
+          - デフォルトのPostgreSQL認証情報はサービス説明に記載されています
+
+          ## 設定オプション
+          - `DATABASE_URL`：PostgreSQL接続文字列（自動設定）
+          - `APP_URL`：アプリケーションの公開URL
+          - `BETTER_AUTH_SECRET`：認証シークレットキー
+          - 環境変数を介してオプションのOIDC設定が可能
+
+          ## ドキュメント
+          - 公式ドキュメント：https://docs.metamcp.com
+          - GitHub：https://github.com/metatool-ai/metamcp
+    es-ES:
+        description: |
+          MetaMCP es un Agregador, Orquestador, Middleware y Gateway de MCP en un único contenedor Docker. Agrega dinámicamente servidores MCP en un servidor MCP unificado y aplica middlewares.
+        variables:
+          - key: PUBLIC_DOMAIN
+            type: DOMAIN
+            name: Dominio
+            description: ¿A qué dominio quieres vincular MetaMCP?
+          - key: BETTER_AUTH_SECRET
+            type: STRING
+            name: Secreto de Autenticación
+            description: Clave secreta para la autenticación de Better Auth (cámbiala en producción)
+        readme: |
+          # MetaMCP
+          MetaMCP es un potente proxy MCP que te permite agregar dinámicamente servidores MCP en un servidor MCP unificado y aplicar middlewares. Funciona como Agregador, Orquestador, Middleware y Gateway de MCP todo en un contenedor Docker.
+
+          ## Características principales
+          - **Agregación MCP**: Agrupa servidores MCP en espacios de nombres y hostéalos como meta-MCPs
+          - **Endpoints públicos**: Asigna endpoints públicos (SSE o Streamable HTTP) con autenticación
+          - **Selección de herramientas**: Elige solo las herramientas que necesitas al remezclar servidores MCP
+          - **Middleware conectable**: Aplica middleware para observabilidad y seguridad
+          - **Inspector mejorado**: Úsalo como inspector MCP con configuraciones de servidor guardadas
+
+          ## Uso
+          - Abre MetaMCP en `https://${PUBLIC_DOMAIN}`
+          - Inicia sesión y configura tus servidores MCP
+          - Las credenciales predeterminadas de PostgreSQL se proporcionan en las instrucciones del servicio
+
+          ## Configuración
+          - `DATABASE_URL`: Cadena de conexión PostgreSQL (configurada automáticamente)
+          - `APP_URL`: URL pública de la aplicación
+          - `BETTER_AUTH_SECRET`: Clave secreta de autenticación
+          - Configuración OIDC opcional disponible a través de variables de entorno
+
+          ## Documentación
+          - Documentación oficial: https://docs.metamcp.com
+          - GitHub: https://github.com/metatool-ai/metamcp
+    id-ID:
+        description: |
+          MetaMCP adalah Aggregator, Orchestrator, Middleware, dan Gateway MCP dalam satu container Docker. Secara dinamis mengagregasi server MCP menjadi server MCP terpadu dan menerapkan middleware.
+        variables:
+          - key: PUBLIC_DOMAIN
+            type: DOMAIN
+            name: Domain
+            description: Domain mana yang ingin Anda ikat ke MetaMCP?
+          - key: BETTER_AUTH_SECRET
+            type: STRING
+            name: Kunci Rahasia Autentikasi
+            description: Kunci rahasia untuk autentikasi Better Auth (ubah ini untuk produksi)
+        readme: |
+          # MetaMCP
+          MetaMCP adalah proxy MCP yang kuat yang memungkinkan Anda mengagregasi server MCP secara dinamis menjadi server MCP terpadu dan menerapkan middleware. Berfungsi sebagai Aggregator, Orchestrator, Middleware, dan Gateway MCP semuanya dalam satu container Docker.
+
+          ## Fitur Utama
+          - **Agregasi MCP**: Kelompokkan server MCP ke dalam namespace dan host sebagai meta-MCP
+          - **Endpoint Publik**: Tetapkan endpoint publik (SSE atau Streamable HTTP) dengan autentikasi
+          - **Pemilihan Tool**: Pilih hanya tool yang Anda butuhkan saat meremix server MCP
+          - **Middleware Pluggable**: Terapkan middleware untuk observabilitas dan keamanan
+          - **Inspector yang Ditingkatkan**: Gunakan sebagai inspector MCP dengan konfigurasi server yang tersimpan
+
+          ## Cara Penggunaan
+          - Buka MetaMCP di `https://${PUBLIC_DOMAIN}`
+          - Login dan konfigurasi server MCP Anda
+          - Kredensial PostgreSQL default disediakan dalam instruksi layanan
+
+          ## Konfigurasi
+          - `DATABASE_URL`: String koneksi PostgreSQL (dikonfigurasi otomatis)
+          - `APP_URL`: URL publik aplikasi
+          - `BETTER_AUTH_SECRET`: Kunci rahasia autentikasi
+          - Konfigurasi OIDC opsional tersedia melalui variabel environment
+
+          ## Dokumentasi
+          - Dokumentasi resmi: https://docs.metamcp.com
+          - GitHub: https://github.com/metatool-ai/metamcp
