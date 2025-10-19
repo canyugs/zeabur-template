@@ -226,7 +226,38 @@ spec:
       - GitHub: https://github.com/example/repo
 ```
 
-### Step 7: Add Localization
+### Step 7: Test Deployment
+
+**Important: Complete and test the English version first before adding localization**
+
+Before adding multi-language support, please:
+
+1. **Complete the English version**
+   - Ensure all required fields are filled
+   - Verify environment variable configuration is correct
+   - Check service dependency relationships
+
+2. **Local Validation**
+   ```bash
+   # Use VS Code to check YAML syntax
+   # schema comment will auto-validate format
+   ```
+
+3. **Deployment Test**
+   ```bash
+   # Deploy test using Zeabur CLI
+   npx zeabur@latest template deploy zeabur-template-{service-name}.yaml
+   ```
+
+4. **Confirm Functionality**
+   - Service starts successfully
+   - Environment variables are correctly passed
+   - Domain binding works properly
+   - Dependent services connect correctly
+
+### Step 8: Add Localization
+
+**Only add localization after confirming successful deployment**
 
 ```yaml
 localization:
@@ -264,6 +295,15 @@ localization:
 
           Simplified Chinese documentation...
 ```
+
+**Localization Writing Process:**
+
+1. Complete the English version first (written in `spec`)
+2. Deploy and test to confirm functionality
+3. Copy English content to `localization` block
+4. Translate to other languages one by one (zh-TW, zh-CN)
+5. Ensure information is consistent across all language versions
+6. Test deployment again to verify localization displays correctly
 
 ## Best Practices
 
@@ -333,6 +373,7 @@ localization:
 - `zh-CN`: Simplified Chinese (Mainland China)
 - `ja-JP`: Japanese
 - `es-ES`: Spanish
+- `id-ID`: Indonesian
 
 ### 3. Image Resources
 
@@ -340,11 +381,18 @@ localization:
   - Prefer SVG format
   - If using raster images, at least 512x512px
   - Use official brand icons
+  - Ensure URL is publicly accessible (GitHub raw link recommended)
 
 - **Cover Images**:
   - Recommended size: 1200x630px
   - Format: WebP (smaller file size)
   - Storage location: `screenshot.webp` in GitHub repository
+
+- **Image Validation**:
+  - ✅ Test all image URLs are accessible before submitting
+  - ✅ Open image URLs in browser to confirm no broken images
+  - ✅ Check image format is correct (SVG/PNG/WebP)
+  - ✅ Ensure image size is reasonable (avoid too large affecting load speed)
 
 ### 4. Environment Variable Design
 
@@ -445,6 +493,7 @@ spec:
 - `zh-CN`: Simplified Chinese
 - `ja-JP`: Japanese
 - `es-ES`: Spanish
+- `id-ID`: Indonesian
 
 ### Localizable Fields
 
@@ -481,11 +530,20 @@ In VS Code, the first line schema comment enables automatic validation:
 ### 2. Essential Checklist
 
 - [ ] All required fields are filled
-- [ ] Icon and cover image URLs are accessible
+- [ ] Icon and cover image URLs are accessible and not broken
+  - [ ] Template icon (`spec.icon`) displays correctly
+  - [ ] Cover image (`spec.coverImage`) displays correctly
+  - [ ] Service icons (`services[].icon`) display correctly
 - [ ] Environment variables are correctly configured
 - [ ] Dependencies are properly set
 - [ ] README includes usage instructions
 - [ ] Localization translations are complete and correct
+  - [ ] English (en-US) - Default
+  - [ ] Traditional Chinese (zh-TW)
+  - [ ] Simplified Chinese (zh-CN)
+  - [ ] Japanese (ja-JP)
+  - [ ] Spanish (es-ES)
+  - [ ] Indonesian (id-ID)
 - [ ] Variable default values are reasonable
 
 ### 3. Local Testing
@@ -590,10 +648,6 @@ Example templates in this repository:
 - **Odoo**: Complete ERP system with PostgreSQL
   - File: `odoo/zeabur-template-odoo.yaml`
   - Features: Custom configuration, initialization scripts
-
-- **FossFLOW**: PWA drawing application
-  - File: `FossFLOW/zeabur-template-fossflow.yaml`
-  - Features: Single service, persistent storage
 
 - **MetaMCP**: MCP aggregator
   - File: `MetaMCP/zeabur-template-metamcp.yaml`
@@ -741,8 +795,15 @@ For more information, refer to:
 ### PR Checklist
 
 - [ ] Template passes schema validation
-- [ ] Includes English, Traditional Chinese, and Simplified Chinese translations
+- [ ] Includes complete multi-language translations (recommended all 6 languages)
+  - [ ] English (en-US)
+  - [ ] Traditional Chinese (zh-TW)
+  - [ ] Simplified Chinese (zh-CN)
+  - [ ] Japanese (ja-JP)
+  - [ ] Spanish (es-ES)
+  - [ ] Indonesian (id-ID)
 - [ ] Provides screenshot (screenshot.webp)
+- [ ] All image resources are accessible and not broken
 - [ ] README documentation is complete
 - [ ] Tested deployment on Zeabur platform
 
