@@ -273,19 +273,87 @@ localization:
 - **服務名稱**: 使用小寫字母，可包含連字號
 - **變數命名**: 使用大寫字母和底線，如 `PUBLIC_DOMAIN`
 
-### 2. 圖片資源
+### 2. 多國語言支援
+
+**強烈建議為所有模板提供多國語言支援**，至少包含英文、繁體中文、簡體中文三種語言。
+
+#### 必須本地化的內容
+
+1. **description** - 模板描述
+   ```yaml
+   spec:
+     description: |
+       English description
+   localization:
+     zh-TW:
+       description: |
+         繁體中文描述
+     zh-CN:
+       description: |
+         简体中文描述
+   ```
+
+2. **variables** - 變數名稱和描述
+   ```yaml
+   spec:
+     variables:
+       - key: PUBLIC_DOMAIN
+         type: DOMAIN
+         name: Domain
+         description: What domain do you want to bind to?
+   localization:
+     zh-TW:
+       variables:
+         - key: PUBLIC_DOMAIN
+           name: 網域
+           description: 你想綁定哪個網域？
+     zh-CN:
+       variables:
+         - key: PUBLIC_DOMAIN
+           name: 域名
+           description: 你想绑定哪个域名？
+   ```
+
+3. **readme** - 使用說明文件
+   - 包含使用方式
+   - 配置選項
+   - 文件連結
+
+#### 翻譯品質要求
+
+- ✅ 使用正確的專業術語
+- ✅ 保持語氣一致
+- ✅ 注意繁簡體差異（伺服器 vs 服务器、資料庫 vs 数据库）
+- ✅ 所有語言版本的資訊應該完整且一致
+
+#### 支援的語言代碼
+
+- `en-US`: 英文（預設，直接寫在 spec 中）
+- `zh-TW`: 繁體中文（台灣、香港、澳門）
+- `zh-CN`: 簡體中文（中國大陸）
+- `ja-JP`: 日文
+- `es-ES`: 西班牙文
+
+### 3. 圖片資源
 
 - **圖示**:
   - 優先使用 SVG 格式
   - 如使用點陣圖，至少 512x512px
   - 使用官方品牌圖示
+  - 確保 URL 可公開存取（建議使用 GitHub raw 連結）
 
 - **封面圖片**:
   - 建議尺寸: 1200x630px
   - 格式: WebP（較小檔案大小）
   - 存放位置: GitHub 倉庫的 `screenshot.webp`
 
-### 3. 環境變數設計
+- **圖片驗證**:
+  - ✅ 在提交前測試所有圖片 URL 是否可正常存取
+  - ✅ 使用瀏覽器開啟圖片 URL 確認無破圖
+  - ✅ 檢查圖片格式是否正確（SVG/PNG/WebP）
+  - ✅ 確認圖片大小合理（避免過大影響載入速度）
+
+### 4. 環境變數設計
 
 ```yaml
 env:
@@ -322,7 +390,7 @@ env:
         readonly: true
 ```
 
-### 4. 依賴管理
+### 5. 依賴管理
 
 使用 `dependencies` 確保服務啟動順序：
 
@@ -341,7 +409,7 @@ services:
     # ... 應用配置
 ```
 
-### 5. 健康檢查（適用於資料庫等）
+### 6. 健康檢查（適用於資料庫等）
 
 ```yaml
 # 注意: Zeabur 模板 schema 不直接支援 healthcheck
@@ -359,7 +427,7 @@ spec:
         done
 ```
 
-### 6. 初始化腳本
+### 7. 初始化腳本
 
 ```yaml
 spec:
@@ -384,6 +452,7 @@ spec:
 - `zh-CN`: 簡體中文
 - `ja-JP`: 日文
 - `es-ES`: 西班牙文
+- `id-ID`: 印尼文
 
 ### 可本地化的欄位
 
@@ -420,11 +489,20 @@ spec:
 ### 2. 必要檢查清單
 
 - [ ] 所有必要欄位已填寫
-- [ ] 圖示和封面圖片 URL 可存取
+- [ ] 圖示和封面圖片 URL 可存取且無破圖
+  - [ ] 模板圖示 (`spec.icon`) 正常顯示
+  - [ ] 封面圖片 (`spec.coverImage`) 正常顯示
+  - [ ] 各服務圖示 (`services[].icon`) 正常顯示
 - [ ] 環境變數正確配置
 - [ ] 依賴關係正確設定
 - [ ] README 包含使用說明
 - [ ] 多語系翻譯完整且正確
+  - [ ] 英文 (en-US) - 預設
+  - [ ] 繁體中文 (zh-TW)
+  - [ ] 簡體中文 (zh-CN)
+  - [ ] 日文 (ja-JP)
+  - [ ] 西班牙文 (es-ES)
+  - [ ] 印尼文 (id-ID)
 - [ ] 變數的預設值合理
 
 ### 3. 本地測試
@@ -675,8 +753,15 @@ Zeabur 的資料庫服務會自動暴露以下變數：
 ### PR 檢查清單
 
 - [ ] 模板通過 schema 驗證
-- [ ] 包含英文、繁體中文、簡體中文翻譯
+- [ ] 包含完整的多語系翻譯（建議全部 6 種語言）
+  - [ ] 英文 (en-US)
+  - [ ] 繁體中文 (zh-TW)
+  - [ ] 簡體中文 (zh-CN)
+  - [ ] 日文 (ja-JP)
+  - [ ] 西班牙文 (es-ES)
+  - [ ] 印尼文 (id-ID)
 - [ ] 提供截圖（screenshot.webp）
+- [ ] 所有圖片資源可正常存取且無破圖
 - [ ] README 說明完整
 - [ ] 已在 Zeabur 平台測試部署
 

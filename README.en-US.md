@@ -273,7 +273,68 @@ localization:
 - **Service names**: Use lowercase letters, hyphens allowed
 - **Variable naming**: Use uppercase letters and underscores, e.g., `PUBLIC_DOMAIN`
 
-### 2. Image Resources
+### 2. Multi-language Support
+
+**Highly recommended to provide multi-language support for all templates**, including at least English, Traditional Chinese, and Simplified Chinese.
+
+#### Required Localized Content
+
+1. **description** - Template description
+   ```yaml
+   spec:
+     description: |
+       English description
+   localization:
+     zh-TW:
+       description: |
+         繁體中文描述
+     zh-CN:
+       description: |
+         简体中文描述
+   ```
+
+2. **variables** - Variable names and descriptions
+   ```yaml
+   spec:
+     variables:
+       - key: PUBLIC_DOMAIN
+         type: DOMAIN
+         name: Domain
+         description: What domain do you want to bind to?
+   localization:
+     zh-TW:
+       variables:
+         - key: PUBLIC_DOMAIN
+           name: 網域
+           description: 你想綁定哪個網域？
+     zh-CN:
+       variables:
+         - key: PUBLIC_DOMAIN
+           name: 域名
+           description: 你想绑定哪个域名？
+   ```
+
+3. **readme** - Documentation
+   - Usage instructions
+   - Configuration options
+   - Documentation links
+
+#### Translation Quality Requirements
+
+- ✅ Use correct professional terminology
+- ✅ Maintain consistent tone
+- ✅ Pay attention to Traditional vs Simplified Chinese differences (伺服器 vs 服务器, 資料庫 vs 数据库)
+- ✅ All language versions should have complete and consistent information
+
+#### Supported Language Codes
+
+- `en-US`: English (default, written directly in spec)
+- `zh-TW`: Traditional Chinese (Taiwan, Hong Kong, Macau)
+- `zh-CN`: Simplified Chinese (Mainland China)
+- `ja-JP`: Japanese
+- `es-ES`: Spanish
+
+### 3. Image Resources
 
 - **Icons**:
   - Prefer SVG format
@@ -285,7 +346,7 @@ localization:
   - Format: WebP (smaller file size)
   - Storage location: `screenshot.webp` in GitHub repository
 
-### 3. Environment Variable Design
+### 4. Environment Variable Design
 
 ```yaml
 env:
@@ -322,7 +383,7 @@ env:
         readonly: true
 ```
 
-### 4. Dependency Management
+### 5. Dependency Management
 
 Use `dependencies` to ensure service startup order:
 
@@ -341,7 +402,7 @@ services:
     # ... application configuration
 ```
 
-### 5. Health Checks (for databases, etc.)
+### 6. Health Checks (for databases, etc.)
 
 ```yaml
 # Note: Zeabur template schema doesn't directly support healthcheck
@@ -359,7 +420,7 @@ spec:
         done
 ```
 
-### 6. Initialization Scripts
+### 7. Initialization Scripts
 
 ```yaml
 spec:

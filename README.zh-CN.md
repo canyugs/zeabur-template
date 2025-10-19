@@ -273,7 +273,68 @@ localization:
 - **服务名称**: 使用小写字母，可包含连字符
 - **变量命名**: 使用大写字母和下划线，如 `PUBLIC_DOMAIN`
 
-### 2. 图片资源
+### 2. 多语言支持
+
+**强烈建议为所有模板提供多语言支持**，至少包含英文、繁体中文、简体中文三种语言。
+
+#### 必须本地化的内容
+
+1. **description** - 模板描述
+   ```yaml
+   spec:
+     description: |
+       English description
+   localization:
+     zh-TW:
+       description: |
+         繁體中文描述
+     zh-CN:
+       description: |
+         简体中文描述
+   ```
+
+2. **variables** - 变量名称和描述
+   ```yaml
+   spec:
+     variables:
+       - key: PUBLIC_DOMAIN
+         type: DOMAIN
+         name: Domain
+         description: What domain do you want to bind to?
+   localization:
+     zh-TW:
+       variables:
+         - key: PUBLIC_DOMAIN
+           name: 網域
+           description: 你想綁定哪個網域？
+     zh-CN:
+       variables:
+         - key: PUBLIC_DOMAIN
+           name: 域名
+           description: 你想绑定哪个域名？
+   ```
+
+3. **readme** - 使用说明文档
+   - 包含使用方式
+   - 配置选项
+   - 文档链接
+
+#### 翻译质量要求
+
+- ✅ 使用正确的专业术语
+- ✅ 保持语气一致
+- ✅ 注意繁简体差异（伺服器 vs 服务器、資料庫 vs 数据库）
+- ✅ 所有语言版本的信息应该完整且一致
+
+#### 支持的语言代码
+
+- `en-US`: 英文（默认，直接写在 spec 中）
+- `zh-TW`: 繁体中文（台湾、香港、澳门）
+- `zh-CN`: 简体中文（中国大陆）
+- `ja-JP`: 日文
+- `es-ES`: 西班牙文
+
+### 3. 图片资源
 
 - **图标**:
   - 优先使用 SVG 格式
@@ -285,7 +346,7 @@ localization:
   - 格式: WebP（较小文件大小）
   - 存放位置: GitHub 仓库的 `screenshot.webp`
 
-### 3. 环境变量设计
+### 4. 环境变量设计
 
 ```yaml
 env:
@@ -322,7 +383,7 @@ env:
         readonly: true
 ```
 
-### 4. 依赖管理
+### 5. 依赖管理
 
 使用 `dependencies` 确保服务启动顺序：
 
@@ -341,7 +402,7 @@ services:
     # ... 应用配置
 ```
 
-### 5. 健康检查（适用于数据库等）
+### 6. 健康检查（适用于数据库等）
 
 ```yaml
 # 注意: Zeabur 模板 schema 不直接支持 healthcheck
@@ -359,7 +420,7 @@ spec:
         done
 ```
 
-### 6. 初始化脚本
+### 7. 初始化脚本
 
 ```yaml
 spec:
