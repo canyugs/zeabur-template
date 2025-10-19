@@ -1,0 +1,308 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: FossFLOW
+spec:
+    description: |
+      FossFLOW is a powerful open-source Progressive Web App for creating beautiful isometric infrastructure diagrams. Built with React, it features offline support, auto-save, custom icons, and supports major cloud providers (AWS, Azure, GCP, Kubernetes).
+    icon: https://raw.githubusercontent.com/stan-smith/FossFLOW/master/packages/fossflow-app/public/logo512.png
+    coverImage: https://github.com/user-attachments/assets/e7f254ad-625f-4b8a-8efc-5293b5be9d55
+    variables:
+      - key: PUBLIC_DOMAIN
+        type: DOMAIN
+        name: Domain
+        description: What domain do you want to bind FossFLOW to?
+    tags:
+      - Diagramming
+      - Productivity
+      - PWA
+      - Design
+
+    readme: |
+      # FossFLOW
+
+      FossFLOW is an open-source Progressive Web App for creating stunning isometric infrastructure diagrams directly in your browser. With server-side persistent storage and optional Git backup integration, your diagrams are safe and accessible across devices.
+
+      ## Features
+
+      - **Isometric Diagramming**: Create beautiful 3D-style infrastructure diagrams
+      - **Auto-Save**: Diagrams automatically save every 5 seconds to persistent storage
+      - **PWA Support**: Works offline and can be installed as a desktop/mobile app
+      - **Icon Libraries**: Pre-loaded icons for AWS, Azure, GCP, Kubernetes, and more
+      - **Custom Icons**: Upload and use your own custom icons
+      - **Import/Export**: Share diagrams as JSON files
+      - **Git Backup**: Optional automatic commits to Git for version control
+
+      ## Usage
+
+      1. Open FossFLOW at your domain
+      2. Start creating diagrams - they're automatically saved to `/data/diagrams`
+      3. Import/export diagrams as JSON files
+      4. Toggle between isometric and flat icon styles
+
+      ## Configuration
+
+      - `ENABLE_SERVER_STORAGE` (default: `true`) - Enables persistent storage on the server
+      - `ENABLE_GIT_BACKUP` (default: `false`) - Enables automatic Git commits (requires Git configuration inside container)
+      - `STORAGE_PATH` (default: `/data/diagrams`) - Where diagrams are stored in the container
+      - `BACKEND_PORT` (default: `3001`) - Backend server port
+
+      ## Documentation
+
+      - GitHub Repository: https://github.com/stan-smith/FossFLOW
+      - Live Demo: https://stan-smith.github.io/FossFLOW/
+      - Browser Support: Chrome, Edge, Firefox, Safari (including mobile)
+
+    services:
+      - name: fossflow
+        icon: https://raw.githubusercontent.com/stan-smith/FossFLOW/master/packages/fossflow-app/public/logo512.png
+        template: PREBUILT
+        domainKey: PUBLIC_DOMAIN
+        spec:
+          source:
+              image: stnsmith/fossflow:latest
+          ports:
+              - id: web
+                port: 80
+                type: HTTP
+          env:
+              NODE_ENV:
+                  default: production
+                  readonly: true
+              ENABLE_SERVER_STORAGE:
+                  default: "true"
+              ENABLE_GIT_BACKUP:
+                  default: "false"
+              STORAGE_PATH:
+                  default: /data/diagrams
+                  readonly: true
+              BACKEND_PORT:
+                  default: "3001"
+                  readonly: true
+          volumes:
+              - id: diagrams
+                dir: /data/diagrams
+          instructions:
+              - type: TEXT
+                title: Access FossFLOW
+                content: https://${PUBLIC_DOMAIN}
+              - type: TEXT
+                title: Persistent storage path
+                content: /data/diagrams
+                category: Storage
+              - type: TEXT
+                title: Enable Git backups
+                content: Set ENABLE_GIT_BACKUP=true and configure Git inside the container to commit diagram changes automatically.
+                category: Configuration
+
+localization:
+    zh-TW:
+        description: |
+          FossFLOW 是一個強大的開源漸進式網頁應用程式，用於創建精美的等距基礎架構圖。基於 React 構建，具備離線支援、自動儲存、自訂圖示，並支援主流雲端服務商（AWS、Azure、GCP、Kubernetes）。
+        variables:
+          - key: PUBLIC_DOMAIN
+            name: 網域
+            description: 你想將 FossFLOW 綁定到哪個網域？
+        readme: |
+          # FossFLOW
+
+          FossFLOW 是一個開源的漸進式網頁應用程式，用於直接在瀏覽器中創建精美的等距基礎架構圖。透過伺服器端持久化儲存和可選的 Git 備份整合，您的圖表安全且可跨裝置存取。
+
+          ## 功能特色
+
+          - **等距繪圖**：創建精美的 3D 風格基礎架構圖
+          - **自動儲存**：圖表每 5 秒自動儲存到持久化儲存
+          - **PWA 支援**：可離線工作，並可安裝為桌面/行動應用程式
+          - **圖示庫**：預載 AWS、Azure、GCP、Kubernetes 等圖示
+          - **自訂圖示**：上傳並使用您自己的自訂圖示
+          - **匯入/匯出**：以 JSON 檔案分享圖表
+          - **Git 備份**：可選的自動 Git 提交進行版本控制
+
+          ## 使用方式
+
+          1. 開啟您網域上的 FossFLOW
+          2. 開始創建圖表 - 它們會自動儲存到 `/data/diagrams`
+          3. 匯入/匯出圖表為 JSON 檔案
+          4. 在等距和平面圖示風格之間切換
+
+          ## 配置選項
+
+          - `ENABLE_SERVER_STORAGE`（預設：`true`）- 啟用伺服器上的持久化儲存
+          - `ENABLE_GIT_BACKUP`（預設：`false`）- 啟用自動 Git 提交（需要在容器內配置 Git）
+          - `STORAGE_PATH`（預設：`/data/diagrams`）- 容器中圖表的儲存位置
+          - `BACKEND_PORT`（預設：`3001`）- 後端伺服器埠號
+
+          ## 文件
+
+          - GitHub 倉庫：https://github.com/stan-smith/FossFLOW
+          - 線上示範：https://stan-smith.github.io/FossFLOW/
+          - 瀏覽器支援：Chrome、Edge、Firefox、Safari（包括行動版）
+
+    zh-CN:
+        description: |
+          FossFLOW 是一个强大的开源渐进式 Web 应用程序，用于创建精美的等距基础架构图。基于 React 构建，具备离线支持、自动保存、自定义图标，并支持主流云服务商（AWS、Azure、GCP、Kubernetes）。
+        variables:
+          - key: PUBLIC_DOMAIN
+            name: 域名
+            description: 你想将 FossFLOW 绑定到哪个域名？
+        readme: |
+          # FossFLOW
+
+          FossFLOW 是一个开源的渐进式 Web 应用程序，用于直接在浏览器中创建精美的等距基础架构图。通过服务器端持久化存储和可选的 Git 备份集成，您的图表安全且可跨设备访问。
+
+          ## 功能特性
+
+          - **等距绘图**：创建精美的 3D 风格基础架构图
+          - **自动保存**：图表每 5 秒自动保存到持久化存储
+          - **PWA 支持**：可离线工作，并可安装为桌面/移动应用程序
+          - **图标库**：预载 AWS、Azure、GCP、Kubernetes 等图标
+          - **自定义图标**：上传并使用您自己的自定义图标
+          - **导入/导出**：以 JSON 文件分享图表
+          - **Git 备份**：可选的自动 Git 提交进行版本控制
+
+          ## 使用方式
+
+          1. 打开您域名上的 FossFLOW
+          2. 开始创建图表 - 它们会自动保存到 `/data/diagrams`
+          3. 导入/导出图表为 JSON 文件
+          4. 在等距和平面图标风格之间切换
+
+          ## 配置选项
+
+          - `ENABLE_SERVER_STORAGE`（默认：`true`）- 启用服务器上的持久化存储
+          - `ENABLE_GIT_BACKUP`（默认：`false`）- 启用自动 Git 提交（需要在容器内配置 Git）
+          - `STORAGE_PATH`（默认：`/data/diagrams`）- 容器中图表的存储位置
+          - `BACKEND_PORT`（默认：`3001`）- 后端服务器端口
+
+          ## 文档
+
+          - GitHub 仓库：https://github.com/stan-smith/FossFLOW
+          - 在线演示：https://stan-smith.github.io/FossFLOW/
+          - 浏览器支持：Chrome、Edge、Firefox、Safari（包括移动版）
+
+    ja-JP:
+        description: |
+          FossFLOW は、美しいアイソメトリックインフラストラクチャ図を作成するための強力なオープンソース Progressive Web App です。React で構築され、オフラインサポート、自動保存、カスタムアイコンを備え、主要クラウドプロバイダー（AWS、Azure、GCP、Kubernetes）をサポートします。
+        variables:
+          - key: PUBLIC_DOMAIN
+            name: ドメイン
+            description: FossFLOW をどのドメインにバインドしますか？
+        readme: |
+          # FossFLOW
+
+          FossFLOW は、ブラウザで直接美しいアイソメトリックインフラストラクチャ図を作成するためのオープンソース Progressive Web App です。サーバーサイドの永続ストレージとオプションの Git バックアップ統合により、図はデバイス間で安全にアクセスできます。
+
+          ## 機能
+
+          - **アイソメトリック図作成**：美しい 3D スタイルのインフラストラクチャ図を作成
+          - **自動保存**：図は 5 秒ごとに永続ストレージに自動保存されます
+          - **PWA サポート**：オフラインで動作し、デスクトップ/モバイルアプリとしてインストール可能
+          - **アイコンライブラリ**：AWS、Azure、GCP、Kubernetes などのアイコンをプリロード
+          - **カスタムアイコン**：独自のカスタムアイコンをアップロードして使用
+          - **インポート/エクスポート**：JSON ファイルとして図を共有
+          - **Git バックアップ**：バージョン管理のためのオプションの自動 Git コミット
+
+          ## 使用方法
+
+          1. ドメインで FossFLOW を開く
+          2. 図の作成を開始 - `/data/diagrams` に自動保存されます
+          3. 図を JSON ファイルとしてインポート/エクスポート
+          4. アイソメトリックとフラットアイコンスタイルを切り替え
+
+          ## 設定オプション
+
+          - `ENABLE_SERVER_STORAGE`（デフォルト：`true`）- サーバー上の永続ストレージを有効化
+          - `ENABLE_GIT_BACKUP`（デフォルト：`false`）- 自動 Git コミットを有効化（コンテナ内で Git の設定が必要）
+          - `STORAGE_PATH`（デフォルト：`/data/diagrams`）- コンテナ内の図の保存場所
+          - `BACKEND_PORT`（デフォルト：`3001`）- バックエンドサーバーポート
+
+          ## ドキュメント
+
+          - GitHub リポジトリ：https://github.com/stan-smith/FossFLOW
+          - ライブデモ：https://stan-smith.github.io/FossFLOW/
+          - ブラウザサポート：Chrome、Edge、Firefox、Safari（モバイルを含む）
+
+    es-ES:
+        description: |
+          FossFLOW es una potente aplicación web progresiva de código abierto para crear hermosos diagramas de infraestructura isométricos. Construida con React, cuenta con soporte sin conexión, autoguardado, iconos personalizados y admite los principales proveedores de nube (AWS, Azure, GCP, Kubernetes).
+        variables:
+          - key: PUBLIC_DOMAIN
+            name: Dominio
+            description: ¿A qué dominio quieres vincular FossFLOW?
+        readme: |
+          # FossFLOW
+
+          FossFLOW es una aplicación web progresiva de código abierto para crear impresionantes diagramas de infraestructura isométricos directamente en tu navegador. Con almacenamiento persistente del lado del servidor y la integración opcional de respaldo Git, tus diagramas están seguros y accesibles entre dispositivos.
+
+          ## Características
+
+          - **Diagramación isométrica**: Crea hermosos diagramas de infraestructura en estilo 3D
+          - **Autoguardado**: Los diagramas se guardan automáticamente cada 5 segundos en almacenamiento persistente
+          - **Soporte PWA**: Funciona sin conexión y se puede instalar como aplicación de escritorio/móvil
+          - **Bibliotecas de iconos**: Iconos precargados para AWS, Azure, GCP, Kubernetes y más
+          - **Iconos personalizados**: Sube y usa tus propios iconos personalizados
+          - **Importar/Exportar**: Comparte diagramas como archivos JSON
+          - **Respaldo Git**: Commits automáticos opcionales a Git para control de versiones
+
+          ## Uso
+
+          1. Abre FossFLOW en tu dominio
+          2. Comienza a crear diagramas - se guardan automáticamente en `/data/diagrams`
+          3. Importa/exporta diagramas como archivos JSON
+          4. Alterna entre estilos de iconos isométricos y planos
+
+          ## Configuración
+
+          - `ENABLE_SERVER_STORAGE` (predeterminado: `true`) - Habilita almacenamiento persistente en el servidor
+          - `ENABLE_GIT_BACKUP` (predeterminado: `false`) - Habilita commits automáticos a Git (requiere configuración de Git dentro del contenedor)
+          - `STORAGE_PATH` (predeterminado: `/data/diagrams`) - Ubicación donde se almacenan los diagramas en el contenedor
+          - `BACKEND_PORT` (predeterminado: `3001`) - Puerto del servidor backend
+
+          ## Documentación
+
+          - Repositorio GitHub: https://github.com/stan-smith/FossFLOW
+          - Demo en vivo: https://stan-smith.github.io/FossFLOW/
+          - Soporte de navegadores: Chrome, Edge, Firefox, Safari (incluidos móviles)
+
+    id-ID:
+        description: |
+          FossFLOW adalah Aplikasi Web Progresif open-source yang kuat untuk membuat diagram infrastruktur isometrik yang indah. Dibangun dengan React, dilengkapi dengan dukungan offline, penyimpanan otomatis, ikon kustom, dan mendukung penyedia cloud utama (AWS, Azure, GCP, Kubernetes).
+        variables:
+          - key: PUBLIC_DOMAIN
+            name: Domain
+            description: Domain mana yang ingin Anda ikat ke FossFLOW?
+        readme: |
+          # FossFLOW
+
+          FossFLOW adalah Aplikasi Web Progresif open-source untuk membuat diagram infrastruktur isometrik yang menakjubkan langsung di browser Anda. Dengan penyimpanan persisten di sisi server dan integrasi cadangan Git opsional, diagram Anda aman dan dapat diakses di berbagai perangkat.
+
+          ## Fitur
+
+          - **Diagram Isometrik**: Buat diagram infrastruktur bergaya 3D yang indah
+          - **Simpan Otomatis**: Diagram secara otomatis disimpan setiap 5 detik ke penyimpanan persisten
+          - **Dukungan PWA**: Bekerja offline dan dapat diinstal sebagai aplikasi desktop/mobile
+          - **Pustaka Ikon**: Ikon yang sudah dimuat untuk AWS, Azure, GCP, Kubernetes, dan lainnya
+          - **Ikon Kustom**: Unggah dan gunakan ikon kustom Anda sendiri
+          - **Impor/Ekspor**: Bagikan diagram sebagai file JSON
+          - **Cadangan Git**: Commit otomatis opsional ke Git untuk kontrol versi
+
+          ## Penggunaan
+
+          1. Buka FossFLOW di domain Anda
+          2. Mulai membuat diagram - secara otomatis disimpan ke `/data/diagrams`
+          3. Impor/ekspor diagram sebagai file JSON
+          4. Beralih antara gaya ikon isometrik dan datar
+
+          ## Konfigurasi
+
+          - `ENABLE_SERVER_STORAGE` (default: `true`) - Mengaktifkan penyimpanan persisten di server
+          - `ENABLE_GIT_BACKUP` (default: `false`) - Mengaktifkan commit Git otomatis (memerlukan konfigurasi Git di dalam container)
+          - `STORAGE_PATH` (default: `/data/diagrams`) - Lokasi penyimpanan diagram di dalam container
+          - `BACKEND_PORT` (default: `3001`) - Port server backend
+
+          ## Dokumentasi
+
+          - Repositori GitHub: https://github.com/stan-smith/FossFLOW
+          - Demo Langsung: https://stan-smith.github.io/FossFLOW/
+          - Dukungan Browser: Chrome, Edge, Firefox, Safari (termasuk mobile)
