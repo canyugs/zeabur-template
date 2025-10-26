@@ -140,6 +140,10 @@ spec:
 
 ### 步驟 5: 定義服務
 
+**⚠️ 重要提醒：Volume 預設為空**
+
+Zeabur 的 Volume 預設是空的目錄。如果需要預先存在的配置檔案，請使用 `configs` 或 `init` 腳本建立。詳見[最佳實踐 - Volume 管理](#5-volume-管理)。
+
 #### 5.1 資料庫服務範例（PostgreSQL）
 
 ```yaml
@@ -430,7 +434,56 @@ env:
         readonly: true
 ```
 
-### 5. 依賴管理
+### 5. Volume 管理
+
+**⚠️ 重要：Zeabur Volume 預設為空**
+
+Zeabur 的 Volume 預設是空的目錄。如果您的服務需要預先存在的配置檔案或資料，必須透過以下方式處理：
+
+```yaml
+# ❌ 錯誤做法 - Volume 會是空的
+spec:
+  volumes:
+    - id: config
+      dir: /app/config  # 這個目錄會是空的！
+
+# ✅ 正確做法 1 - 使用 configs 注入檔案
+spec:
+  configs:
+    - path: /app/config/app.yml
+      template: |
+        server:
+          host: 0.0.0.0
+          port: ${PORT}
+      envsubst: true
+  volumes:
+    - id: data
+      dir: /app/data  # 用於存放執行時產生的資料
+
+# ✅ 正確做法 2 - 使用 init 階段建立檔案
+spec:
+  init:
+    - id: setup-config
+      command:
+        - /bin/bash
+        - -c
+        - |
+          cat > /app/config/app.yml <<EOF
+          server:
+            host: 0.0.0.0
+            port: ${PORT}
+          EOF
+  volumes:
+    - id: config
+      dir: /app/config
+```
+
+**使用場景：**
+- 需要配置檔案 → 使用 `configs` 或 `init` 注入
+- 需要持久化資料 → 使用 `volumes`（用於執行時產生的資料）
+- 需要預設資料 → 在 Docker 映像中包含，或透過 `init` 腳本建立
+
+### 6. 依賴管理
 
 使用 `dependencies` 確保服務啟動順序：
 
@@ -449,7 +502,7 @@ services:
     # ... 應用配置
 ```
 
-### 6. 健康檢查（適用於資料庫等）
+### 7. 健康檢查（適用於資料庫等）
 
 ```yaml
 # 注意: Zeabur 模板 schema 不直接支援 healthcheck
@@ -467,7 +520,7 @@ spec:
         done
 ```
 
-### 7. 初始化腳本
+### 8. 初始化腳本
 
 ```yaml
 spec:
