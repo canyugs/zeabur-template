@@ -1,0 +1,2409 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: Supabase (Zeabur Self-hosted)
+spec:
+  description: An open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
+  coverImage: https://miro.medium.com/v2/resize:fit:1200/1*KllQKJSGK5QruqT8kIElEA.png
+  icon: https://icons.zeabur.com/supabase.png
+  variables:
+    - key: DASHBOARD_USERNAME
+      type: STRING
+      name: Dashboard Username
+      description: What is the username you want for your Supabase Dashboard?
+    - key: PUBLIC_DOMAIN
+      type: DOMAIN
+      name: Domain
+      description: What is the domain you want for your Supabase?
+  tags:
+      - CMS
+      - Database
+      - Tool
+      - API
+  readme: |
+    # Supabase for Zeabur Self-hosted
+    
+    This is a demo of Supabase for Zeabur Self-hosted.
+    You can use this template to deploy a Supabase instance on Zeabur.
+
+    ## Development Status
+
+    > ⚠️ **This template is currently in active development.**
+    > Some services may not be fully functional yet. See the status table below for details.
+
+    | Service | Status | Notes |
+    |---------|--------|-------|
+    | PostgreSQL | ✅ Working | Core database fully functional |
+    | Kong | ✅ Working | API Gateway operational |
+    | Studio | ✅ Working | Dashboard accessible |
+    | Auth | ✅ Working | Authentication flows working |
+    | REST | ✅ Working | PostgREST API functional |
+    | Meta | ✅ Working | Database metadata API operational |
+    | Vector | ✅ Working | Log collection operational |
+    | Analytics | ✅ Working | Logflare integration working |
+    | JWT/Keys | ✅ Working | Custom JWT secrets supported |
+    | Realtime | ⚠️ Testing | May be unstable, needs more testing |
+    | Storage | 🚧 In Progress | Not fully tested yet |
+    | Supavisor | 🚧 In Progress | Connection pooler needs testing |
+    | Functions | 🚧 Beta | Edge functions not fully tested |
+
+    **Legend:**
+    - ✅ Working - Fully tested and operational
+    - ⚠️ Testing - Functional but may have issues
+    - 🚧 In Progress - Under development/testing
+
+    ## Services Overview
+
+    ### Core Services (Required)
+
+    1. **postgresql** - PostgreSQL Database
+       - The core database for Supabase, stores all application data
+       - ⚠️ Required - Cannot be removed
+
+    2. **kong** - API Gateway
+       - Unified API entry point, handles routing, authentication, and rate limiting
+       - ⚠️ Required - Cannot be removed
+
+    3. **studio** - Supabase Dashboard
+       - Web-based admin interface for managing database, auth, storage, etc.
+       - ⚠️ Required - Highly recommended for management
+
+    4. **auth** - GoTrue Authentication
+       - Handles user registration, login, OAuth, and authentication flows
+       - ⚠️ Required - Unless using external authentication system
+
+    5. **rest** - PostgREST API
+       - Automatically converts PostgreSQL database to RESTful API
+       - ⚠️ Required - Cannot be removed
+
+    6. **meta** - Postgres Meta API
+       - Provides database metadata API, used by Studio
+       - ⚠️ Required - Studio depends on this
+
+    ### Optional Services
+
+    7. **vector** - Log Aggregation
+       - Collects and forwards service logs to Analytics
+       - ✅ Optional - Can be removed if log analysis is not needed
+
+    8. **analytics** - Logflare Analytics
+       - Log analysis and query service
+       - ✅ Optional - Can be removed if log analysis is not needed (remove vector too)
+
+    9. **storage** - File Storage
+       - File upload, storage, and management service
+       - ✅ Optional - Can be removed if file storage is not needed
+       - ⚠️ Status: Not fully tested yet
+
+    10. **imgproxy** - Image Transformation
+        - Image conversion and optimization service (for Storage)
+        - ✅ Optional - Can be removed if storage is removed
+
+    11. **realtime** - Real-time Subscriptions
+        - Provides real-time database change subscriptions
+        - ✅ Optional - Can be removed if real-time features are not needed
+        - ⚠️ Status: May be unstable
+
+    12. **functions** - Edge Functions
+        - Serverless function execution environment (similar to AWS Lambda)
+        - ✅ Optional - Can be removed if edge functions are not needed
+        - ⚠️ Status: Beta, not fully tested
+
+    13. **supavisor** - Connection Pooler
+        - PostgreSQL connection pool manager, improves database connection performance
+        - ✅ Optional - Can be removed for small projects
+        - ⚠️ Status: Not fully tested yet
+
+    ## Getting Started
+
+    ### Access the Dashboard
+
+    After deployment, your Supabase Studio dashboard will be available at your configured domain.
+
+    **Finding Your Credentials:**
+    1. Go to the **Kong service** in your Zeabur project
+    2. Click on the **Instructions** tab
+    3. You'll find:
+       - **Supabase Username**: Your dashboard username (from `DASHBOARD_USERNAME` variable)
+       - **Supabase Password**: Auto-generated secure password
+
+    ### Important Security Keys
+
+    The following keys are exposed in the **Kong service** environment variables:
+
+    | Key | Location | Description |
+    |-----|----------|-------------|
+    | `JWT_SECRET` | Kong service | Secret for signing JWT tokens |
+    | `ANON_KEY` | Kong service | Public API key for anonymous access |
+    | `SERVICE_ROLE_KEY` | Kong service | Admin API key with full access |
+
+    **⚠️ CRITICAL**: The default keys are for demo purposes only. You **MUST** generate new keys before production use.
+
+    **How to Generate Secure Keys:**
+    1. Visit the [Supabase JWT Generator](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
+    2. Generate new `ANON_KEY` and `SERVICE_ROLE_KEY` using your custom `JWT_SECRET`
+    3. Update the environment variables in the Kong service
+    4. Restart all services to apply changes:
+       - Go to your **Project** → **Settings** → **General**
+       - Scroll down to **Batch Actions**
+       - Click **Restart All** to restart all services
+
+    ## Securing your services
+    While we provided you with some example secrets for getting started, you should NEVER deploy your Supabase setup using the defaults we have provided. Follow all of the steps in this section to ensure you have a secure setup, and then restart all services to pick up the changes.
+
+    [Official Guide](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
+
+  services:
+    - name: imgproxy
+      icon: https://icons.zeabur.com/supabase.png
+      template: PREBUILT
+      spec:
+        ports:
+          - id: web
+            port: 5001
+            type: HTTP
+        source:
+          image: darthsim/imgproxy:v3.8.0
+        volumes:
+          - id: vol-0
+            dir: /var/lib/storage
+        env:
+          IMGPROXY_BIND:
+            default: ":5001"
+          IMGPROXY_LOCAL_FILESYSTEM_ROOT:
+            default: /
+          IMGPROXY_USE_ETAG:
+            default: "true"
+          IMGPROXY_ENABLE_WEBP_DETECTION:
+            default: "true"
+    - name: vector
+      icon: https://icons.zeabur.com/supabase.png
+      template: PREBUILT
+      spec:
+        source:
+          image: timberio/vector:0.28.1-alpine
+        volumes:
+        - id: vol-1
+          dir: /var/run/docker.sock
+        configs:
+          - path: /etc/vector/vector.yml
+            template: |
+              api:
+                enabled: true
+                address: 0.0.0.0:9001
+
+              sources:
+                docker_host:
+                  type: docker_logs
+                  exclude_containers:
+                    - supabase-vector
+
+              transforms:
+                project_logs:
+                  type: remap
+                  inputs:
+                    - docker_host
+                  source: |-
+                    .project = "default"
+                    .event_message = del(.message)
+                    .appname = del(.container_name)
+                    del(.container_created_at)
+                    del(.container_id)
+                    del(.source_type)
+                    del(.stream)
+                    del(.label)
+                    del(.image)
+                    del(.host)
+                    del(.stream)
+                router:
+                  type: route
+                  inputs:
+                    - project_logs
+                  route:
+                    kong: '.appname == "supabase-kong"'
+                    auth: '.appname == "supabase-auth"'
+                    rest: '.appname == "supabase-rest"'
+                    realtime: '.appname == "supabase-realtime"'
+                    storage: '.appname == "supabase-storage"'
+                    functions: '.appname == "supabase-edge-functions"'
+                    db: '.appname == "supabase-db"'
+                # Ignores non nginx errors since they are related with kong booting up
+                kong_logs:
+                  type: remap
+                  inputs:
+                    - router.kong
+                  source: |-
+                    req, err = parse_nginx_log(.event_message, "combined")
+                    if err == null {
+                        .timestamp = req.timestamp
+                        .metadata.request.headers.referer = req.referer
+                        .metadata.request.headers.user_agent = req.agent
+                        .metadata.request.headers.cf_connecting_ip = req.client
+                        .metadata.request.method = req.method
+                        .metadata.request.path = req.path
+                        .metadata.request.protocol = req.protocol
+                        .metadata.response.status_code = req.status
+                    }
+                    if err != null {
+                      abort
+                    }
+                # Ignores non nginx errors since they are related with kong booting up
+                kong_err:
+                  type: remap
+                  inputs:
+                    - router.kong
+                  source: |-
+                    .metadata.request.method = "GET"
+                    .metadata.response.status_code = 200
+                    parsed, err = parse_nginx_log(.event_message, "error")
+                    if err == null {
+                        .timestamp = parsed.timestamp
+                        .severity = parsed.severity
+                        .metadata.request.host = parsed.host
+                        .metadata.request.headers.cf_connecting_ip = parsed.client
+                        url, err = split(parsed.request, " ")
+                        if err == null {
+                            .metadata.request.method = url[0]
+                            .metadata.request.path = url[1]
+                            .metadata.request.protocol = url[2]
+                        }
+                    }
+                    if err != null {
+                      abort
+                    }
+                # Gotrue logs are structured json strings which frontend parses directly. But we keep metadata for consistency.
+                auth_logs:
+                  type: remap
+                  inputs:
+                    - router.auth
+                  source: |-
+                    parsed, err = parse_json(.event_message)
+                    if err == null {
+                        .metadata.timestamp = parsed.time
+                        .metadata = merge!(.metadata, parsed)
+                    }
+                # PostgREST logs are structured so we separate timestamp from message using regex
+                rest_logs:
+                  type: remap
+                  inputs:
+                    - router.rest
+                  source: |-
+                    parsed, err = parse_regex(.event_message, r'^(?P<time>.*): (?P<msg>.*)$')
+                    if err == null {
+                        .event_message = parsed.msg
+                        .timestamp = to_timestamp!(parsed.time)
+                        .metadata.host = .project
+                    }
+                # Realtime logs are structured so we parse the severity level using regex (ignore time because it has no date)
+                realtime_logs:
+                  type: remap
+                  inputs:
+                    - router.realtime
+                  source: |-
+                    .metadata.project = del(.project)
+                    .metadata.external_id = .metadata.project
+                    parsed, err = parse_regex(.event_message, r'^(?P<time>\d+:\d+:\d+\.\d+) \[(?P<level>\w+)\] (?P<msg>.*)$')
+                    if err == null {
+                        .event_message = parsed.msg
+                        .metadata.level = parsed.level
+                    }
+                # Function logs are unstructured messages on stderr
+                functions_logs:
+                  type: remap
+                  inputs:
+                    - router.functions
+                  source: |-
+                    .metadata.project_ref = del(.project)
+                # Storage logs may contain json objects so we parse them for completeness
+                storage_logs:
+                  type: remap
+                  inputs:
+                    - router.storage
+                  source: |-
+                    .metadata.project = del(.project)
+                    .metadata.tenantId = .metadata.project
+                    parsed, err = parse_json(.event_message)
+                    if err == null {
+                        .event_message = parsed.msg
+                        .metadata.level = parsed.level
+                        .metadata.timestamp = parsed.time
+                        .metadata.context[0].host = parsed.hostname
+                        .metadata.context[0].pid = parsed.pid
+                    }
+                # Postgres logs some messages to stderr which we map to warning severity level
+                db_logs:
+                  type: remap
+                  inputs:
+                    - router.db
+                  source: |-
+                    .metadata.host = "db-default"
+                    .metadata.parsed.timestamp = .timestamp
+
+                    parsed, err = parse_regex(.event_message, r'.*(?P<level>INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC?):.*', numeric_groups: true)
+
+                    if err != null || parsed == null {
+                      .metadata.parsed.error_severity = "info"
+                    }
+                    if parsed != null {
+                    .metadata.parsed.error_severity = parsed.level
+                    }
+                    if .metadata.parsed.error_severity == "info" {
+                        .metadata.parsed.error_severity = "log"
+                    }
+                    .metadata.parsed.error_severity = upcase!(.metadata.parsed.error_severity)
+
+              sinks:
+                logflare_auth:
+                  type: 'http'
+                  inputs:
+                    - auth_logs
+                  encoding:
+                    codec: 'json'
+                  method: 'post'
+                  request:
+                    retry_max_duration_secs: 10
+                    headers:
+                      x-api-key: ${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}
+                  uri: 'http://analytics:4000/api/logs?source_name=gotrue.logs.prod'
+                logflare_realtime:
+                  type: 'http'
+                  inputs:
+                    - realtime_logs
+                  encoding:
+                    codec: 'json'
+                  method: 'post'
+                  request:
+                    retry_max_duration_secs: 10
+                    headers:
+                      x-api-key: ${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}
+                  uri: 'http://analytics:4000/api/logs?source_name=realtime.logs.prod'
+                logflare_rest:
+                  type: 'http'
+                  inputs:
+                    - rest_logs
+                  encoding:
+                    codec: 'json'
+                  method: 'post'
+                  request:
+                    retry_max_duration_secs: 10
+                    headers:
+                      x-api-key: ${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}
+                  uri: 'http://analytics:4000/api/logs?source_name=postgREST.logs.prod'
+                logflare_db:
+                  type: 'http'
+                  inputs:
+                    - db_logs
+                  encoding:
+                    codec: 'json'
+                  method: 'post'
+                  request:
+                    retry_max_duration_secs: 10
+                    headers:
+                      x-api-key: ${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}
+                  # We must route the sink through kong because ingesting logs before logflare is fully initialised will
+                  # lead to broken queries from studio. This works by the assumption that containers are started in the
+                  # following order: vector > db > logflare > kong
+                  uri: 'http://kong:8000/analytics/v1/api/logs?source_name=postgres.logs'
+                logflare_functions:
+                  type: 'http'
+                  inputs:
+                    - functions_logs
+                  encoding:
+                    codec: 'json'
+                  method: 'post'
+                  request:
+                    retry_max_duration_secs: 10
+                    headers:
+                      x-api-key: ${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}
+                  uri: 'http://analytics:4000/api/logs?source_name=deno-relay-logs'
+                logflare_storage:
+                  type: 'http'
+                  inputs:
+                    - storage_logs
+                  encoding:
+                    codec: 'json'
+                  method: 'post'
+                  request:
+                    retry_max_duration_secs: 10
+                    headers:
+                      x-api-key: ${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}
+                  uri: 'http://analytics:4000/api/logs?source_name=storage.logs.prod.2'
+                logflare_kong:
+                  type: 'http'
+                  inputs:
+                    - kong_logs
+                    - kong_err
+                  encoding:
+                    codec: 'json'
+                  method: 'post'
+                  request:
+                    retry_max_duration_secs: 10
+                    headers:
+                      x-api-key: ${LOGFLARE_PUBLIC_ACCESS_TOKEN?LOGFLARE_PUBLIC_ACCESS_TOKEN is required}
+                  uri: 'http://analytics:4000/api/logs?source_name=cloudflare.logs.prod'
+              permission: null
+              envsubst: true
+        # expose from other services
+        # env:
+        #   LOGFLARE_PUBLIC_ACCESS_TOKEN:
+        #     default: ${LOGFLARE_PUBLIC_ACCESS_TOKEN}
+
+        command:
+          - --config
+          - /etc/vector/vector.yml
+    - name: postgresql
+      icon: https://icons.zeabur.com/supabase.png
+      template: PREBUILT
+      spec:
+        source:
+          image: supabase/postgres:15.8.1.085
+        dependencies:
+          - vector
+        ports:
+          - id: database
+            port: 5432
+            type: TCP
+        volumes:
+            - id: data
+              dir: /var/lib/postgresql
+        instructions:
+            - title: Connection String
+              content: postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}
+            - title: PostgreSQL Connect Command
+              content: psql "postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}"
+            - title: PostgreSQL username
+              content: ${DATABASE_USER}
+            - title: PostgresSQL password
+              content: ${DATABASE_PASSWORD}
+            - title: PostgresSQL database
+              content: ${DATABASE_NAME}
+            - title: PostgreSQL host
+              content: ${DATABASE_HOST}
+            - title: PostgreSQL port
+              content: ${DATABASE_PORT}
+        configs:
+          - path: /docker-entrypoint-initdb.d/migrations/99-realtime.sql
+            template: |
+              \set pguser `echo "$DATABASE_USER"`
+              create schema if not exists _realtime;
+              alter schema _realtime owner to :pguser;
+            permission: null
+            envsubst: true
+          - path: /docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql
+            template: |
+              BEGIN;
+              -- Create pg_net extension
+              CREATE EXTENSION IF NOT EXISTS pg_net SCHEMA extensions;
+              -- Create supabase_functions schema
+              CREATE SCHEMA supabase_functions AUTHORIZATION supabase_admin;
+              GRANT USAGE ON SCHEMA supabase_functions TO postgres, anon, authenticated, service_role;
+              ALTER DEFAULT PRIVILEGES IN SCHEMA supabase_functions GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
+              ALTER DEFAULT PRIVILEGES IN SCHEMA supabase_functions GRANT ALL ON FUNCTIONS TO postgres, anon, authenticated, service_role;
+              ALTER DEFAULT PRIVILEGES IN SCHEMA supabase_functions GRANT ALL ON SEQUENCES TO postgres, anon, authenticated, service_role;
+              -- supabase_functions.migrations definition
+              CREATE TABLE supabase_functions.migrations (
+                version text PRIMARY KEY,
+                inserted_at timestamptz NOT NULL DEFAULT NOW()
+              );
+              -- Initial supabase_functions migration
+              INSERT INTO supabase_functions.migrations (version) VALUES ('initial');
+              -- supabase_functions.hooks definition
+              CREATE TABLE supabase_functions.hooks (
+                id bigserial PRIMARY KEY,
+                hook_table_id integer NOT NULL,
+                hook_name text NOT NULL,
+                created_at timestamptz NOT NULL DEFAULT NOW(),
+                request_id bigint
+              );
+              CREATE INDEX supabase_functions_hooks_request_id_idx ON supabase_functions.hooks USING btree (request_id);
+              CREATE INDEX supabase_functions_hooks_h_table_id_h_name_idx ON supabase_functions.hooks USING btree (hook_table_id, hook_name);
+              COMMENT ON TABLE supabase_functions.hooks IS 'Supabase Functions Hooks: Audit trail for triggered hooks.';
+              CREATE FUNCTION supabase_functions.http_request()
+                RETURNS trigger
+                LANGUAGE plpgsql
+                AS $function$
+                DECLARE
+                  request_id bigint;
+                  payload jsonb;
+                  url text := TG_ARGV[0]::text;
+                  method text := TG_ARGV[1]::text;
+                  headers jsonb DEFAULT '{}'::jsonb;
+                  params jsonb DEFAULT '{}'::jsonb;
+                  timeout_ms integer DEFAULT 1000;
+                BEGIN
+                  IF url IS NULL OR url = 'null' THEN
+                    RAISE EXCEPTION 'url argument is missing';
+                  END IF;
+
+                  IF method IS NULL OR method = 'null' THEN
+                    RAISE EXCEPTION 'method argument is missing';
+                  END IF;
+
+                  IF TG_ARGV[2] IS NULL OR TG_ARGV[2] = 'null' THEN
+                    headers = '{"Content-Type": "application/json"}'::jsonb;
+                  ELSE
+                    headers = TG_ARGV[2]::jsonb;
+                  END IF;
+
+                  IF TG_ARGV[3] IS NULL OR TG_ARGV[3] = 'null' THEN
+                    params = '{}'::jsonb;
+                  ELSE
+                    params = TG_ARGV[3]::jsonb;
+                  END IF;
+
+                  IF TG_ARGV[4] IS NULL OR TG_ARGV[4] = 'null' THEN
+                    timeout_ms = 1000;
+                  ELSE
+                    timeout_ms = TG_ARGV[4]::integer;
+                  END IF;
+
+                  CASE
+                    WHEN method = 'GET' THEN
+                      SELECT http_get INTO request_id FROM net.http_get(
+                        url,
+                        params,
+                        headers,
+                        timeout_ms
+                      );
+                    WHEN method = 'POST' THEN
+                      payload = jsonb_build_object(
+                        'old_record', OLD,
+                        'record', NEW,
+                        'type', TG_OP,
+                        'table', TG_TABLE_NAME,
+                        'schema', TG_TABLE_SCHEMA
+                      );
+
+                      SELECT http_post INTO request_id FROM net.http_post(
+                        url,
+                        payload,
+                        params,
+                        headers,
+                        timeout_ms
+                      );
+                    ELSE
+                      RAISE EXCEPTION 'method argument % is invalid', method;
+                  END CASE;
+
+                  INSERT INTO supabase_functions.hooks
+                    (hook_table_id, hook_name, request_id)
+                  VALUES
+                    (TG_RELID, TG_NAME, request_id);
+
+                  RETURN NEW;
+                END
+              $function$;
+              -- Supabase super admin
+              DO
+              $$
+              BEGIN
+                IF NOT EXISTS (
+                  SELECT 1
+                  FROM pg_roles
+                  WHERE rolname = 'supabase_functions_admin'
+                )
+                THEN
+                  CREATE USER supabase_functions_admin NOINHERIT CREATEROLE LOGIN NOREPLICATION;
+                END IF;
+              END
+              $$;
+              GRANT ALL PRIVILEGES ON SCHEMA supabase_functions TO supabase_functions_admin;
+              GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA supabase_functions TO supabase_functions_admin;
+              GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA supabase_functions TO supabase_functions_admin;
+              ALTER USER supabase_functions_admin SET search_path = "supabase_functions";
+              ALTER table "supabase_functions".migrations OWNER TO supabase_functions_admin;
+              ALTER table "supabase_functions".hooks OWNER TO supabase_functions_admin;
+              ALTER function "supabase_functions".http_request() OWNER TO supabase_functions_admin;
+              GRANT supabase_functions_admin TO postgres;
+              -- Remove unused supabase_pg_net_admin role
+              DO
+              $$
+              BEGIN
+                IF EXISTS (
+                  SELECT 1
+                  FROM pg_roles
+                  WHERE rolname = 'supabase_pg_net_admin'
+                )
+                THEN
+                  REASSIGN OWNED BY supabase_pg_net_admin TO supabase_admin;
+                  DROP OWNED BY supabase_pg_net_admin;
+                  DROP ROLE supabase_pg_net_admin;
+                END IF;
+              END
+              $$;
+              -- pg_net grants when extension is already enabled
+              DO
+              $$
+              BEGIN
+                IF EXISTS (
+                  SELECT 1
+                  FROM pg_extension
+                  WHERE extname = 'pg_net'
+                )
+                THEN
+                  GRANT USAGE ON SCHEMA net TO supabase_functions_admin, postgres, anon, authenticated, service_role;
+                  ALTER function net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) SECURITY DEFINER;
+                  ALTER function net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) SECURITY DEFINER;
+                  ALTER function net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) SET search_path = net;
+                  ALTER function net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) SET search_path = net;
+                  REVOKE ALL ON FUNCTION net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) FROM PUBLIC;
+                  REVOKE ALL ON FUNCTION net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) FROM PUBLIC;
+                  GRANT EXECUTE ON FUNCTION net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) TO supabase_functions_admin, postgres, anon, authenticated, service_role;
+                  GRANT EXECUTE ON FUNCTION net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) TO supabase_functions_admin, postgres, anon, authenticated, service_role;
+                END IF;
+              END
+              $$;
+              -- Event trigger for pg_net
+              CREATE OR REPLACE FUNCTION extensions.grant_pg_net_access()
+              RETURNS event_trigger
+              LANGUAGE plpgsql
+              AS $$
+              BEGIN
+                IF EXISTS (
+                  SELECT 1
+                  FROM pg_event_trigger_ddl_commands() AS ev
+                  JOIN pg_extension AS ext
+                  ON ev.objid = ext.oid
+                  WHERE ext.extname = 'pg_net'
+                )
+                THEN
+                  GRANT USAGE ON SCHEMA net TO supabase_functions_admin, postgres, anon, authenticated, service_role;
+                  ALTER function net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) SECURITY DEFINER;
+                  ALTER function net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) SECURITY DEFINER;
+                  ALTER function net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) SET search_path = net;
+                  ALTER function net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) SET search_path = net;
+                  REVOKE ALL ON FUNCTION net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) FROM PUBLIC;
+                  REVOKE ALL ON FUNCTION net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) FROM PUBLIC;
+                  GRANT EXECUTE ON FUNCTION net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) TO supabase_functions_admin, postgres, anon, authenticated, service_role;
+                  GRANT EXECUTE ON FUNCTION net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) TO supabase_functions_admin, postgres, anon, authenticated, service_role;
+                END IF;
+              END;
+              $$;
+              COMMENT ON FUNCTION extensions.grant_pg_net_access IS 'Grants access to pg_net';
+              DO
+              $$
+              BEGIN
+                IF NOT EXISTS (
+                  SELECT 1
+                  FROM pg_event_trigger
+                  WHERE evtname = 'issue_pg_net_access'
+                ) THEN
+                  CREATE EVENT TRIGGER issue_pg_net_access ON ddl_command_end WHEN TAG IN ('CREATE EXTENSION')
+                  EXECUTE PROCEDURE extensions.grant_pg_net_access();
+                END IF;
+              END
+              $$;
+              INSERT INTO supabase_functions.migrations (version) VALUES ('20210809183423_update_grants');
+              ALTER function supabase_functions.http_request() SECURITY DEFINER;
+              ALTER function supabase_functions.http_request() SET search_path = supabase_functions;
+              REVOKE ALL ON FUNCTION supabase_functions.http_request() FROM PUBLIC;
+              GRANT EXECUTE ON FUNCTION supabase_functions.http_request() TO postgres, anon, authenticated, service_role;
+              COMMIT;
+            permission: null
+            envsubst: null
+          - path: /docker-entrypoint-initdb.d/init-scripts/99-roles.sql
+            template: |
+              -- NOTE: change to your own passwords for production environments
+              \set pgpass `echo "$DATABASE_PASSWORD"`
+              ALTER USER authenticator WITH PASSWORD :'pgpass';
+              ALTER USER pgbouncer WITH PASSWORD :'pgpass';
+              ALTER USER supabase_auth_admin WITH PASSWORD :'pgpass';
+              ALTER USER supabase_functions_admin WITH PASSWORD :'pgpass';
+              ALTER USER supabase_storage_admin WITH PASSWORD :'pgpass';
+            permission: null
+            envsubst: true
+          - path: /docker-entrypoint-initdb.d/init-scripts/99-jwt.sql
+            template: |
+              \set jwt_secret `echo "$JWT_SECRET"`
+              \set jwt_exp `echo "$JWT_EXP"`
+
+              ALTER DATABASE postgres SET "app.settings.jwt_secret" TO :'jwt_secret';
+              ALTER DATABASE postgres SET "app.settings.jwt_exp" TO :'jwt_exp';
+            permission: null
+            envsubst: true
+          - path: /docker-entrypoint-initdb.d/migrations/97-_supabase.sql
+            template: |
+              \set pguser `echo "$DATABASE_USER"`
+              CREATE DATABASE _supabase WITH OWNER :pguser;
+            permission: null
+            envsubst: true
+          - path: /docker-entrypoint-initdb.d/migrations/99-logs.sql
+            template: |
+              \set pguser `echo "$DATABASE_USER"`
+              \c _supabase
+              create schema if not exists _analytics;
+              alter schema _analytics owner to :pguser;
+              \c postgres
+            permission: null
+            envsubst: true
+          - path: /docker-entrypoint-initdb.d/migrations/99-pooler.sql
+            template: |
+              \set pguser `echo "$DATABASE_USER"`
+              \c _supabase
+              create schema if not exists _supavisor;
+              alter schema _supavisor owner to :pguser;
+              \c postgres
+            permission: null
+            envsubst: true
+        env:
+          # expose from other services
+          # JWT_SECRET:
+          #   default: your-super-secret-jwt-token-with-at-least-32-characters-long
+          #   expose: true
+          # JWT_EXPIRY:
+          #   default: "3600"
+          #   expose: true
+          POSTGRES_HOST:
+            default: /var/run/postgresql
+          POSTGRES_PASSWORD:
+            default: ${DATABASE_PASSWORD}
+          PGPORT:
+            default: ${DATABASE_PORT}
+          PGPASSWORD:
+            default: ${DATABASE_PASSWORD}
+          PGDATABASE:
+            default: ${DATABASE_NAME}
+          
+          DATABASE_NAME:
+            default: postgres
+            expose: true
+          DATABASE_USER:
+            default: supabase_admin
+            expose: true
+          DATABASE_PASSWORD:
+            default: ${PASSWORD}
+            expose: true
+          DATABASE_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+            readonly: true
+          DATABASE_PORT:
+            default: "5432"
+            expose: true
+        command:
+          - postgres
+          - -c
+          - config_file=/etc/postgresql/postgresql.conf
+          - -c
+          - log_min_messages=fatal
+    - name: analytics
+      icon: https://icons.zeabur.com/supabase.png
+      template: PREBUILT
+      spec:
+        source:
+          image: supabase/logflare:1.22.6
+        dependencies:
+          - postgresql
+        ports:
+          - id: web
+            port: 4000
+            type: HTTP
+        env:
+          LOGFLARE_NODE_HOST:
+            default: 127.0.0.1
+          DB_USERNAME:
+            default: ${DATABASE_USER}
+          DB_DATABASE:
+            default: _supabase
+          DB_HOSTNAME:
+            default: postgresql
+          DB_PORT:
+            default: ${DATABASE_PORT}
+          DB_PASSWORD:
+            default: ${DATABASE_PASSWORD}
+          DB_SCHEMA:
+            default: _analytics
+
+          LOGFLARE_PUBLIC_ACCESS_TOKEN:
+            default: your-super-secret-and-long-logflare-key-public
+            expose: true
+          LOGFLARE_PRIVATE_ACCESS_TOKEN:
+            default: your-super-secret-and-long-logflare-key-private
+            expose: true
+
+          LOGFLARE_SINGLE_TENANT:
+            default: "true"
+          LOGFLARE_SUPABASE_MODE:
+            default: "true"
+          LOGFLARE_MIN_CLUSTER_SIZE:
+            default: "1"
+          POSTGRES_BACKEND_URL:
+            default: postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${POSTGRESQL_HOST}:${DATABASE_PORT}/_supabase
+          POSTGRES_BACKEND_SCHEMA:
+            default: _analytics
+          LOGFLARE_FEATURE_FLAG_OVERRIDE:
+            default: multibackend=true
+          ANALYTICS_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+            readonly: true
+    - name: meta
+      icon: https://icons.zeabur.com/supabase.png
+      template: PREBUILT
+      spec:
+        source:
+          image: supabase/postgres-meta:v0.93.0
+        ports:
+          - id: web
+            port: 8080
+            type: HTTP
+        dependencies:
+          - postgresql
+        env:
+          PG_META_HOST:
+            default: 0.0.0.0
+          PG_META_PORT:
+            default: "8080"
+          PG_META_DB_HOST:
+            default: postgresql
+          PG_META_DB_PORT:
+            default: ${DATABASE_PORT}
+          PG_META_DB_NAME:
+            default: ${DATABASE_NAME}
+          PG_META_DB_USER:
+            default: ${DATABASE_USER}
+          PG_META_DB_PASSWORD:
+            default: ${DATABASE_PASSWORD}
+          CRYPTO_KEY:
+            default: ${PG_META_CRYPTO_KEY}
+    - name: auth
+      icon: https://icons.zeabur.com/supabase.png
+      template: PREBUILT
+      spec:
+        source:
+          image: supabase/gotrue:v2.180.0
+        dependencies:
+          - postgresql
+          - analytics
+        ports:
+          - id: web
+            port: 9999
+            type: HTTP
+        env:
+          GOTRUE_API_HOST:
+            default: 0.0.0.0
+          GOTRUE_API_PORT:
+            default: "9999"
+          API_EXTERNAL_URL:
+            default: https://${SUPABASE_PUBLIC_DOMAIN}
+
+          GOTRUE_DB_DRIVER:
+            default: postgres
+          GOTRUE_DB_DATABASE_URL:
+            default: postgres://supabase_auth_admin:${DATABASE_PASSWORD}@postgresql:${DATABASE_PORT}/${DATABASE_NAME}
+
+          GOTRUE_SITE_URL:
+            default: http://auth:9999
+          GOTRUE_URI_ALLOW_LIST:
+            default: ""
+          GOTRUE_DISABLE_SIGNUP:
+            default: "false"
+          GOTRUE_JWT_ADMIN_ROLES:
+            default: service_role
+          GOTRUE_JWT_AUD:
+            default: authenticated
+          GOTRUE_JWT_DEFAULT_GROUP_NAME:
+            default: authenticated
+          GOTRUE_JWT_EXP:
+            default: ${JWT_EXPIRY}
+          GOTRUE_JWT_SECRET:
+            default: ${JWT_SECRET}
+
+          # Email configuration
+          GOTRUE_EXTERNAL_EMAIL_ENABLED:
+            default: "true"
+          GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED:
+            default: "false"
+          GOTRUE_MAILER_AUTOCONFIRM:
+            default: "false"
+          GOTRUE_SMTP_ADMIN_EMAIL:
+            default: admin@example.com
+          GOTRUE_SMTP_HOST:
+            default: supabase-mail
+          GOTRUE_SMTP_PORT:
+            default: "2500"
+          GOTRUE_SMTP_USER:
+            default: fake_mail_user
+          GOTRUE_SMTP_PASS:
+            default: fake_mail_password
+          GOTRUE_SMTP_SENDER_NAME:
+            default: fake_sender
+          GOTRUE_MAILER_URLPATHS_INVITE:
+            default: /auth/v1/verify
+          GOTRUE_MAILER_URLPATHS_CONFIRMATION:
+            default: /auth/v1/verify
+          GOTRUE_MAILER_URLPATHS_RECOVERY:
+            default: /auth/v1/verify
+          GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE:
+            default: /auth/v1/verify
+
+          ## Phone auth
+          GOTRUE_EXTERNAL_PHONE_ENABLED:
+            default: "true"
+          GOTRUE_SMS_AUTOCONFIRM:
+            default: "true"
+    - name: rest
+      icon: https://icons.zeabur.com/supabase.png
+      template: PREBUILT
+      spec:
+        source:
+          image: postgrest/postgrest:v13.0.7
+        dependencies:
+          - postgresql
+          - analytics
+        ports:
+          - id: web
+            port: 3000
+            type: HTTP
+        env:
+          PGRST_DB_URI:
+            default: postgres://${DATABASE_USER}:${DATABASE_PASSWORD}@${POSTGRESQL_HOST}:${DATABASE_PORT}/${DATABASE_NAME}
+          PGRST_DB_SCHEMAS:
+            default: public,storage,graphql_public
+          PGRST_DB_ANON_ROLE:
+            default: anon
+          PGRST_JWT_SECRET:
+            default: ${JWT_SECRET}
+          PGRST_DB_USE_LEGACY_GUCS:
+            default: "false"
+          PGRST_APP_SETTINGS_JWT_SECRET:
+            default: ${JWT_SECRET}
+          PGRST_APP_SETTINGS_JWT_EXP:
+            default: ${JWT_EXPIRY}
+          REST_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+            readonly: true
+        command:
+          - postgrest
+    - name: studio
+      icon: https://icons.zeabur.com/supabase.png
+      template: PREBUILT
+      spec:
+        source:
+          image: supabase/studio:2025.10.20-sha-5005fc6
+        dependencies:
+          - analytics
+          - postgresql
+          - kong
+        ports:
+          - id: web
+            port: 3000
+            type: HTTP
+        env:
+          HOSTNAME:
+            default: 0.0.0.0
+          STUDIO_PG_META_URL:
+            default: http://meta:8080
+          POSTGRES_DB:
+            default: ${DATABASE_NAME}
+          POSTGRES_HOST:
+            default: postgresql
+          POSTGRES_PASSWORD:
+            default: ${DATABASE_PASSWORD}
+          PG_META_CRYPTO_KEY:
+            default: your-encryption-key-32-chars-min
+            expose: true
+          DEFAULT_ORGANIZATION_NAME:
+            default: Default Organization
+          DEFAULT_PROJECT_NAME:
+            default: Default Project
+          OPENAI_API_KEY:
+            default: ${OPENAI_API_KEY}
+          SUPABASE_URL:
+            default: http://kong:8000
+          SUPABASE_PUBLIC_URL:
+            default: https://${SUPABASE_PUBLIC_DOMAIN}
+          SUPABASE_ANON_KEY:
+            default: ${ANON_KEY}
+          SUPABASE_SERVICE_KEY:
+            default: ${SERVICE_ROLE_KEY}
+          AUTH_JWT_SECRET:
+            default: ${JWT_SECRET}
+          # expose from other services
+          # LOGFLARE_PRIVATE_ACCESS_TOKEN:
+          #   default: ${LOGFLARE_PRIVATE_ACCESS_TOKEN}
+          LOGFLARE_URL:
+            default: http://analytics:4000
+          NEXT_PUBLIC_ENABLE_LOGS:
+            default: "true"
+          NEXT_ANALYTICS_BACKEND_PROVIDER:
+            default: postgres
+    - name: storage
+      icon: https://icons.zeabur.com/supabase.png
+      template: PREBUILT
+      spec:
+        source:
+          image: supabase/storage-api:v1.28.1
+        dependencies:
+          - postgresql
+          - rest
+          - imgproxy
+        ports:
+          - id: web
+            port: 5000
+            type: HTTP
+        volumes:
+          - id: vol-0
+            dir: /var/lib/storage
+        env:
+          POSTGREST_URL:
+            default: http://rest:3000
+          PGRST_JWT_SECRET:
+            default: ${JWT_SECRET}
+          PG_STORAGE_ADMIN_USERNAME:
+            default: supabase_storage_admin
+          PG_STORAGE_ADMIN_PASSWORD:
+            default: ${DATABASE_PASSWORD}
+          DATABASE_URL:
+            default: postgres://${PG_STORAGE_ADMIN_USERNAME}:${PG_STORAGE_ADMIN_PASSWORD}@postgresql:${DATABASE_PORT}/${DATABASE_NAME}
+          FILE_SIZE_LIMIT:
+            default: "52428800"
+          STORAGE_BACKEND:
+            default: file
+          FILE_STORAGE_BACKEND_PATH:
+            default: /var/lib/storage
+          TENANT_ID:
+            default: stub
+          REGION:
+            default: stub
+          GLOBAL_S3_BUCKET:
+            default: stub
+          ENABLE_IMAGE_TRANSFORMATION:
+            default: "true"
+          IMGPROXY_URL:
+            default: http://imgproxy:5001
+    - name: kong
+      icon: https://icons.zeabur.com/kong.svg
+      template: PREBUILT
+      domainKey: PUBLIC_DOMAIN
+      spec:
+        source:
+          image: kong:2.8.1
+        dependencies:
+          - analytics
+        ports:
+          - id: web
+            port: 8000
+            type: HTTP
+        instructions:
+          - title: Supabase Username
+            content: ${DASHBOARD_USERNAME}
+          - title: Supabase Password
+            content: ${DASHBOARD_PASSWORD}
+        configs:
+          - path: /home/kong/kong.yml
+            template: |
+              _format_version: '2.1'
+              _transform: true
+
+              ###
+              ### Consumers / Users
+              ###
+              consumers:
+                - username: DASHBOARD
+                - username: anon
+                  keyauth_credentials:
+                    - key: ${ANON_KEY}
+                - username: service_role
+                  keyauth_credentials:
+                    - key: ${SERVICE_ROLE_KEY}
+
+              ###
+              ### Access Control List
+              ###
+              acls:
+                - consumer: anon
+                  group: anon
+                - consumer: service_role
+                  group: admin
+
+              ###
+              ### Dashboard credentials
+              ###
+              basicauth_credentials:
+                - consumer: DASHBOARD
+                  username: $DASHBOARD_USERNAME
+                  password: $DASHBOARD_PASSWORD
+
+              ###
+              ### API Routes
+              ###
+              services:
+                ## Open Auth routes
+                - name: auth-v1-open
+                  url: http://auth:9999/verify
+                  routes:
+                    - name: auth-v1-open
+                      strip_path: true
+                      paths:
+                        - /auth/v1/verify
+                  plugins:
+                    - name: cors
+                - name: auth-v1-open-callback
+                  url: http://auth:9999/callback
+                  routes:
+                    - name: auth-v1-open-callback
+                      strip_path: true
+                      paths:
+                        - /auth/v1/callback
+                  plugins:
+                    - name: cors
+                - name: auth-v1-open-authorize
+                  url: http://auth:9999/authorize
+                  routes:
+                    - name: auth-v1-open-authorize
+                      strip_path: true
+                      paths:
+                        - /auth/v1/authorize
+                  plugins:
+                    - name: cors
+
+                ## Secure Auth routes
+                - name: auth-v1
+                  _comment: 'GoTrue: /auth/v1/* -> http://auth:9999/*'
+                  url: http://auth:9999/
+                  routes:
+                    - name: auth-v1-all
+                      strip_path: true
+                      paths:
+                        - /auth/v1/
+                  plugins:
+                    - name: cors
+                    - name: key-auth
+                      config:
+                        hide_credentials: false
+                    - name: acl
+                      config:
+                        hide_groups_header: true
+                        allow:
+                          - admin
+                          - anon
+
+                ## Secure REST routes
+                - name: rest-v1
+                  _comment: 'PostgREST: /rest/v1/* -> http://rest:3000/*'
+                  url: http://rest:3000/
+                  routes:
+                    - name: rest-v1-all
+                      strip_path: true
+                      paths:
+                        - /rest/v1/
+                  plugins:
+                    - name: cors
+                    - name: key-auth
+                      config:
+                        hide_credentials: true
+                    - name: acl
+                      config:
+                        hide_groups_header: true
+                        allow:
+                          - admin
+                          - anon
+
+                ## Secure GraphQL routes
+                - name: graphql-v1
+                  _comment: 'PostgREST: /graphql/v1/* -> http://rest:3000/rpc/graphql'
+                  url: http://rest:3000/rpc/graphql
+                  routes:
+                    - name: graphql-v1-all
+                      strip_path: true
+                      paths:
+                        - /graphql/v1
+                  plugins:
+                    - name: cors
+                    - name: key-auth
+                      config:
+                        hide_credentials: true
+                    - name: request-transformer
+                      config:
+                        add:
+                          headers:
+                            - Content-Profile:graphql_public
+                    - name: acl
+                      config:
+                        hide_groups_header: true
+                        allow:
+                          - admin
+                          - anon
+
+                ## Secure Realtime routes
+                - name: realtime-v1-ws
+                  _comment: 'Realtime: /realtime/v1/* -> ws://realtime:4000/socket/*'
+                  url: http://realtime:4000/socket
+                  protocol: ws
+                  routes:
+                    - name: realtime-v1-ws
+                      strip_path: true
+                      paths:
+                        - /realtime/v1/
+                  plugins:
+                    - name: cors
+                    - name: key-auth
+                      config:
+                        hide_credentials: false
+                    - name: acl
+                      config:
+                        hide_groups_header: true
+                        allow:
+                          - admin
+                          - anon
+                - name: realtime-v1-rest
+                  _comment: 'Realtime: /realtime/v1/* -> ws://realtime:4000/socket/*'
+                  url: http://realtime:4000/api
+                  protocol: http
+                  routes:
+                    - name: realtime-v1-rest
+                      strip_path: true
+                      paths:
+                        - /realtime/v1/api
+                  plugins:
+                    - name: cors
+                    - name: key-auth
+                      config:
+                        hide_credentials: false
+                    - name: acl
+                      config:
+                        hide_groups_header: true
+                        allow:
+                          - admin
+                          - anon
+                ## Storage routes: the storage server manages its own auth
+                - name: storage-v1
+                  _comment: 'Storage: /storage/v1/* -> http://storage:5000/*'
+                  url: http://storage:5000/
+                  routes:
+                    - name: storage-v1-all
+                      strip_path: true
+                      paths:
+                        - /storage/v1/
+                  plugins:
+                    - name: cors
+          
+                ## Edge Functions routes
+                - name: functions-v1
+                  _comment: 'Edge Functions: /functions/v1/* -> http://functions:9000/*'
+                  url: http://functions:9000/
+                  routes:
+                    - name: functions-v1-all
+                      strip_path: true
+                      paths:
+                        - /functions/v1/
+                  plugins:
+                    - name: cors
+
+                ## Analytics routes
+                - name: analytics-v1
+                  _comment: 'Analytics: /analytics/v1/* -> http://logflare:4000/*'
+                  url: http://analytics:4000/
+                  routes:
+                    - name: analytics-v1-all
+                      strip_path: true
+                      paths:
+                        - /analytics/v1/
+
+                ## Secure Database routes
+                - name: meta
+                  _comment: 'pg-meta: /pg/* -> http://pg-meta:8080/*'
+                  url: http://meta:8080/
+                  routes:
+                    - name: meta-all
+                      strip_path: true
+                      paths:
+                        - /pg/
+                  plugins:
+                    - name: key-auth
+                      config:
+                        hide_credentials: false
+                    - name: acl
+                      config:
+                        hide_groups_header: true
+                        allow:
+                          - admin
+
+                ## Protected Dashboard - catch all remaining routes
+                - name: dashboard
+                  _comment: 'Studio: /* -> http://studio:3000/*'
+                  url: http://studio:3000/
+                  routes:
+                    - name: dashboard-all
+                      strip_path: true
+                      paths:
+                        - /
+                  plugins:
+                    - name: cors
+                    - name: basic-auth
+                      config:
+                        hide_credentials: true
+            permission: null
+            envsubst: true
+        env:
+          JWT_SECRET:
+            default: your-super-secret-jwt-token-with-at-least-32-characters-long
+            expose: true
+          JWT_EXPIRY:
+            default: "3600"
+            expose: true
+          ANON_KEY:
+            default: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE
+            expose: true
+          SERVICE_ROLE_KEY:
+            default: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJzZXJ2aWNlX3JvbGUiLAogICAgImlzcyI6ICJzdXBhYmFzZS1kZW1vIiwKICAgICJpYXQiOiAxNjQxNzY5MjAwLAogICAgImV4cCI6IDE3OTk1MzU2MDAKfQ.DaYlNEoUrrEn2Ig7tqibS-PHK5vgusbcbo7X36XVt4Q
+            expose: true
+          DASHBOARD_USERNAME:
+            default: ${DASHBOARD_USERNAME}
+            expose: true
+          DASHBOARD_PASSWORD:
+            default: ${PASSWORD}
+            expose: true
+
+          KONG_DATABASE:
+            default: "off"
+          KONG_DECLARATIVE_CONFIG:
+            default: /home/kong/kong.yml
+          KONG_DNS_ORDER:
+            default: LAST,A,CNAME
+          KONG_PLUGINS:
+            default: request-transformer,cors,key-auth,acl,basic-auth
+          KONG_NGINX_WORKER_PROCESSES:
+            default: "1"
+          KONG_NGINX_PROXY_PROXY_BUFFER_SIZE:
+            default: 160k
+          KONG_NGINX_PROXY_PROXY_BUFFERS:
+            default: 64 160k
+          SUPABASE_ANON_KEY:
+            default: ${ANON_KEY}
+          SUPABASE_SERVICE_KEY:
+            default: ${SERVICE_ROLE_KEY}
+          SUPABASE_PUBLIC_DOMAIN:
+            default: ${ZEABUR_WEB_DOMAIN}
+            expose: true
+
+    - name: realtime
+      icon: https://icons.zeabur.com/supabase.png
+      template: PREBUILT
+      spec:
+        source:
+          image: supabase/realtime:v2.56.0
+        dependencies:
+          - postgresql
+          - analytics
+        ports:
+          - id: web
+            port: 4000
+            type: HTTP
+        env:
+          PORT:
+            default: "4000"
+          DB_HOST:
+            default: postgresql
+          DB_PORT:
+            default: ${DATABASE_PORT}
+          DB_USER:
+            default: ${DATABASE_USER}
+          DB_PASSWORD:
+            default: ${DATABASE_PASSWORD}
+          DB_NAME:
+            default: ${DATABASE_NAME}
+          DB_AFTER_CONNECT_QUERY:
+            default: SET search_path TO _realtime
+          DB_ENC_KEY:
+            default: supabaserealtime
+          API_JWT_SECRET:
+            default: ${JWT_SECRET}
+          # expose from other services
+          # SECRET_KEY_BASE:
+          #     default: ${PASSWORD}
+          ERL_AFLAGS:
+            default: -proto_dist inet_tcp
+          DNS_NODES:
+              default: ''''''
+          RLIMIT_NOFILE:
+            default: "10000"
+          APP_NAME:
+            default: realtime
+          SEED_SELF_HOST:
+            default: "true"
+          RUN_JANITOR:
+            default: "true"
+          REALTIME_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+            readonly: true
+    - name: supavisor
+      icon: https://icons.zeabur.com/supabase.png
+      template: PREBUILT
+      spec:
+        source:
+          image: supabase/supavisor:2.7.3
+        dependencies:
+          - postgresql
+        ports:
+          - id: web
+            port: 4000
+            type: HTTP
+          - id: port1
+            port: 6543
+            type: TCP
+          - id: port2
+            port: 5432
+            type: TCP
+        configs:
+          - path: /etc/pooler/pooler.exs
+            template: |
+              {:ok, _} = Application.ensure_all_started(:supavisor)
+
+              {:ok, version} =
+                case Supavisor.Repo.query!("select version()") do
+                  %{rows: [[ver]]} -> Supavisor.Helpers.parse_pg_version(ver)
+                  _ -> nil
+                end
+
+              params = %{
+                "external_id" => System.get_env("POOLER_TENANT_ID"),
+                "db_host" => postgresql,
+                "db_port" => System.get_env("DATABASE_PORT"),
+                "db_database" => System.get_env("DATABASE_NAME"),
+                "require_user" => false,
+                "auth_query" => "SELECT * FROM pgbouncer.get_auth($1)",
+                "default_max_clients" => System.get_env("POOLER_MAX_CLIENT_CONN"),
+                "default_pool_size" => System.get_env("POOLER_DEFAULT_POOL_SIZE"),
+                "default_parameter_status" => %{"server_version" => version},
+                "users" => [%{
+                  "db_user" => "pgbouncer",
+                  "db_password" => System.get_env("DATABASE_PASSWORD"),
+                  "mode_type" => System.get_env("POOLER_POOL_MODE"),
+                  "pool_size" => System.get_env("POOLER_DEFAULT_POOL_SIZE"),
+                  "is_manager" => true
+                }]
+              }
+
+              if !Supavisor.Tenants.get_tenant_by_external_id(params["external_id"]) do
+                {:ok, _} = Supavisor.Tenants.create_tenant(params)
+              end
+            permission: null
+            envsubst: true
+        env:
+          PORT:
+            default: "4000"
+          POSTGRES_PORT:
+            default: ${DATABASE_PORT}
+          POSTGRES_DB:
+            default: ${DATABASE_NAME}
+          POSTGRES_PASSWORD:
+            default: ${DATABASE_PASSWORD}
+          DATABASE_URL:
+            default: ecto://supabase_admin:${DATABASE_PASSWORD}@postgresql:${DATABASE_PORT}/_supabase
+          CLUSTER_POSTGRES:
+            default: "true"
+          SECRET_KEY_BASE:
+            default: ${PASSWORD}
+            expose: true
+          VAULT_ENC_KEY:
+            default: your-encryption-key-32-chars-min
+          API_JWT_SECRET:
+            default: ${JWT_SECRET}
+          METRICS_JWT_SECRET:
+            default: ${JWT_SECRET}
+          REGION:
+            default: local
+          ERL_AFLAGS:
+            default: -proto_dist inet_tcp
+          POOLER_TENANT_ID:
+            default: your-tenant-id
+          POOLER_DEFAULT_POOL_SIZE:
+            default: "20"
+          POOLER_MAX_CLIENT_CONN:
+            default: "100"
+          POOLER_POOL_MODE:
+            default: transaction
+          DB_POOL_SIZE:
+            default: "20"
+        command:
+          - /bin/sh
+          - -c
+          - /app/bin/migrate && /app/bin/supavisor eval "$$(cat /etc/pooler/pooler.exs)" && /app/bin/server
+    - name: functions
+      icon: https://icons.zeabur.com/supabase.png
+      template: PREBUILT
+      spec:
+        source:
+          image: supabase/edge-runtime:v1.69.14
+        dependencies:
+          - postgresql    
+        ports:
+          - id: web
+            port: 9000
+            type: HTTP
+        configs:
+          - path: /home/deno/functions/hello/index.ts
+            template: |
+              // Follow this setup guide to integrate the Deno language server with your editor:
+              // https://deno.land/manual/getting_started/setup_your_environment
+              // This enables autocomplete, go to definition, etc.
+
+              import { serve } from "https://deno.land/std@0.177.1/http/server.ts"
+
+              serve(async () => {
+                return new Response(
+                  `"Hello from Edge Functions!"`,
+                  { headers: { "Content-Type": "application/json" } },
+                )
+              })
+
+              // To invoke:
+              // curl 'http://localhost:<KONG_HTTP_PORT>/functions/v1/hello' \
+              //   --header 'Authorization: Bearer <anon/service_role API key>'
+            permission: null
+            envsubst: false
+          - path: /home/deno/functions/main/index.ts
+            template: |
+              import { serve } from 'https://deno.land/std@0.131.0/http/server.ts'
+              import * as jose from 'https://deno.land/x/jose@v4.14.4/index.ts'
+
+              console.log('main function started')
+
+              const JWT_SECRET = Deno.env.get('JWT_SECRET')
+              const VERIFY_JWT = Deno.env.get('VERIFY_JWT') === 'true'
+
+              function getAuthToken(req: Request) {
+                const authHeader = req.headers.get('authorization')
+                if (!authHeader) {
+                  throw new Error('Missing authorization header')
+                }
+                const [bearer, token] = authHeader.split(' ')
+                if (bearer !== 'Bearer') {
+                  throw new Error(`Auth header is not 'Bearer {token}'`)
+                }
+                return token
+              }
+
+              async function verifyJWT(jwt: string): Promise<boolean> {
+                const encoder = new TextEncoder()
+                const secretKey = encoder.encode(JWT_SECRET)
+                try {
+                  await jose.jwtVerify(jwt, secretKey)
+                } catch (err) {
+                  console.error(err)
+                  return false
+                }
+                return true
+              }
+
+              serve(async (req: Request) => {
+                if (req.method !== 'OPTIONS' && VERIFY_JWT) {
+                  try {
+                    const token = getAuthToken(req)
+                    const isValidJWT = await verifyJWT(token)
+
+                    if (!isValidJWT) {
+                      return new Response(JSON.stringify({ msg: 'Invalid JWT' }), {
+                        status: 401,
+                        headers: { 'Content-Type': 'application/json' },
+                      })
+                    }
+                  } catch (e) {
+                    console.error(e)
+                    return new Response(JSON.stringify({ msg: e.toString() }), {
+                      status: 401,
+                      headers: { 'Content-Type': 'application/json' },
+                    })
+                  }
+                }
+
+                const url = new URL(req.url)
+                const { pathname } = url
+                const path_parts = pathname.split('/')
+                const service_name = path_parts[1]
+
+                if (!service_name || service_name === '') {
+                  const error = { msg: 'missing function name in request' }
+                  return new Response(JSON.stringify(error), {
+                    status: 400,
+                    headers: { 'Content-Type': 'application/json' },
+                  })
+                }
+
+                const servicePath = `/home/deno/functions/${service_name}`
+                console.error(`serving the request with ${servicePath}`)
+
+                const memoryLimitMb = 150
+                const workerTimeoutMs = 1 * 60 * 1000
+                const noModuleCache = false
+                const importMapPath = null
+                const envVarsObj = Deno.env.toObject()
+                const envVars = Object.keys(envVarsObj).map((k) => [k, envVarsObj[k]])
+
+                try {
+                  const worker = await EdgeRuntime.userWorkers.create({
+                    servicePath,
+                    memoryLimitMb,
+                    workerTimeoutMs,
+                    noModuleCache,
+                    importMapPath,
+                    envVars,
+                  })
+                  return await worker.fetch(req)
+                } catch (e) {
+                  const error = { msg: e.toString() }
+                  return new Response(JSON.stringify(error), {
+                    status: 500,
+                    headers: { 'Content-Type': 'application/json' },
+                  })
+                }
+              })
+            permission: null
+            envsubst: false
+        volumes:
+          - id: vol-0
+            dir: /home/deno/functions
+        env:
+          # expose from other services
+          # JWT_SECRET:
+          #   default: ${JWT_SECRET}
+          SUPABASE_URL:
+            default: http://kong:8000
+          SUPABASE_ANON_KEY:
+            default: ${ANON_KEY}
+          SUPABASE_SERVICE_ROLE_KEY:
+            default: ${SERVICE_ROLE_KEY}
+          SUPABASE_DB_URL:
+            default: postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@postgresql:${DATABASE_PORT}/${DATABASE_NAME}
+          # TODO: Allow configuring VERIFY_JWT per function. This PR might help: https://github.com/supabase/cli/pull/786
+          VERIFY_JWT:
+            default: "false"
+          FUNCTIONS_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+            readonly: true
+        command:
+          - start
+          - --main-service
+          - /home/deno/functions/main
+
+localization:
+  zh-TW:
+    description: 開源的 Firebase 替代方案。我們使用企業級開源工具來建構 Firebase 的功能。
+    variables:
+      - key: DASHBOARD_USERNAME
+        type: STRING
+        name: 儀表板使用者名稱
+        description: 你想為 Supabase 儀表板設定什麼使用者名稱？
+      - key: PUBLIC_DOMAIN
+        type: DOMAIN
+        name: 網域
+        description: 你想為 Supabase 使用什麼網域？
+    readme: |
+      # Supabase Zeabur 自架版
+
+      這是 Supabase 在 Zeabur 上的自架版範例。
+      你可以使用這個模板在 Zeabur 上部署 Supabase 實例。
+
+      ## 開發狀態
+
+      > ⚠️ **此模板目前正在積極開發中。**
+      > 某些服務可能尚未完全正常運作。詳情請參閱下方狀態表。
+
+      | 服務 | 狀態 | 備註 |
+      |---------|--------|-------|
+      | PostgreSQL | ✅ 正常運作 | 核心資料庫完全正常 |
+      | Kong | ✅ 正常運作 | API 閘道運作中 |
+      | Studio | ✅ 正常運作 | 儀表板可存取 |
+      | Auth | ✅ 正常運作 | 身份驗證流程運作中 |
+      | REST | ✅ 正常運作 | PostgREST API 正常 |
+      | Meta | ✅ 正常運作 | 資料庫元數據 API 運作中 |
+      | Vector | ✅ 正常運作 | 日誌收集運作中 |
+      | Analytics | ✅ 正常運作 | Logflare 整合運作中 |
+      | JWT/Keys | ✅ 正常運作 | 支援自訂 JWT 密鑰 |
+      | Realtime | ⚠️ 測試中 | 可能不穩定，需要更多測試 |
+      | Storage | 🚧 開發中 | 尚未完全測試 |
+      | Supavisor | 🚧 開發中 | 連線池需要測試 |
+      | Functions | 🚧 Beta | 邊緣函數尚未完全測試 |
+
+      **圖例：**
+      - ✅ 正常運作 - 已完全測試且可運作
+      - ⚠️ 測試中 - 功能可用但可能有問題
+      - 🚧 開發中 - 正在開發/測試中
+
+      ## 服務概覽
+
+      ### 核心服務（必要）
+
+      1. **postgresql** - PostgreSQL 資料庫
+         - Supabase 的核心資料庫，儲存所有應用程式資料
+         - ⚠️ 必要 - 無法移除
+
+      2. **kong** - API 閘道
+         - 統一的 API 入口，處理路由、身份驗證和速率限制
+         - ⚠️ 必要 - 無法移除
+
+      3. **studio** - Supabase 儀表板
+         - 網頁管理介面，用於管理資料庫、身份驗證、儲存等
+         - ⚠️ 必要 - 強烈建議保留以便管理
+
+      4. **auth** - GoTrue 身份驗證
+         - 處理使用者註冊、登入、OAuth 和身份驗證流程
+         - ⚠️ 必要 - 除非使用外部身份驗證系統
+
+      5. **rest** - PostgREST API
+         - 自動將 PostgreSQL 資料庫轉換為 RESTful API
+         - ⚠️ 必要 - 無法移除
+
+      6. **meta** - Postgres Meta API
+         - 提供資料庫元數據 API，供 Studio 使用
+         - ⚠️ 必要 - Studio 依賴此服務
+
+      ### 可選服務
+
+      7. **vector** - 日誌聚合
+         - 收集並轉發服務日誌到 Analytics
+         - ✅ 可選 - 如不需要日誌分析可移除
+
+      8. **analytics** - Logflare 分析
+         - 日誌分析和查詢服務
+         - ✅ 可選 - 如不需要日誌分析可移除（也需移除 vector）
+
+      9. **storage** - 檔案儲存
+         - 檔案上傳、儲存和管理服務
+         - ✅ 可選 - 如不需要檔案儲存功能可移除
+         - ⚠️ 狀態：尚未完全測試
+
+      10. **imgproxy** - 圖片轉換
+          - 圖片轉換和優化服務（用於 Storage）
+          - ✅ 可選 - 如移除 storage 則可一併移除
+
+      11. **realtime** - 即時訂閱
+          - 提供資料庫變更的即時訂閱功能
+          - ✅ 可選 - 如不需要即時功能可移除
+          - ⚠️ 狀態：可能不穩定
+
+      12. **functions** - 邊緣函數
+          - Serverless 函數執行環境（類似 AWS Lambda）
+          - ✅ 可選 - 如不需要邊緣函數可移除
+          - ⚠️ 狀態：Beta 階段，尚未完全測試
+
+      13. **supavisor** - 連線池
+          - PostgreSQL 連線池管理器，提升資料庫連線效能
+          - ✅ 可選 - 小型專案可移除
+          - ⚠️ 狀態：尚未完全測試
+
+      ## 開始使用
+
+      ### 訪問儀表板
+
+      部署完成後，你的 Supabase Studio 儀表板將可在你配置的網域上使用。
+
+      **查詢登入憑證：**
+      1. 前往 Zeabur 專案中的 **Kong 服務**
+      2. 點擊 **Instructions（說明）** 標籤
+      3. 你會看到：
+         - **Supabase Username**：你的儀表板使用者名稱（來自 `DASHBOARD_USERNAME` 變數）
+         - **Supabase Password**：自動生成的安全密碼
+
+      ### 重要安全密鑰
+
+      以下密鑰在 **Kong 服務** 的環境變數中公開：
+
+      | 密鑰 | 位置 | 說明 |
+      |-----|----------|-------------|
+      | `JWT_SECRET` | Kong 服務 | 用於簽署 JWT 令牌的密鑰 |
+      | `ANON_KEY` | Kong 服務 | 匿名訪問的公開 API 密鑰 |
+      | `SERVICE_ROLE_KEY` | Kong 服務 | 具有完整訪問權限的管理員 API 密鑰 |
+
+      **⚠️ 重要**：預設密鑰僅供示範使用。在正式環境使用前，你**必須**生成新的密鑰。
+
+      **如何生成安全密鑰：**
+      1. 訪問 [Supabase JWT 生成器](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
+      2. 使用你的自訂 `JWT_SECRET` 生成新的 `ANON_KEY` 和 `SERVICE_ROLE_KEY`
+      3. 在 Kong 服務中更新環境變數
+      4. 重啟所有服務以套用變更：
+         - 進入你的 **專案** → **設定** → **一般設定**
+         - 向下捲動到 **批次動作**
+         - 點擊 **全部重啟** 以重啟所有服務
+
+      ## 保護你的服務
+
+      雖然我們提供了一些範例密鑰以便快速開始，但你絕對不應該使用我們提供的預設值來部署 Supabase。請依照本節中的所有步驟確保你有安全的設定，然後重啟所有服務以套用變更。
+
+      [官方指南](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
+
+  zh-CN:
+    description: 开源的 Firebase 替代方案。我们使用企业级开源工具来构建 Firebase 的功能。
+    variables:
+      - key: DASHBOARD_USERNAME
+        type: STRING
+        name: 仪表板用户名
+        description: 你想为 Supabase 仪表板设置什么用户名？
+      - key: PUBLIC_DOMAIN
+        type: DOMAIN
+        name: 域名
+        description: 你想为 Supabase 使用什么域名？
+    readme: |
+      # Supabase Zeabur 自托管版
+
+      这是 Supabase 在 Zeabur 上的自托管版示例。
+      你可以使用这个模板在 Zeabur 上部署 Supabase 实例。
+
+      ## 开发状态
+
+      > ⚠️ **此模板目前正在积极开发中。**
+      > 某些服务可能尚未完全正常运作。详情请参阅下方状态表。
+
+      | 服务 | 状态 | 备注 |
+      |---------|--------|-------|
+      | PostgreSQL | ✅ 正常运作 | 核心数据库完全正常 |
+      | Kong | ✅ 正常运作 | API 网关运作中 |
+      | Studio | ✅ 正常运作 | 仪表板可访问 |
+      | Auth | ✅ 正常运作 | 身份验证流程运作中 |
+      | REST | ✅ 正常运作 | PostgREST API 正常 |
+      | Meta | ✅ 正常运作 | 数据库元数据 API 运作中 |
+      | Vector | ✅ 正常运作 | 日志收集运作中 |
+      | Analytics | ✅ 正常运作 | Logflare 集成运作中 |
+      | JWT/Keys | ✅ 正常运作 | 支持自定义 JWT 密钥 |
+      | Realtime | ⚠️ 测试中 | 可能不稳定，需要更多测试 |
+      | Storage | 🚧 开发中 | 尚未完全测试 |
+      | Supavisor | 🚧 开发中 | 连接池需要测试 |
+      | Functions | 🚧 Beta | 边缘函数尚未完全测试 |
+
+      **图例：**
+      - ✅ 正常运作 - 已完全测试且可运作
+      - ⚠️ 测试中 - 功能可用但可能有问题
+      - 🚧 开发中 - 正在开发/测试中
+
+      ## 服务概览
+
+      ### 核心服务（必要）
+
+      1. **postgresql** - PostgreSQL 数据库
+         - Supabase 的核心数据库，存储所有应用程序数据
+         - ⚠️ 必要 - 无法移除
+
+      2. **kong** - API 网关
+         - 统一的 API 入口，处理路由、身份验证和速率限制
+         - ⚠️ 必要 - 无法移除
+
+      3. **studio** - Supabase 仪表板
+         - 网页管理界面，用于管理数据库、身份验证、存储等
+         - ⚠️ 必要 - 强烈建议保留以便管理
+
+      4. **auth** - GoTrue 身份验证
+         - 处理用户注册、登录、OAuth 和身份验证流程
+         - ⚠️ 必要 - 除非使用外部身份验证系统
+
+      5. **rest** - PostgREST API
+         - 自动将 PostgreSQL 数据库转换为 RESTful API
+         - ⚠️ 必要 - 无法移除
+
+      6. **meta** - Postgres Meta API
+         - 提供数据库元数据 API，供 Studio 使用
+         - ⚠️ 必要 - Studio 依赖此服务
+
+      ### 可选服务
+
+      7. **vector** - 日志聚合
+         - 收集并转发服务日志到 Analytics
+         - ✅ 可选 - 如不需要日志分析可移除
+
+      8. **analytics** - Logflare 分析
+         - 日志分析和查询服务
+         - ✅ 可选 - 如不需要日志分析可移除（也需移除 vector）
+
+      9. **storage** - 文件存储
+         - 文件上传、存储和管理服务
+         - ✅ 可选 - 如不需要文件存储功能可移除
+         - ⚠️ 状态：尚未完全测试
+
+      10. **imgproxy** - 图片转换
+          - 图片转换和优化服务（用于 Storage）
+          - ✅ 可选 - 如移除 storage 则可一并移除
+
+      11. **realtime** - 实时订阅
+          - 提供数据库变更的实时订阅功能
+          - ✅ 可选 - 如不需要实时功能可移除
+          - ⚠️ 状态：可能不稳定
+
+      12. **functions** - 边缘函数
+          - Serverless 函数执行环境（类似 AWS Lambda）
+          - ✅ 可选 - 如不需要边缘函数可移除
+          - ⚠️ 状态：Beta 阶段，尚未完全测试
+
+      13. **supavisor** - 连接池
+          - PostgreSQL 连接池管理器，提升数据库连接性能
+          - ✅ 可选 - 小型项目可移除
+          - ⚠️ 状态：尚未完全测试
+
+      ## 开始使用
+
+      ### 访问仪表板
+
+      部署完成后，你的 Supabase Studio 仪表板将可在你配置的域名上使用。
+
+      **查询登录凭证：**
+      1. 前往 Zeabur 项目中的 **Kong 服务**
+      2. 点击 **Instructions（说明）** 标签
+      3. 你会看到：
+         - **Supabase Username**：你的仪表板用户名（来自 `DASHBOARD_USERNAME` 变量）
+         - **Supabase Password**：自动生成的安全密码
+
+      ### 重要安全密钥
+
+      以下密钥在 **Kong 服务** 的环境变量中公开：
+
+      | 密钥 | 位置 | 说明 |
+      |-----|----------|-------------|
+      | `JWT_SECRET` | Kong 服务 | 用于签署 JWT 令牌的密钥 |
+      | `ANON_KEY` | Kong 服务 | 匿名访问的公开 API 密钥 |
+      | `SERVICE_ROLE_KEY` | Kong 服务 | 具有完整访问权限的管理员 API 密钥 |
+
+      **⚠️ 重要**：默认密钥仅供演示使用。在正式环境使用前，你**必须**生成新的密钥。
+
+      **如何生成安全密钥：**
+      1. 访问 [Supabase JWT 生成器](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
+      2. 使用你的自定义 `JWT_SECRET` 生成新的 `ANON_KEY` 和 `SERVICE_ROLE_KEY`
+      3. 在 Kong 服务中更新环境变量
+      4. 重启所有服务以应用更改：
+         - 进入你的 **项目** → **设置** → **常规设置**
+         - 向下滚动到 **批量操作**
+         - 点击 **全部重启** 以重启所有服务
+
+      ## 保护你的服务
+
+      虽然我们提供了一些示例密钥以便快速开始，但你绝对不应该使用我们提供的默认值来部署 Supabase。请依照本节中的所有步骤确保你有安全的设置，然后重启所有服务以应用更改。
+
+      [官方指南](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
+
+  ja-JP:
+    description: オープンソースのFirebase代替。エンタープライズグレードのオープンソースツールを使用してFirebaseの機能を構築しています。
+    variables:
+      - key: DASHBOARD_USERNAME
+        type: STRING
+        name: ダッシュボードユーザー名
+        description: Supabaseダッシュボードに使用するユーザー名は何ですか？
+      - key: PUBLIC_DOMAIN
+        type: DOMAIN
+        name: ドメイン
+        description: Supabaseに使用するドメインは何ですか？
+    readme: |
+      # Supabase Zeabur セルフホスティング版
+
+      これはZeabur上でのSupabaseセルフホスティング版のデモです。
+      このテンプレートを使用してZeabur上にSupabaseインスタンスをデプロイできます。
+
+      ## 開発状況
+
+      > ⚠️ **このテンプレートは現在積極的に開発中です。**
+      > 一部のサービスはまだ完全に機能していない可能性があります。詳細は以下のステータステーブルをご覧ください。
+
+      | サービス | ステータス | 備考 |
+      |---------|--------|-------|
+      | PostgreSQL | ✅ 動作中 | コアデータベースは完全に機能 |
+      | Kong | ✅ 動作中 | APIゲートウェイが動作中 |
+      | Studio | ✅ 動作中 | ダッシュボードにアクセス可能 |
+      | Auth | ✅ 動作中 | 認証フローが動作中 |
+      | REST | ✅ 動作中 | PostgREST APIが機能 |
+      | Meta | ✅ 動作中 | データベースメタデータAPIが動作中 |
+      | Vector | ✅ 動作中 | ログ収集が動作中 |
+      | Analytics | ✅ 動作中 | Logflare統合が動作中 |
+      | JWT/Keys | ✅ 動作中 | カスタムJWTシークレットをサポート |
+      | Realtime | ⚠️ テスト中 | 不安定な可能性があり、さらなるテストが必要 |
+      | Storage | 🚧 開発中 | まだ完全にテストされていません |
+      | Supavisor | 🚧 開発中 | コネクションプーラーのテストが必要 |
+      | Functions | 🚧 Beta | エッジ関数はまだ完全にテストされていません |
+
+      **凡例：**
+      - ✅ 動作中 - 完全にテスト済みで動作
+      - ⚠️ テスト中 - 機能しているが問題がある可能性
+      - 🚧 開発中 - 開発/テスト中
+
+      ## サービス概要
+
+      ### コアサービス（必須）
+
+      1. **postgresql** - PostgreSQLデータベース
+         - Supabaseのコアデータベース、すべてのアプリケーションデータを保存
+         - ⚠️ 必須 - 削除不可
+
+      2. **kong** - APIゲートウェイ
+         - 統一されたAPIエントリーポイント、ルーティング、認証、レート制限を処理
+         - ⚠️ 必須 - 削除不可
+
+      3. **studio** - Supabaseダッシュボード
+         - データベース、認証、ストレージなどを管理するためのWeb管理インターフェース
+         - ⚠️ 必須 - 管理のために維持することを強く推奨
+
+      4. **auth** - GoTrue認証
+         - ユーザー登録、ログイン、OAuth、認証フローを処理
+         - ⚠️ 必須 - 外部認証システムを使用しない限り
+
+      5. **rest** - PostgREST API
+         - PostgreSQLデータベースを自動的にRESTful APIに変換
+         - ⚠️ 必須 - 削除不可
+
+      6. **meta** - Postgres Meta API
+         - Studioで使用されるデータベースメタデータAPIを提供
+         - ⚠️ 必須 - Studioが依存
+
+      ### オプショナルサービス
+
+      7. **vector** - ログ集約
+         - サービスログを収集してAnalyticsに転送
+         - ✅ オプション - ログ分析が不要な場合は削除可能
+
+      8. **analytics** - Logflare分析
+         - ログ分析とクエリサービス
+         - ✅ オプション - ログ分析が不要な場合は削除可能（vectorも削除）
+
+      9. **storage** - ファイルストレージ
+         - ファイルのアップロード、保存、管理サービス
+         - ✅ オプション - ファイルストレージが不要な場合は削除可能
+         - ⚠️ ステータス：まだ完全にテストされていません
+
+      10. **imgproxy** - 画像変換
+          - 画像変換と最適化サービス（Storageで使用）
+          - ✅ オプション - storageを削除する場合は一緒に削除可能
+
+      11. **realtime** - リアルタイムサブスクリプション
+          - データベース変更のリアルタイムサブスクリプション機能を提供
+          - ✅ オプション - リアルタイム機能が不要な場合は削除可能
+          - ⚠️ ステータス：不安定な可能性
+
+      12. **functions** - エッジ関数
+          - サーバーレス関数実行環境（AWS Lambdaに類似）
+          - ✅ オプション - エッジ関数が不要な場合は削除可能
+          - ⚠️ ステータス：ベータ段階、まだ完全にテストされていません
+
+      13. **supavisor** - コネクションプーラー
+          - PostgreSQLコネクションプールマネージャー、データベース接続のパフォーマンスを向上
+          - ✅ オプション - 小規模プロジェクトでは削除可能
+          - ⚠️ ステータス：まだ完全にテストされていません
+
+      ## はじめに
+
+      ### ダッシュボードへのアクセス
+
+      デプロイ後、設定したドメインでSupabase Studioダッシュボードが利用可能になります。
+
+      **認証情報の確認：**
+      1. Zeaburプロジェクトの **Kongサービス** に移動
+      2. **Instructions（手順）** タブをクリック
+      3. 以下が表示されます：
+         - **Supabase Username**：ダッシュボードのユーザー名（`DASHBOARD_USERNAME`変数から）
+         - **Supabase Password**：自動生成された安全なパスワード
+
+      ### 重要なセキュリティキー
+
+      以下のキーは **Kongサービス** の環境変数で公開されています：
+
+      | キー | 場所 | 説明 |
+      |-----|----------|-------------|
+      | `JWT_SECRET` | Kongサービス | JWTトークンの署名用シークレット |
+      | `ANON_KEY` | Kongサービス | 匿名アクセス用のパブリックAPIキー |
+      | `SERVICE_ROLE_KEY` | Kongサービス | フルアクセス権限を持つ管理者APIキー |
+
+      **⚠️ 重要**：デフォルトのキーはデモ用です。本番環境で使用する前に、新しいキーを生成**する必要があります**。
+
+      **安全なキーの生成方法：**
+      1. [Supabase JWTジェネレーター](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)にアクセス
+      2. カスタムの`JWT_SECRET`を使用して新しい`ANON_KEY`と`SERVICE_ROLE_KEY`を生成
+      3. Kongサービスで環境変数を更新
+      4. すべてのサービスを再起動して変更を適用：
+         - **プロジェクト** → **設定** → **一般** に移動
+         - **バッチアクション** までスクロール
+         - **すべて再起動** をクリックしてすべてのサービスを再起動
+
+      ## サービスの保護
+
+      開始するためにいくつかのサンプルシークレットを提供していますが、提供されているデフォルトを使用してSupabaseセットアップをデプロイしてはいけません。このセクションのすべての手順に従って安全なセットアップを確保し、すべてのサービスを再起動して変更を適用してください。
+
+      [公式ガイド](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
+
+  es-ES:
+    description: Una alternativa de código abierto a Firebase. Estamos construyendo las características de Firebase utilizando herramientas de código abierto de nivel empresarial.
+    variables:
+      - key: DASHBOARD_USERNAME
+        type: STRING
+        name: Nombre de usuario del panel
+        description: ¿Qué nombre de usuario deseas para tu panel de Supabase?
+      - key: PUBLIC_DOMAIN
+        type: DOMAIN
+        name: Dominio
+        description: ¿Qué dominio deseas para tu Supabase?
+    readme: |
+      # Supabase Auto-alojado en Zeabur
+
+      Esta es una demostración de Supabase auto-alojado en Zeabur.
+      Puedes usar esta plantilla para desplegar una instancia de Supabase en Zeabur.
+
+      ## Estado de Desarrollo
+
+      > ⚠️ **Esta plantilla está actualmente en desarrollo activo.**
+      > Algunos servicios pueden no estar completamente funcionales todavía. Consulta la tabla de estado a continuación para más detalles.
+
+      | Servicio | Estado | Notas |
+      |---------|--------|-------|
+      | PostgreSQL | ✅ Funcionando | Base de datos principal completamente funcional |
+      | Kong | ✅ Funcionando | Gateway API operativo |
+      | Studio | ✅ Funcionando | Panel accesible |
+      | Auth | ✅ Funcionando | Flujos de autenticación funcionando |
+      | REST | ✅ Funcionando | API PostgREST funcional |
+      | Meta | ✅ Funcionando | API de metadatos de base de datos operativa |
+      | Vector | ✅ Funcionando | Recolección de registros operativa |
+      | Analytics | ✅ Funcionando | Integración de Logflare funcionando |
+      | JWT/Keys | ✅ Funcionando | Secretos JWT personalizados compatibles |
+      | Realtime | ⚠️ En pruebas | Puede ser inestable, necesita más pruebas |
+      | Storage | 🚧 En progreso | Aún no completamente probado |
+      | Supavisor | 🚧 En progreso | El pool de conexiones necesita pruebas |
+      | Functions | 🚧 Beta | Las funciones edge no están completamente probadas |
+
+      **Leyenda:**
+      - ✅ Funcionando - Completamente probado y operativo
+      - ⚠️ En pruebas - Funcional pero puede tener problemas
+      - 🚧 En progreso - En desarrollo/pruebas
+
+      ## Resumen de Servicios
+
+      ### Servicios Principales (Requeridos)
+
+      1. **postgresql** - Base de datos PostgreSQL
+         - Base de datos principal de Supabase, almacena todos los datos de la aplicación
+         - ⚠️ Requerido - No se puede eliminar
+
+      2. **kong** - Gateway API
+         - Punto de entrada API unificado, maneja enrutamiento, autenticación y límite de velocidad
+         - ⚠️ Requerido - No se puede eliminar
+
+      3. **studio** - Panel de Supabase
+         - Interfaz de administración web para gestionar base de datos, autenticación, almacenamiento, etc.
+         - ⚠️ Requerido - Altamente recomendado mantener para administración
+
+      4. **auth** - Autenticación GoTrue
+         - Maneja registro de usuarios, inicio de sesión, OAuth y flujos de autenticación
+         - ⚠️ Requerido - A menos que uses un sistema de autenticación externo
+
+      5. **rest** - API PostgREST
+         - Convierte automáticamente la base de datos PostgreSQL en API RESTful
+         - ⚠️ Requerido - No se puede eliminar
+
+      6. **meta** - API Postgres Meta
+         - Proporciona API de metadatos de base de datos, utilizada por Studio
+         - ⚠️ Requerido - Studio depende de esto
+
+      ### Servicios Opcionales
+
+      7. **vector** - Agregación de registros
+         - Recopila y reenvía registros de servicio a Analytics
+         - ✅ Opcional - Se puede eliminar si no se necesita análisis de registros
+
+      8. **analytics** - Analytics Logflare
+         - Servicio de análisis y consulta de registros
+         - ✅ Opcional - Se puede eliminar si no se necesita análisis de registros (eliminar vector también)
+
+      9. **storage** - Almacenamiento de archivos
+         - Servicio de carga, almacenamiento y gestión de archivos
+         - ✅ Opcional - Se puede eliminar si no se necesita almacenamiento de archivos
+         - ⚠️ Estado: Aún no completamente probado
+
+      10. **imgproxy** - Transformación de imágenes
+          - Servicio de conversión y optimización de imágenes (para Storage)
+          - ✅ Opcional - Se puede eliminar si se elimina storage
+
+      11. **realtime** - Suscripciones en tiempo real
+          - Proporciona funcionalidad de suscripción en tiempo real a cambios en la base de datos
+          - ✅ Opcional - Se puede eliminar si no se necesitan características en tiempo real
+          - ⚠️ Estado: Puede ser inestable
+
+      12. **functions** - Funciones Edge
+          - Entorno de ejecución de funciones serverless (similar a AWS Lambda)
+          - ✅ Opcional - Se puede eliminar si no se necesitan funciones edge
+          - ⚠️ Estado: Fase beta, aún no completamente probado
+
+      13. **supavisor** - Pool de conexiones
+          - Gestor de pool de conexiones PostgreSQL, mejora el rendimiento de conexión a la base de datos
+          - ✅ Opcional - Se puede eliminar para proyectos pequeños
+          - ⚠️ Estado: Aún no completamente probado
+
+      ## Comenzar
+
+      ### Acceder al Panel
+
+      Después del despliegue, tu panel de Supabase Studio estará disponible en tu dominio configurado.
+
+      **Encontrar tus credenciales:**
+      1. Ve al **servicio Kong** en tu proyecto Zeabur
+      2. Haz clic en la pestaña **Instructions (Instrucciones)**
+      3. Encontrarás:
+         - **Supabase Username**: Tu nombre de usuario del panel (de la variable `DASHBOARD_USERNAME`)
+         - **Supabase Password**: Contraseña segura generada automáticamente
+
+      ### Claves de Seguridad Importantes
+
+      Las siguientes claves están expuestas en las variables de entorno del **servicio Kong**:
+
+      | Clave | Ubicación | Descripción |
+      |-----|----------|-------------|
+      | `JWT_SECRET` | Servicio Kong | Secreto para firmar tokens JWT |
+      | `ANON_KEY` | Servicio Kong | Clave API pública para acceso anónimo |
+      | `SERVICE_ROLE_KEY` | Servicio Kong | Clave API de administrador con acceso completo |
+
+      **⚠️ CRÍTICO**: Las claves predeterminadas son solo para fines de demostración. **DEBES** generar nuevas claves antes del uso en producción.
+
+      **Cómo generar claves seguras:**
+      1. Visita el [Generador JWT de Supabase](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
+      2. Genera nuevas `ANON_KEY` y `SERVICE_ROLE_KEY` usando tu `JWT_SECRET` personalizado
+      3. Actualiza las variables de entorno en el servicio Kong
+      4. Reinicia todos los servicios para aplicar los cambios:
+         - Ve a tu **Proyecto** → **Configuración** → **General**
+         - Desplázate hacia abajo hasta **Acciones por lotes**
+         - Haz clic en **Reiniciar todo** para reiniciar todos los servicios
+
+      ## Asegurar tus servicios
+
+      Aunque proporcionamos algunos secretos de ejemplo para comenzar, NUNCA debes desplegar tu configuración de Supabase usando los valores predeterminados que hemos proporcionado. Sigue todos los pasos en esta sección para asegurar que tienes una configuración segura, y luego reinicia todos los servicios para aplicar los cambios.
+
+      [Guía oficial](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
+
+  id-ID:
+    description: Alternatif open source untuk Firebase. Kami membangun fitur-fitur Firebase menggunakan alat open source tingkat enterprise.
+    variables:
+      - key: DASHBOARD_USERNAME
+        type: STRING
+        name: Nama Pengguna Dashboard
+        description: Nama pengguna apa yang Anda inginkan untuk Dashboard Supabase Anda?
+      - key: PUBLIC_DOMAIN
+        type: DOMAIN
+        name: Domain
+        description: Domain apa yang Anda inginkan untuk Supabase Anda?
+    readme: |
+      # Supabase Self-hosted untuk Zeabur
+
+      Ini adalah demo Supabase self-hosted untuk Zeabur.
+      Anda dapat menggunakan template ini untuk mendeploy instance Supabase di Zeabur.
+
+      ## Status Pengembangan
+
+      > ⚠️ **Template ini saat ini dalam pengembangan aktif.**
+      > Beberapa layanan mungkin belum sepenuhnya berfungsi. Lihat tabel status di bawah untuk detailnya.
+
+      | Layanan | Status | Catatan |
+      |---------|--------|-------|
+      | PostgreSQL | ✅ Berfungsi | Database inti sepenuhnya berfungsi |
+      | Kong | ✅ Berfungsi | Gateway API operasional |
+      | Studio | ✅ Berfungsi | Dashboard dapat diakses |
+      | Auth | ✅ Berfungsi | Alur autentikasi berfungsi |
+      | REST | ✅ Berfungsi | API PostgREST fungsional |
+      | Meta | ✅ Berfungsi | API metadata database operasional |
+      | Vector | ✅ Berfungsi | Pengumpulan log operasional |
+      | Analytics | ✅ Berfungsi | Integrasi Logflare berfungsi |
+      | JWT/Keys | ✅ Berfungsi | Secret JWT kustom didukung |
+      | Realtime | ⚠️ Pengujian | Mungkin tidak stabil, perlu lebih banyak pengujian |
+      | Storage | 🚧 Dalam Progres | Belum diuji sepenuhnya |
+      | Supavisor | 🚧 Dalam Progres | Connection pooler perlu pengujian |
+      | Functions | 🚧 Beta | Edge functions belum diuji sepenuhnya |
+
+      **Legenda:**
+      - ✅ Berfungsi - Sepenuhnya diuji dan operasional
+      - ⚠️ Pengujian - Fungsional tetapi mungkin memiliki masalah
+      - 🚧 Dalam Progres - Dalam pengembangan/pengujian
+
+      ## Ringkasan Layanan
+
+      ### Layanan Inti (Wajib)
+
+      1. **postgresql** - Database PostgreSQL
+         - Database inti Supabase, menyimpan semua data aplikasi
+         - ⚠️ Wajib - Tidak dapat dihapus
+
+      2. **kong** - Gateway API
+         - Titik masuk API terpadu, menangani routing, autentikasi, dan pembatasan rate
+         - ⚠️ Wajib - Tidak dapat dihapus
+
+      3. **studio** - Dashboard Supabase
+         - Antarmuka administrasi web untuk mengelola database, autentikasi, storage, dll.
+         - ⚠️ Wajib - Sangat direkomendasikan untuk manajemen
+
+      4. **auth** - Autentikasi GoTrue
+         - Menangani pendaftaran pengguna, login, OAuth, dan alur autentikasi
+         - ⚠️ Wajib - Kecuali menggunakan sistem autentikasi eksternal
+
+      5. **rest** - API PostgREST
+         - Secara otomatis mengonversi database PostgreSQL menjadi API RESTful
+         - ⚠️ Wajib - Tidak dapat dihapus
+
+      6. **meta** - API Postgres Meta
+         - Menyediakan API metadata database, digunakan oleh Studio
+         - ⚠️ Wajib - Studio bergantung pada ini
+
+      ### Layanan Opsional
+
+      7. **vector** - Agregasi Log
+         - Mengumpulkan dan meneruskan log layanan ke Analytics
+         - ✅ Opsional - Dapat dihapus jika analisis log tidak diperlukan
+
+      8. **analytics** - Analytics Logflare
+         - Layanan analisis dan query log
+         - ✅ Opsional - Dapat dihapus jika analisis log tidak diperlukan (hapus vector juga)
+
+      9. **storage** - Penyimpanan File
+         - Layanan upload, penyimpanan, dan manajemen file
+         - ✅ Opsional - Dapat dihapus jika penyimpanan file tidak diperlukan
+         - ⚠️ Status: Belum diuji sepenuhnya
+
+      10. **imgproxy** - Transformasi Gambar
+          - Layanan konversi dan optimasi gambar (untuk Storage)
+          - ✅ Opsional - Dapat dihapus jika storage dihapus
+
+      11. **realtime** - Langganan Real-time
+          - Menyediakan fungsionalitas langganan real-time untuk perubahan database
+          - ✅ Opsional - Dapat dihapus jika fitur real-time tidak diperlukan
+          - ⚠️ Status: Mungkin tidak stabil
+
+      12. **functions** - Edge Functions
+          - Lingkungan eksekusi fungsi serverless (mirip AWS Lambda)
+          - ✅ Opsional - Dapat dihapus jika edge functions tidak diperlukan
+          - ⚠️ Status: Fase beta, belum diuji sepenuhnya
+
+      13. **supavisor** - Connection Pooler
+          - Manajer connection pool PostgreSQL, meningkatkan performa koneksi database
+          - ✅ Opsional - Dapat dihapus untuk proyek kecil
+          - ⚠️ Status: Belum diuji sepenuhnya
+
+      ## Memulai
+
+      ### Mengakses Dashboard
+
+      Setelah deployment, dashboard Supabase Studio Anda akan tersedia di domain yang telah dikonfigurasi.
+
+      **Menemukan kredensial Anda:**
+      1. Buka **layanan Kong** di proyek Zeabur Anda
+      2. Klik tab **Instructions (Instruksi)**
+      3. Anda akan menemukan:
+         - **Supabase Username**: Nama pengguna dashboard Anda (dari variabel `DASHBOARD_USERNAME`)
+         - **Supabase Password**: Password aman yang dihasilkan otomatis
+
+      ### Kunci Keamanan Penting
+
+      Kunci-kunci berikut tersedia di variabel lingkungan **layanan Kong**:
+
+      | Kunci | Lokasi | Deskripsi |
+      |-----|----------|-------------|
+      | `JWT_SECRET` | Layanan Kong | Secret untuk menandatangani token JWT |
+      | `ANON_KEY` | Layanan Kong | Kunci API publik untuk akses anonim |
+      | `SERVICE_ROLE_KEY` | Layanan Kong | Kunci API admin dengan akses penuh |
+
+      **⚠️ PENTING**: Kunci default hanya untuk tujuan demo. Anda **HARUS** menghasilkan kunci baru sebelum penggunaan produksi.
+
+      **Cara menghasilkan kunci yang aman:**
+      1. Kunjungi [Generator JWT Supabase](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
+      2. Hasilkan `ANON_KEY` dan `SERVICE_ROLE_KEY` baru menggunakan `JWT_SECRET` kustom Anda
+      3. Perbarui variabel lingkungan di layanan Kong
+      4. Restart semua layanan untuk menerapkan perubahan:
+         - Buka **Proyek** Anda → **Pengaturan** → **Umum**
+         - Gulir ke bawah ke **Tindakan Batch**
+         - Klik **Restart Semua** untuk me-restart semua layanan
+
+      ## Mengamankan layanan Anda
+
+      Meskipun kami menyediakan beberapa secret contoh untuk memulai, Anda TIDAK BOLEH mendeploy setup Supabase Anda menggunakan default yang kami sediakan. Ikuti semua langkah di bagian ini untuk memastikan Anda memiliki setup yang aman, lalu restart semua layanan untuk menerapkan perubahan.
+
+      [Panduan resmi](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
