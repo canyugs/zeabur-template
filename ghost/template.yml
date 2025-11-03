@@ -1,0 +1,516 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: Ghost
+spec:
+    description: Independent technology for modern publishing.
+    coverImage: https://user-images.githubusercontent.com/353959/169805900-66be5b89-0859-4816-8da9-528ed7534704.png
+    icon: https://asset.brandfetch.io/idu2c8EUPA/idDlmNoqhC.png?updated=1709156005896
+    variables:
+        - key: PUBLIC_DOMAIN
+          type: DOMAIN
+          name: Ghost's domain
+          description: The domain name for your Ghost instance.
+    tags:
+        - Blog
+        - CMS
+        - Tool
+    readme: |-
+        # Ghost
+
+        ## Introduction
+
+        Ghost is a powerful app for professional publishers to create, share, and grow a business around their content. It comes with modern tools to build a website, publish content, send newsletters & offer paid subscriptions to members.
+
+        **Publish by web & email newsletter.** An editor built from the ground-up for professionals. Calm by design, with advanced workflows by default. No more suffering through clumsy toolbars or drag & oops. Immerse yourself in the story with an interface that's invisible until you need it, and powerful when you do.
+
+        **Rich media & dynamic cards.** Modern publishing requires more than just words. Expand your story with image galleries, gifs, video, audio, products, info boxes, accordion toggles, downloadable files, bookmarks, and so much more.
+
+        **Newsletters built-in.** Deliver posts by email newsletter to your audience, so they’ll be in the loop whenever something new goes live. Segment your audience and send multiple different newsletters based on preference.
+
+        **Manage your memberships.** See who's signing up, who's paying, and what they're reading, so you can get a better understanding of your core audience.
+
+        ## Usage
+
+        1. Deploy this template, and this template will hint you to bind your domain.
+        2. After starting the service, you can access the admin panel at `https://<your-domain>/ghost`.
+        3. After setting up your Ghost instance, your audience can access your Ghost instance at `https://<your-domain>`.
+
+        ## Configuration
+
+        ### Updating the Ghost domain
+
+        Run the following command in your Ghost service (for how to run commands, see [this documentation](https://zeabur.com/docs/deploy/command-execution)):
+
+        ```bash
+        ghost config url https://your-new-domain
+        ```
+
+        Then, restart your Ghost service.
+
+        ### Setting up email
+
+        To enable email functionality for member invitations and notifications, configure the mail environment variables in your Ghost service:
+
+        1. Go to your Ghost service in Zeabur
+        2. Navigate to **Variables**
+        3. Add the following environment variables based on your email service provider:
+           - `mail__transport`: Email service (e.g., `SMTP`, `Mailgun`, `SendGrid`)
+           - `mail__options__service`: Service name (e.g., `Gmail`, `Mailgun`)
+           - `mail__options__auth__user`: Your email username
+           - `mail__options__auth__pass`: Your email password or API key
+        4. For detailed mail configuration options, see [Ghost email configuration docs](https://docs.ghost.org/config#mail)
+
+        ### Setting up newsletters
+
+        To configure newsletter delivery:
+
+        1. Access the admin panel at `https://<your-domain>/ghost`
+        2. Navigate to **Settings** → **Email newsletter** → **Mailgun Settings**
+        3. Configure your Mailgun settings:
+           - **Mailgun region**: Select your region (US or EU)
+           - **Mailgun domain**: Enter your Mailgun domain
+           - **Mailgun private API key**: Enter your private API key
+        4. Save the settings
+        5. Learn more at [Ghost newsletters documentation](https://docs.ghost.org/newsletters#bulk-email-configuration)
+
+        ### Forgot your password?
+
+        If you forgot your Ghost admin password, you can reset it directly in the database:
+
+        1. Go to your MySQL service and navigate to Database > zeabur database
+
+        ![Ghost Forgot Password](https://cdn.zeabur.com/ghost-forgot-password.png)
+
+        2. Click "Execute SQL Command" and run the following command:
+
+        ```sql
+        UPDATE zeabur.users SET password='$2a$12$1hiHKBSMnfHOjS0BQ227sO38Y9JpxnNMKutH573F8zMvkRljPFyGe' WHERE email = 'your-email@example.com';
+        ```
+
+        Replace `your-email@example.com` with the email address you use to log in. The password will be reset to `password123`.
+
+        If you want to use a different password, you can generate a bcrypt hash using this tool: [Bcrypt Generator](https://bcrypt-generator.com/).
+    services:
+        - name: mysql
+          icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/mysql.svg
+          template: PREBUILT
+          spec:
+            source:
+                image: mysql:8.0
+            ports:
+                - id: database
+                  port: 3306
+                  type: TCP
+            volumes:
+                - id: data
+                  dir: /var/lib/mysql
+            instructions:
+                - title: Command to connect to your MySQL
+                  content: mysqlsh --sql --host=${CONTAINER_HOSTNAME} --port=${MYSQL_PORT} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --schema=${MYSQL_DATABASE}
+                - title: MySQL username
+                  content: ${MYSQL_USER}
+                - title: MySQL password
+                  content: ${MYSQL_PASSWORD}
+                - title: MySQL database
+                  content: ${MYSQL_DATABASE}
+                - title: MySQL host
+                  content: ${CONTAINER_HOSTNAME}
+                - title: MySQL port
+                  content: ${MYSQL_PORT}
+            env:
+                MYSQL_DATABASE:
+                    default: zeabur
+                    expose: true
+                MYSQL_HOST:
+                    default: ${CONTAINER_HOSTNAME}
+                    expose: true
+                MYSQL_PASSWORD:
+                    default: ${MYSQL_ROOT_PASSWORD}
+                    expose: true
+                MYSQL_PORT:
+                    default: "3306"
+                    expose: true
+                MYSQL_ROOT_PASSWORD:
+                    default: ${PASSWORD}
+                MYSQL_USER:
+                    default: mysql
+                    expose: true
+            configs:
+                - path: /etc/my.cnf
+                  template: |
+                    [mysqld]
+                    host-cache-size=0
+                    skip-name-resolve
+                    datadir=/var/lib/mysql
+                    socket=/var/lib/mysql/mysqld.sock
+                    secure-file-priv=/var/lib/mysql-files
+                    user=mysql
+                    max_allowed_packet=10M
+                    performance_schema=off
+                    pid-file=/var/lib/mysql/mysqld.pid
+
+                    [client]
+                    socket=/var/run/mysqld/mysqld.sock
+
+                    !includedir /etc/mysql/conf.d/
+                  permission: null
+                  envsubst: null
+        - name: ghost
+          icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/ghost.svg
+          template: PREBUILT
+          spec:
+            dependencies:
+                - mysql
+            source:
+                image: ghost:6-alpine
+            ports:
+                - id: web
+                  port: 2368
+                  type: HTTP
+            volumes:
+                - id: data
+                  dir: /var/lib/ghost/content
+            env:
+                database__client:
+                    default: mysql
+                database__connection__database:
+                    default: ${MYSQL_DATABASE}
+                database__connection__host:
+                    default: ${MYSQL_HOST}
+                database__connection__password:
+                    default: ${MYSQL_PASSWORD}
+                database__connection__port:
+                    default: ${MYSQL_PORT}
+                database__connection__user:
+                    default: ${MYSQL_USER}
+                url:
+                    default: https://${ZEABUR_WEB_DOMAIN}
+                mail__transport:
+                    default: Direct
+                mail__options__service:
+                    default: ""
+                mail__options__auth__user:
+                    default: ""
+                mail__options__auth__pass:
+                    default: ""
+            configs:
+                - path: /usr/local/bin/docker-entrypoint.sh
+                  template: "#!/bin/bash\nset -e\n\n# remind users to bind domain\nif [[ \"$url\" == \"\" ]]; then\n    echo \"⚠️ Please bind your domain in Zeabur first.\"\n    echo \"⚠️ 请先在 Zeabur 绑定您的域名。\"\n    echo \"\U0001F449 https://zeabur.com/docs/networking/public\"\n    exit 1\nfi\n\n# allow the container to be started with `--user`\nif [[ \"$*\" == node*current/index.js* ]] && [ \"$(id -u)\" = '0' ]; then\n    find \"$GHOST_CONTENT\" \\! -user node -exec chown node '{}' +\n    exec gosu node \"$BASH_SOURCE\" \"$@\"\nfi\n\nif [[ \"$*\" == node*current/index.js* ]]; then\n    baseDir=\"$GHOST_INSTALL/content.orig\"\n    for src in \"$baseDir\"/*/ \"$baseDir\"/themes/*; do\n        src=\"${src%/}\"\n        target=\"$GHOST_CONTENT/${src#$baseDir/}\"\n        mkdir -p \"$(dirname \"$target\")\"\n        if [ ! -e \"$target\" ]; then\n            tar -cC \"$(dirname \"$src\")\" \"$(basename \"$src\")\" | tar -xC \"$(dirname \"$target\")\"\n        fi\n    done\nfi\n\nexec \"$@\"\n"
+                  permission: 493
+                  envsubst: null
+          domainKey: PUBLIC_DOMAIN
+localization:
+    es-ES:
+        description: Tecnología independiente para la publicación moderna.
+        readme: |-
+            # Ghost
+
+            ## Introducción
+
+            Ghost es una potente aplicación para editores profesionales que desean crear, compartir y hacer crecer un negocio alrededor de su contenido. Incluye herramientas modernas para construir un sitio web, publicar contenido, enviar boletines y ofrecer suscripciones de pago a los miembros.
+
+            **Publica en la web y boletines por correo electrónico.** Un editor diseñado desde cero para profesionales. Sereno por diseño, con flujos de trabajo avanzados por defecto. No más sufrir con barras de herramientas torpes o errores de arrastrar y soltar. Sumérgete en la historia con una interfaz que es invisible hasta que la necesitas y poderosa cuando lo haces.
+
+            **Medios enriquecidos y tarjetas dinámicas.** La publicación moderna requiere más que solo palabras. Expande tu historia con galerías de imágenes, GIFs, videos, audios, productos, cuadros de información, conmutadores de acordeón, archivos descargables, marcadores y mucho más.
+
+            **Boletines integrados.** Envía publicaciones a tu audiencia a través de boletines por correo electrónico para que estén al tanto cada vez que algo nuevo esté disponible. Segmenta tu audiencia y envía diferentes boletines según sus preferencias.
+
+            **Gestión de membresías.** Ve quién se está registrando, quién está pagando y qué están leyendo, para que puedas obtener una mejor comprensión de tu audiencia principal.
+
+            ## Uso
+
+            1. Despliega esta plantilla, y esta plantilla te indicará que vincules tu dominio.
+            2. Después de iniciar el servicio, podrás acceder al panel de administración en `https://<tu-dominio>/ghost`.
+            3. Después de configurar tu instancia de Ghost, tu audiencia podrá acceder a tu instancia de Ghost en `https://<tu-dominio>`.
+
+            ## Configuración
+
+            ### Actualizar el dominio de Ghost
+
+            Ejecuta el siguiente comando en tu servicio Ghost (para ver cómo ejecutar comandos, consulta [esta documentación](https://zeabur.com/docs/deploy/command-execution)):
+
+            ```bash
+            ghost config url https://tu-nuevo-dominio
+            ```
+
+            Luego, reinicia tu servicio Ghost.
+
+            ### Configurar el correo electrónico
+
+            Para habilitar la funcionalidad de correo electrónico para invitaciones de miembros y notificaciones, configura las variables de entorno de correo en tu servicio Ghost:
+
+            1. Ve a tu servicio Ghost en Zeabur
+            2. Navega a **Variables**
+            3. Agrega las siguientes variables de entorno según tu proveedor de correo:
+               - `mail__transport`: Servicio de correo (ej. `SMTP`, `Mailgun`, `SendGrid`)
+               - `mail__options__service`: Nombre del servicio (ej. `Gmail`, `Mailgun`)
+               - `mail__options__auth__user`: Tu usuario de correo
+               - `mail__options__auth__pass`: Tu contraseña de correo o clave API
+            4. Para opciones detalladas de configuración de correo, consulta [documentación de configuración de correo de Ghost](https://docs.ghost.org/config#mail)
+
+            ### Configurar boletines
+
+            Para configurar el envío de boletines a tus miembros:
+
+            1. Accede al panel de administración en `https://<tu-dominio>/ghost`
+            2. Navega a **Configuración** → **Boletín de correo** → **Mailgun Settings**
+            3. Configura tus ajustes de Mailgun:
+               - **Mailgun region**: Selecciona tu región (US o EU)
+               - **Mailgun domain**: Ingresa tu dominio de Mailgun
+               - **Mailgun private API key**: Ingresa tu clave API privada
+            4. Guarda la configuración
+            5. Aprende más en [documentación de boletines de Ghost](https://docs.ghost.org/newsletters#bulk-email-configuration)
+
+            ### ¿Olvidaste tu contraseña?
+
+            Si olvidaste tu contraseña de administrador de Ghost, puedes restablecerla directamente en la base de datos:
+
+            1. Ve a tu servicio MySQL y navega a Base de datos > base de datos zeabur
+
+            ![Ghost Forgot Password](https://cdn.zeabur.com/ghost-forgot-password.png)
+
+            2. Haz clic en "Ejecutar comando SQL" y ejecuta el siguiente comando:
+
+            ```sql
+            UPDATE zeabur.users SET password='$2a$12$1hiHKBSMnfHOjS0BQ227sO38Y9JpxnNMKutH573F8zMvkRljPFyGe' WHERE email = 'tu-correo@ejemplo.com';
+            ```
+
+            Reemplaza `tu-correo@ejemplo.com` con la dirección de correo electrónico que usas para iniciar sesión. La contraseña se restablecerá a `password123`.
+
+            Si deseas usar una contraseña diferente, puedes generar un hash bcrypt usando esta herramienta: [Generador de Bcrypt](https://bcrypt-generator.com/).
+    ja-JP:
+        description: モダンな出版のための独立したテクノロジー。
+        readme: |-
+            # Ghost
+
+            ## はじめに
+
+            Ghostは、プロの出版者がコンテンツを中心にビジネスを作成、共有、成長させるための強力なアプリです。ウェブサイトの構築、コンテンツの公開、ニュースレターの送信、会員への有料購読の提供といったモダンなツールが揃っています。
+
+            **ウェブとメールニュースレターでの公開。** プロフェッショナルのためにゼロから設計されたエディタ。洗練されたデザインで、デフォルトで高度なワークフローを備えています。不格好なツールバーやドラッグ＆ミスに苦しむ必要はもうありません。必要なときだけ表示され、必要なときにパワフルに機能するインターフェースでストーリーに没入できます。
+
+            **リッチメディア＆ダイナミックカード。** モダンな出版は単なる言葉だけでは足りません。画像ギャラリー、GIF、動画、音声、商品、情報ボックス、アコーディオン切り替え、ダウンロード可能なファイル、ブックマークなどでストーリーを広げることができます。
+
+            **ニュースレターが組み込み済み。** あなたのオーディエンスにメールニュースレターで投稿を届け、新しいコンテンツが公開されるたびに情報を共有できます。オーディエンスをセグメント化して、好みに応じた複数のニュースレターを送信できます。
+
+            **会員管理。** 誰がサインアップし、誰が支払いをしていて、何を読んでいるのかを把握し、コアオーディエンスをより深く理解できます。
+
+            ## 使用方法
+
+            1. このテンプレートをデプロイすると、ドメイン名のバインドを求められます。
+            2. サービス起動後、`https://<あなたのドメイン名>/ghost` から管理パネルにアクセスできます。
+            3. Ghostインスタンスの設定が完了すると、読者は `https://<あなたのドメイン名>` からあなたのGhostサイトにアクセスできます。
+
+            ## 設定
+
+            ### Ghostドメインの更新
+
+            Ghostサービスで次のコマンドを実行してください（コマンドの実行方法については[こちらのドキュメント](https://zeabur.com/docs/deploy/command-execution)を参照してください）:
+
+            ```bash
+            ghost config url https://新しいドメイン名
+            ```
+
+            その後、Ghostサービスを再起動してください。
+
+            ### メール設定
+
+            メンバー招待や通知のためのメール機能を有効にするには、Ghostサービスでメール環境変数を設定します：
+
+            1. ZeaburのGhostサービスに移動
+            2. **Variables**（変数）に移動
+            3. メールサービスプロバイダーに応じて以下の環境変数を追加：
+               - `mail__transport`: メールサービス（例：`SMTP`、`Mailgun`、`SendGrid`）
+               - `mail__options__service`: サービス名（例：`Gmail`、`Mailgun`）
+               - `mail__options__auth__user`: メールユーザー名
+               - `mail__options__auth__pass`: メールパスワードまたはAPIキー
+            4. 詳細なメール設定オプションについては、[Ghostメール設定ドキュメント](https://docs.ghost.org/config#mail)を参照してください
+
+            ### ニュースレター設定
+
+            メンバーへのニュースレター配信を設定するには：
+
+            1. `https://<あなたのドメイン名>/ghost` で管理パネルにアクセス
+            2. **Settings** → **Email newsletter** → **Mailgun Settings** に移動
+            3. Mailgun設定を構成：
+               - **Mailgun region**: リージョンを選択（USまたはEU）
+               - **Mailgun domain**: Mailgunドメインを入力
+               - **Mailgun private API key**: プライベートAPIキーを入力
+            4. 設定を保存
+            5. 詳細は[Ghostニュースレタードキュメント](https://docs.ghost.org/newsletters#bulk-email-configuration)を参照してください
+
+            ### パスワードを忘れた場合
+
+            Ghost管理者のパスワードを忘れた場合は、データベースで直接リセットできます：
+
+            1. MySQLサービスに移動し、データベース > zeaburデータベースに進みます
+
+            ![Ghost Forgot Password](https://cdn.zeabur.com/ghost-forgot-password.png)
+
+            2. 「SQLコマンドを実行」をクリックして、次のコマンドを実行します：
+
+            ```sql
+            UPDATE zeabur.users SET password='$2a$12$1hiHKBSMnfHOjS0BQ227sO38Y9JpxnNMKutH573F8zMvkRljPFyGe' WHERE email = 'your-email@example.com';
+            ```
+
+            `your-email@example.com` をログインに使用するメールアドレスに置き換えてください。パスワードは `password123` にリセットされます。
+
+            別のパスワードを使用したい場合は、こちらのツールでbcryptハッシュを生成できます：[Bcryptジェネレーター](https://bcrypt-generator.com/)。
+    zh-CN:
+        description: 适用于现代出版的独立技术。
+        readme: |-
+            # Ghost
+
+            ## 简介
+
+            Ghost 是一个强大的应用程序，专为专业出版商设计，帮助他们围绕内容创建、分享并发展业务。它提供了构建网站、发布内容、发送新闻通讯和向会员提供付费订阅的现代化工具。
+
+            **通过网络和邮件新闻通讯发布内容。** 为专业人士从头设计的编辑器。设计简洁，默认启用高级工作流程。不再需要忍受笨拙的工具栏或"拖拽错误"。通过一个隐形但在需要时强大的界面，沉浸在故事中。
+
+            **丰富媒体与动态卡片。** 现代出版不仅仅需要文字。通过图片画廊、GIF、视频、音频、商品、信息框、手风琴切换、可下载文件、书签等内容，扩展你的故事。
+
+            **内置新闻通讯。** 通过邮件新闻通讯向受众发送文章，每当有新内容上线时，让他们及时了解。细分受众，根据偏好发送多种不同的新闻通讯。
+
+            **管理你的会员。** 查看谁注册了、谁在付费、他们在阅读什么，以便更好地了解你的核心受众。
+
+            ## 使用方式
+
+            1. 部署此模板，系统会提示您绑定您的域名。
+            2. 启动服务后，您可以通过 `https://<您的域名>/ghost` 进入管理面板。
+            3. 设置完您的 Ghost 实例后，您的读者可以通过 `https://<您的域名>` 访问您的 Ghost 网站。
+
+            ## 配置
+
+            ### 更新 Ghost 域名
+
+            在你的 Ghost 服务中运行以下命令（关于如何运行命令，请参阅[此文档](https://zeabur.com/docs/deploy/command-execution)）：
+
+            ```bash
+            ghost config url https://您的新域名
+            ```
+
+            然后，重启你的 Ghost 服务。
+
+            ### 设置邮件
+
+            要启用会员邀请和通知的邮件功能，请在 Ghost 服务中配置邮件环境变量：
+
+            1. 进入 Zeabur 的 Ghost 服务
+            2. 导航到 **Variables**（变量）
+            3. 根据你的邮件服务提供商添加以下环境变量：
+               - `mail__transport`: 邮件服务（例如：`SMTP`、`Mailgun`、`SendGrid`）
+               - `mail__options__service`: 服务名称（例如：`Gmail`、`Mailgun`）
+               - `mail__options__auth__user`: 你的邮箱用户名
+               - `mail__options__auth__pass`: 你的邮箱密码或 API 密钥
+            4. 详细的邮件配置选项，请参阅 [Ghost 邮件配置文档](https://docs.ghost.org/config#mail)
+
+            ### 设置新闻通讯
+
+            要配置向会员发送新闻通讯：
+
+            1. 访问管理面板 `https://<您的域名>/ghost`
+            2. 导航到 **Settings** → **Email newsletter** → **Mailgun Settings**
+            3. 配置你的 Mailgun 设置：
+               - **Mailgun region**: 选择你的区域（US 或 EU）
+               - **Mailgun domain**: 输入你的 Mailgun 域名
+               - **Mailgun private API key**: 输入你的私钥
+            4. 保存设置
+            5. 了解更多请访问 [Ghost 新闻通讯文档](https://docs.ghost.org/newsletters#bulk-email-configuration)
+
+            ### 忘记密码怎么办？
+
+            如果您忘记了 Ghost 管理员密码，可以直接在数据库中重置：
+
+            1. 找到 MySQL 服务，进入数据库 > zeabur 数据库
+
+            ![Ghost Forgot Password](https://cdn.zeabur.com/ghost-forgot-password.png)
+
+            2. 点击「执行 SQL 指令」，输入并执行以下指令：
+
+            ```sql
+            UPDATE zeabur.users SET password='$2a$12$1hiHKBSMnfHOjS0BQ227sO38Y9JpxnNMKutH573F8zMvkRljPFyGe' WHERE email = '您的信箱';
+            ```
+
+            将 `您的信箱` 替换为您用来登录的邮箱地址。密码将被重置为 `password123`。
+
+            如果您想使用其他密码，可以使用此工具生成 bcrypt 哈希值：[Bcrypt Generator](https://bcrypt-generator.com/)。
+    zh-TW:
+        description: 適用於現代出版的獨立平台。
+        readme: |-
+            # Ghost
+
+            ## 簡介
+
+            Ghost 是一個強大的應用程式，專為專業出版商設計，幫助他們圍繞內容創造、分享並發展事業。它提供了建立網站、發佈內容、寄送電子報以及提供會員付費訂閱的現代化工具。
+
+            **透過網頁和電子郵件電子報發佈內容。** 為專業人士從零打造的編輯器。設計簡潔，預設啟用進階工作流程。不再需要忍受笨重的工具列或「拖曳失誤」。透過一個隱形但在需要時強大的介面，沉浸在故事中。
+
+            **豐富媒體與動態卡片。** 現代出版不僅僅需要文字。透過圖片相簿、GIF、影片、音樂、商品、資訊框、摺疊選單、可下載檔案、書籤等內容，讓你的故事更豐富。
+
+            **內建電子報功能。** 透過電子郵件電子報傳遞文章給讀者，每當有新內容上線時，讓他們即時了解。區分讀者群，根據喜好寄送多種不同的電子報。
+
+            **管理你的會員。** 查看誰註冊了、誰在付費、他們在看什麼，以便更了解你的核心讀者。
+
+            ## 使用方式
+
+            1. 部署此模板，系統會提示您綁定您的網域。
+            2. 啟動服務後，您可以透過 `https://<您的網域>/ghost` 進入管理面板。
+            3. 設定完您的 Ghost 實例後，您的讀者可以透過 `https://<您的網域>` 存取您的 Ghost 網站。
+
+            ## 設定
+
+            ### 更新 Ghost 網域
+
+            在你的 Ghost 服務中執行以下指令（有關如何執行指令，請參考[此文件](https://zeabur.com/docs/deploy/command-execution)）：
+
+            ```bash
+            ghost config url https://您的新網域
+            ```
+
+            然後，重新啟動你的 Ghost 服務。
+
+            ### 設定郵件
+
+            要啟用會員邀請和通知的郵件功能，請在 Ghost 服務中設定郵件環境變數：
+
+            1. 前往 Zeabur 的 Ghost 服務
+            2. 導覽至 **Variables**（變數）
+            3. 根據你的郵件服務提供商新增以下環境變數：
+               - `mail__transport`: 郵件服務（例如：`SMTP`、`Mailgun`、`SendGrid`）
+               - `mail__options__service`: 服務名稱（例如：`Gmail`、`Mailgun`）
+               - `mail__options__auth__user`: 你的電子郵件使用者名稱
+               - `mail__options__auth__pass`: 你的電子郵件密碼或 API 金鑰
+            4. 詳細的郵件設定選項，請參閱 [Ghost 郵件設定文件](https://docs.ghost.org/config#mail)
+
+            ### 設定電子報
+
+            要設定向會員發送電子報：
+
+            1. 存取管理面板 `https://<您的網域>/ghost`
+            2. 導覽至 **Settings** → **Email newsletter** → **Mailgun Settings**
+            3. 設定你的 Mailgun 設定：
+               - **Mailgun region**: 選擇你的區域（US 或 EU）
+               - **Mailgun domain**: 輸入你的 Mailgun 網域
+               - **Mailgun private API key**: 輸入你的私鑰
+            4. 儲存設定
+            5. 了解更多請造訪 [Ghost 電子報文件](https://docs.ghost.org/newsletters#bulk-email-configuration)
+
+            ### 忘記密碼怎麼辦？
+
+            如果您忘記了 Ghost 管理員密碼，可以直接在資料庫中重置：
+
+            1. 找到 MySQL 服務，進入資料庫 > zeabur 資料庫
+
+            ![Ghost Forgot Password](https://cdn.zeabur.com/ghost-forgot-password.png)
+
+            2. 點選「執行 SQL 指令」，輸入並執行以下指令：
+
+            ```sql
+            UPDATE zeabur.users SET password='$2a$12$1hiHKBSMnfHOjS0BQ227sO38Y9JpxnNMKutH573F8zMvkRljPFyGe' WHERE email = '您的信箱';
+            ```
+
+            將 `您的信箱` 替換為您用來登入的電子郵件地址。密碼將被重置為 `password123`。
+
+            如果您想使用其他密碼，可以使用此工具產生 bcrypt 雜湊值：[Bcrypt Generator](https://bcrypt-generator.com/)。
