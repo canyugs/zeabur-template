@@ -1,0 +1,190 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: WrenAI
+spec:
+    description: ⚡️ GenBI (Generative BI) queries any database in natural language, generates accurate SQL (Text-to-SQL), charts (Text-to-Chart), and AI-powered insights in seconds.
+    coverImage: https://github.com/Canner/WrenAI/blob/main/misc/workflow.png?raw=true
+    icon: https://cdn.zeabur.com/wren.png
+    variables:
+        - key: PUBLIC_DOMAIN
+          type: DOMAIN
+          name: Domain
+          description: The domain of your Wren AI
+    readme: ""
+    services:
+        - name: wren-engine
+          icon: https://cdn.zeabur.com/wren.png
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: ghcr.io/canner/wren-engine
+            ports:
+                - id: http
+                  port: 8080
+                  type: HTTP
+            configs:
+                - path: /usr/src/app/etc/config.properties
+                  template: |
+                    node.environment=production
+                    wren.directory=/usr/src/app/etc/mdl
+
+                  permission: null
+                  envsubst: null
+            volumes:
+                - id: etc
+                  dir: /usr/src/app/etc
+            portForwarding:
+                enabled: false
+        - name: wren-ui
+          icon: https://cdn.zeabur.com/wren.png
+          template: PREBUILT_V2
+          domainKey: PUBLIC_DOMAIN
+          spec:
+            source:
+                image: ghcr.io/canner/wren-ui
+            ports:
+                - id: web
+                  port: 3000
+                  type: HTTP
+            volumes:
+                - id: data
+                  dir: /app/data
+            env:
+                DB_TYPE:
+                    default: sqlite
+                    expose: false
+                IBIS_SERVER_ENDPOINT:
+                    default: http://ibis-server:8000
+                    expose: false
+                SQLITE_FILE:
+                    default: /app/data/db.sqlite3
+                    expose: false
+                WREN_AI_ENDPOINT:
+                    default: http://wren-ai-service:5555
+                    expose: false
+                WREN_ENGINE_ENDPOINT:
+                    default: http://wren-engine:8080
+                    expose: false
+              
+            portForwarding:
+                enabled: false
+        - name: ibis-server
+          icon: https://cdn.zeabur.com/wren.png
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: ghcr.io/canner/wren-engine-ibis
+            ports:
+                - id: http
+                  port: 8000
+                  type: HTTP
+            env:
+                WREN_ENGINE_ENDPOINT:
+                    default: http://wren-engine:8080
+                    expose: false
+            portForwarding:
+                enabled: false
+        - name: wren-ai-service
+          icon: https://cdn.zeabur.com/wren.png
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: ghcr.io/canner/wren-ai-service
+            ports:
+                - id: http
+                  port: 5555
+                  type: HTTP
+            env:
+                CONFIG_PATH:
+                    default: /app/config.yaml
+                    expose: false
+                PYTHONUNBUFFERED:
+                    default: "1"
+                    expose: false
+                QDRANT_HOST:
+                    default: qdrant
+                    expose: false
+                SHOULD_FORCE_DEPLOY:
+                    default: "1"
+                    expose: false
+                WREN_AI_SERVICE_PORT:
+                    default: "5555"
+                    expose: false
+                WREN_UI_ENDPOINT:
+                    default: http://wren-ui:3000
+                    expose: false
+                WREN_UI_PORT:
+                    default: "3000"
+                    expose: false
+            configs:
+                - path: /app/config.yaml
+                  template: "type: llm\nprovider: litellm_llm\ntimeout: 120\nmodels:\n  - alias: default\n    model: gpt-4.1-nano-2025-04-14\n    context_window_size: 1000000\n    kwargs:\n      max_tokens: 4096\n      n: 1\n      seed: 0\n      temperature: 0\n  - model: gpt-4.1-mini-2025-04-14\n    context_window_size: 1000000\n    kwargs:\n      max_tokens: 4096\n      n: 1\n      seed: 0\n      temperature: 0\n  - model: gpt-4.1-2025-04-14\n    context_window_size: 1000000\n    kwargs:\n      max_tokens: 4096\n      n: 1\n      seed: 0\n      temperature: 0\n  - model: gpt-5-nano-2025-08-07\n    context_window_size: 380000\n    kwargs:\n      max_completion_tokens: 4096\n      n: 1\n      seed: 0\n      reasoning_effort: minimal\n  - model: gpt-5-mini-2025-08-07\n    context_window_size: 380000\n    kwargs:\n      max_completion_tokens: 4096\n      n: 1\n      seed: 0\n      reasoning_effort: minimal\n  - model: gpt-5-2025-08-07\n    context_window_size: 380000\n    kwargs:\n      max_completion_tokens: 4096\n      n: 1\n      seed: 0\n      reasoning_effort: minimal\n---\ntype: embedder\nprovider: litellm_embedder\nmodels:\n  - model: text-embedding-3-large\n    alias: default\n    timeout: 120\n\n---\ntype: engine\nprovider: wren_ui\nendpoint: http://wren-ui:3000\n\n---\ntype: engine\nprovider: wren_ibis\nendpoint: http://ibis-server:8000\n\n---\ntype: document_store\nprovider: qdrant\nlocation: http://qdrant:6333\nembedding_model_dim: 3072\ntimeout: 120\nrecreate_index: false \n\n---\ntype: pipeline\npipes:\n  - name: db_schema_indexing\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: historical_question_indexing\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: table_description_indexing\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: db_schema_retrieval\n    llm: litellm_llm.default\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: historical_question_retrieval\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: sql_generation\n    llm: litellm_llm.default\n    engine: wren_ui\n    document_store: qdrant\n  - name: sql_correction\n    llm: litellm_llm.default\n    engine: wren_ui\n    document_store: qdrant\n  - name: followup_sql_generation\n    llm: litellm_llm.default\n    engine: wren_ui\n    document_store: qdrant\n  - name: sql_answer\n    llm: litellm_llm.default\n  - name: semantics_description\n    llm: litellm_llm.default\n  - name: relationship_recommendation\n    llm: litellm_llm.default\n  - name: question_recommendation\n    llm: litellm_llm.default\n  - name: question_recommendation_sql_generation\n    llm: litellm_llm.default\n    engine: wren_ui\n    document_store: qdrant\n  - name: intent_classification\n    llm: litellm_llm.default\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: misleading_assistance\n    llm: litellm_llm.default\n  - name: data_assistance\n    llm: litellm_llm.default\n  - name: sql_pairs_indexing\n    document_store: qdrant\n    embedder: litellm_embedder.default\n  - name: sql_pairs_retrieval\n    document_store: qdrant\n    embedder: litellm_embedder.default\n    llm: litellm_llm.default\n  - name: preprocess_sql_data\n    llm: litellm_llm.default\n  - name: sql_executor\n    engine: wren_ui\n  - name: chart_generation\n    llm: litellm_llm.default\n  - name: chart_adjustment\n    llm: litellm_llm.default\n  - name: user_guide_assistance\n    llm: litellm_llm.default\n  - name: sql_question_generation\n    llm: litellm_llm.default\n  - name: sql_generation_reasoning\n    llm: litellm_llm.default\n  - name: followup_sql_generation_reasoning\n    llm: litellm_llm.default\n  - name: sql_regeneration\n    llm: litellm_llm.default\n    engine: wren_ui\n  - name: instructions_indexing\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: instructions_retrieval\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: sql_functions_retrieval\n    engine: wren_ibis\n    document_store: qdrant\n  - name: project_meta_indexing\n    document_store: qdrant\n  - name: sql_tables_extraction\n    llm: litellm_llm.default\n  - name: sql_diagnosis\n    llm: litellm_llm.default\n\n---\nsettings:\n  doc_endpoint: https://docs.getwren.ai\n  is_oss: true\n  engine_timeout: 30\n  column_indexing_batch_size: 50\n  table_retrieval_size: 10\n  table_column_retrieval_size: 100\n  allow_intent_classification: true\n  allow_sql_generation_reasoning: true\n  allow_sql_functions_retrieval: true\n  enable_column_pruning: false\n  max_sql_correction_retries: 3\n  query_cache_maxsize: 1000\n  query_cache_ttl: 3600\n  langfuse_host: https://cloud.langfuse.com\n  langfuse_enable: true\n  logging_level: DEBUG\n  development: false\n  historical_question_retrieval_similarity_threshold: 0.9\n  sql_pairs_similarity_threshold: 0.7\n  sql_pairs_retrieval_max_size: 10\n  instructions_similarity_threshold: 0.7\n  instructions_top_k: 10"
+                  permission: null
+                  envsubst: null
+            portForwarding:
+                enabled: false
+        - name: qdrant
+          icon: https://avatars.githubusercontent.com/u/73504361?s=48&v=4
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: qdrant/qdrant:latest
+            ports:
+                - id: http
+                  port: 6333
+                  type: HTTP
+                - id: grpc
+                  port: 6334
+                  type: HTTP
+            volumes:
+                - id: storage
+                  dir: /qdrant/storage
+                - id: snapshots
+                  dir: /qdrant/snapshots
+            env:
+                PUBLIC_DOMAIN:
+                    default: werfof34g
+                    expose: false
+                QDRANT__LOG_LEVEL:
+                    default: INFO
+                    expose: false
+            portForwarding:
+                enabled: false
+localization:
+    zh-TW:
+        description: ⚡️ GenBI（生成式商業智能）使用自然語言查詢任何資料庫，生成準確的 SQL（文字轉 SQL）、圖表（文字轉圖表）並在幾秒鐘內提供 AI 驅動的洞察。
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: DOMAIN
+              name: 網域
+              description: 你的 Wren AI 網域
+    zh-CN:
+        description: ⚡️ GenBI（生成式商业智能）使用自然语言查询任何数据库，生成准确的 SQL（文本转 SQL）、图表（文本转图表）并在几秒钟内提供 AI 驱动的洞察。
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: DOMAIN
+              name: 域名
+              description: 你的 Wren AI 域名
+    ja-JP:
+        description: ⚡️ GenBI（生成的BI）は、自然言語で任意のデータベースをクエリし、正確なSQL（テキストからSQL）、チャート（テキストからチャート）、AI駆動のインサイトを数秒で生成します。
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: DOMAIN
+              name: ドメイン
+              description: Wren AI のドメイン
+    es-ES:
+        description: ⚡️ GenBI (BI Generativa) consulta cualquier base de datos en lenguaje natural, genera SQL preciso (Texto a SQL), gráficos (Texto a gráficos) e información impulsada por IA en segundos.
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: DOMAIN
+              name: Dominio
+              description: El dominio de tu Wren AI
+    id-ID:
+        description: ⚡️ GenBI (BI Generatif) melakukan kueri database apa pun dalam bahasa alami, menghasilkan SQL yang akurat (Teks ke SQL), grafik (Teks ke grafik), dan wawasan yang didukung AI dalam hitungan detik.
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: DOMAIN
+              name: Domain
+              description: Domain Wren AI Anda
