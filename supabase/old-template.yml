@@ -1,0 +1,1102 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: Supabase
+spec:
+    description: An open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
+    coverImage: https://miro.medium.com/v2/resize:fit:1200/1*KllQKJSGK5QruqT8kIElEA.png
+    icon: https://icons.zeabur.com/supabase.png
+    variables:
+        - key: SUPABASE_USERNAME
+          type: STRING
+          name: Username
+          description: What is the username you want for your Supabase?
+        - key: PUBLIC_DOMAIN
+          type: DOMAIN
+          name: Domain
+          description: What is the domain you want for your Supabase?
+    tags:
+        - CMS
+        - Database
+        - Tool
+        - API
+    readme: |
+        Supabase is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
+
+        For full documentation, visit [supabase.com/docs](https://supabase.com/docs).
+
+        ## Usage
+
+        You should bind the domain to the service `kong` if Zeabur does not instruct you to bind one.
+
+        You can find the username and password in the service `kong`.
+
+        ## Services
+
+        This Supabase instance includes **Kong** (API Gateway), **Studio** (Supabase Studio), **Database** (PostgreSQL), **Meta** (Postgres Meta), **Rest** (PostgREST), **Auth** (GoTrue), **Supavisor** (Database Pooler), **MinIO** (Object Storage), **Storage** (Storage API), **ImgProxy** (Image Processing), and **Realtime**.
+
+        If you need additional Supabase services, feel free to implement them according to [the upstream `docker-compose.yaml` file](https://github.com/supabase/supabase/blob/master/docker/docker-compose.yml) and submit your changes to [our Discord server](https://zeabur.com/dc). This applies to our [Contribution Reward Program](https://zeabur.com/docs/en-US/billing/reward).
+
+        ## Configuration
+
+        ### Security Configuration
+
+        See [Securing your services](https://supabase.com/docs/guides/self-hosting/docker#securing-your-services) to update the secrets in your services.
+        Note that you should restart all services in Project Settings in order to apply the configurations.
+
+        - JWT secrets: update it in the service, `postgresql`
+        - Anon and Service role keys: update it in the service, `kong`
+        - Dashboard username and password: update `SUPABASE_USERNAME` and `PASSWORD` in the service, `kong`
+
+        ### Add Google OAuth support
+
+        Add the following environment variables to the `auth` service:
+
+        - `GOTRUE_EXTERNAL_GOOGLE_ENABLED=true`
+        - `GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID=xxxxxxxx`
+        - `GOTRUE_EXTERNAL_GOOGLE_SECRET=yyyyyyyy`
+        - `GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI=https://supabase.zeabur.app/auth/v1/callback`
+
+        Update `supabase.zeabur.app` to your public domain, for example: `supabase.example.com`.
+
+        You can find the client ID and secret in the Google Cloud Console.
+
+        Then, restart your `auth` service.
+
+        ### Add Apple OAuth support
+
+        Add the following environment variables to the `auth` service:
+
+        - `GOTRUE_EXTERNAL_APPLE_ENABLED=true`
+        - `GOTRUE_EXTERNAL_APPLE_CLIENT_ID=xxxxxxxx`
+        - `GOTRUE_EXTERNAL_APPLE_SECRET=yyyyyyyy`
+        - `GOTRUE_EXTERNAL_APPLE_REDIRECT_URI=https://supabase.zeabur.app/auth/v1/callback`
+
+        Update `supabase.zeabur.app` to your public domain, for example: `supabase.example.com`.
+
+        You can find the client ID and secret in the Apple Developer Console.
+
+        Then, restart your `auth` service.
+
+        ### Configure SMTP Email Service (Resend Integration)
+
+        To enable email functionality in Supabase (user verification, password reset, etc.), configure SMTP settings using Resend as the email service provider.
+
+        #### Step 1: Resend Setup (Email Service Provider)
+
+        **Domain Verification:**
+        1. Verify your domain (e.g., `mail.yourdomain.com`) in Resend
+        2. Configure DNS records (TXT, CNAME, SPF, MX) as provided by Resend
+        3. Ensure verification status shows "Verified"
+
+        **Sender Email Setup:**
+        1. Configure sender email address: `noreply@mail.yourdomain.com`
+        2. Obtain your Resend API key from the dashboard
+
+        #### Step 2: Supabase Auth SMTP Configuration
+
+        Add the following environment variables to the `auth` service:
+
+        - `GOTRUE_SMTP_HOST=smtp.resend.com` - SMTP server host
+        - `GOTRUE_SMTP_PORT=587` - Use STARTTLS port
+        - `GOTRUE_SMTP_USER=resend` (or leave blank) - Resend doesn't validate username, only API key
+        - `GOTRUE_SMTP_PASS=re_xxx` - Your Resend API Key
+        - `GOTRUE_SMTP_ADMIN_EMAIL=noreply@mail.yourdomain.com` - Admin sender email
+        - `GOTRUE_SMTP_SENDER_NAME=Your App Name` - Display name for emails
+        - `GOTRUE_SITE_URL=https://yourdomain.zeabur.app` - Determines the domain for verification links in emails
+
+        #### Step 3: Zeabur Environment Configuration
+
+        1. Navigate to your Zeabur project
+        2. Go to Service > Auth > Variables
+        3. Add all the SMTP variables listed above
+        4. Restart the `auth` service to apply changes
+
+        #### Step 4: Testing Email Functionality
+
+        **Manual Testing:**
+        ```bash
+        curl -X POST "https://yourdomain.zeabur.app/auth/v1/signup" \
+          -H "Content-Type: application/json" \
+          -H "apikey: YOUR_ANON_KEY" \
+          -d '{
+            "email": "test@example.com",
+            "password": "yourpassword"
+          }'
+        ```
+
+        **Expected Results:**
+        - Verification email sent successfully
+        - Email delivered to recipient (check spam folder initially)
+        - Supabase Auth handles registration verification and password reset emails automatically
+
+        #### Troubleshooting Notes
+
+        - **SPF/DKIM Issues:** Ensure all DNS settings match Resend's requirements to prevent email rejection
+        - **Redirect URI Mismatch:** Make sure `GOTRUE_SITE_URL` matches your actual deployed domain
+        - **Email Delivery:** Initial emails may go to spam; proper DNS configuration improves deliverability
+        - **API Key Security:** Store Resend API key securely in environment variables, never in code
+
+        #### Additional Features (Optional)
+
+        For advanced email customization, you can configure:
+        - Custom email templates
+        - Delivery report webhooks
+        - BIMI (Brand Indicators for Message Identification) settings
+        - Rate limiting and frequency controls
+
+        ### Advanced Auth Configuration (Optional)
+
+        Add these environment variables to the `auth` service for advanced features:
+
+        **Custom Access Token Hook:**
+        - `GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_ENABLED=true`
+        - `GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_URI=pg-functions://postgres/public/custom_access_token_hook`
+        - `GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_SECRETS=<your-base64-secret>`
+
+        **MFA Verification Hook:**
+        - `GOTRUE_HOOK_MFA_VERIFICATION_ATTEMPT_ENABLED=true`
+        - `GOTRUE_HOOK_MFA_VERIFICATION_ATTEMPT_URI=pg-functions://postgres/public/mfa_verification_attempt`
+
+        **Password Verification Hook:**
+        - `GOTRUE_HOOK_PASSWORD_VERIFICATION_ATTEMPT_ENABLED=true`
+        - `GOTRUE_HOOK_PASSWORD_VERIFICATION_ATTEMPT_URI=pg-functions://postgres/public/password_verification_attempt`
+
+        **Custom SMS Hook:**
+        - `GOTRUE_HOOK_SEND_SMS_ENABLED=true`
+        - `GOTRUE_HOOK_SEND_SMS_URI=pg-functions://postgres/public/custom_sms_hook`
+        - `GOTRUE_HOOK_SEND_SMS_SECRETS=v1,whsec_<your-secret>`
+
+        **Custom Email Hook:**
+        - `GOTRUE_HOOK_SEND_EMAIL_ENABLED=true`
+        - `GOTRUE_HOOK_SEND_EMAIL_URI=http://host.docker.internal:54321/functions/v1/email_sender`
+        - `GOTRUE_HOOK_SEND_EMAIL_SECRETS=v1,whsec_<your-secret>`
+
+        **Other Options:**
+        - `GOTRUE_EXTERNAL_SKIP_NONCE_CHECK=true` (for mobile Google Sign In)
+        - `GOTRUE_MAILER_SECURE_EMAIL_CHANGE_ENABLED=true`
+        - `GOTRUE_SMTP_MAX_FREQUENCY=1s`
+
+        **Studio SQL Assistant:**
+        Add to `studio` service:
+        - `OPENAI_API_KEY=your-openai-api-key`
+    services:
+        - name: kong
+          icon: https://icons.zeabur.com/kong.svg
+          template: PREBUILT
+          spec:
+            source:
+                image: kong:2.8.1
+            ports:
+                - id: web
+                  port: 8000
+                  type: HTTP
+            instructions:
+                - title: Supabase Username
+                  content: ${DASHBOARD_USERNAME}
+                - title: Supabase Password
+                  content: ${DASHBOARD_PASSWORD}
+            env:
+                ANON_KEY:
+                    default: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE
+                    expose: true
+                DASHBOARD_PASSWORD:
+                    default: ${PASSWORD}
+                DASHBOARD_USERNAME:
+                    default: ${SUPABASE_USERNAME}
+                KONG_DATABASE:
+                    default: "off"
+                KONG_DECLARATIVE_CONFIG:
+                    default: /home/kong/kong.yml
+                KONG_DNS_ORDER:
+                    default: LAST,A,CNAME
+                KONG_NGINX_PROXY_PROXY_BUFFER_SIZE:
+                    default: 160k
+                KONG_NGINX_PROXY_PROXY_BUFFERS:
+                    default: 64 160k
+                KONG_NGINX_WORKER_PROCESSES:
+                    default: "1"
+                KONG_PLUGINS:
+                    default: request-transformer,cors,key-auth,acl,basic-auth
+                KONG_PORT_MAPS:
+                    default: 443:8000
+                SERVICE_ROLE_KEY:
+                    default: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJzZXJ2aWNlX3JvbGUiLAogICAgImlzcyI6ICJzdXBhYmFzZS1kZW1vIiwKICAgICJpYXQiOiAxNjQxNzY5MjAwLAogICAgImV4cCI6IDE3OTk1MzU2MDAKfQ.DaYlNEoUrrEn2Ig7tqibS-PHK5vgusbcbo7X36XVt4Q
+                    expose: true
+                SUPABASE_ANON_KEY:
+                    default: ${ANON_KEY}
+                SUPABASE_PUBLIC_DOMAIN:
+                    default: ${ZEABUR_WEB_DOMAIN}
+                    expose: true
+                SUPABASE_SERVICE_KEY:
+                    default: ${SERVICE_ROLE_KEY}
+            configs:
+                - path: /home/kong/kong.yml
+                  template: |
+                    _format_version: '2.1'
+                    _transform: true
+
+                    consumers:
+                      - username: DASHBOARD
+                      - username: anon
+                        keyauth_credentials:
+                          - key: ${ANON_KEY}
+                      - username: service_role
+                        keyauth_credentials:
+                          - key: ${SERVICE_ROLE_KEY}
+
+                    acls:
+                      - consumer: anon
+                        group: anon
+                      - consumer: service_role
+                        group: admin
+
+                    basicauth_credentials:
+                    - consumer: DASHBOARD
+                      username: ${DASHBOARD_USERNAME}
+                      password: ${DASHBOARD_PASSWORD}
+
+                    services:
+
+                      ## Open Auth routes
+                      - name: auth-v1-open
+                        url: http://auth:9999/verify
+                        routes:
+                          - name: auth-v1-open
+                            strip_path: true
+                            paths:
+                              - /auth/v1/verify
+                        plugins:
+                          - name: cors
+                      - name: auth-v1-open-callback
+                        url: http://auth:9999/callback
+                        routes:
+                          - name: auth-v1-open-callback
+                            strip_path: true
+                            paths:
+                              - /auth/v1/callback
+                        plugins:
+                          - name: cors
+                      - name: auth-v1-open-authorize
+                        url: http://auth:9999/authorize
+                        routes:
+                          - name: auth-v1-open-authorize
+                            strip_path: true
+                            paths:
+                              - /auth/v1/authorize
+                        plugins:
+                          - name: cors
+
+                      ## Secure Auth routes
+                      - name: auth-v1
+                        _comment: 'GoTrue: /auth/v1/* -> http://auth:9999/*'
+                        url: http://auth:9999/
+                        routes:
+                          - name: auth-v1-all
+                            strip_path: true
+                            paths:
+                              - /auth/v1/
+                        plugins:
+                          - name: cors
+                          - name: key-auth
+                            config:
+                              hide_credentials: false
+                          - name: acl
+                            config:
+                              hide_groups_header: true
+                              allow:
+                                - admin
+                                - anon
+
+                      ## Secure REST routes
+                      - name: rest-v1
+                        _comment: 'PostgREST: /rest/v1/* -> http://rest:3000/*'
+                        url: http://rest:3000/
+                        routes:
+                          - name: rest-v1-all
+                            strip_path: true
+                            paths:
+                              - /rest/v1/
+                        plugins:
+                          - name: cors
+                          - name: key-auth
+                            config:
+                              hide_credentials: true
+                          - name: acl
+                            config:
+                              hide_groups_header: true
+                              allow:
+                                - admin
+                                - anon
+
+                      ## Secure GraphQL routes
+                      - name: graphql-v1
+                        _comment: 'PostgREST: /graphql/v1/* -> http://rest:3000/rpc/graphql'
+                        url: http://rest:3000/rpc/graphql
+                        routes:
+                          - name: graphql-v1-all
+                            strip_path: true
+                            paths:
+                              - /graphql/v1
+                        plugins:
+                          - name: cors
+                          - name: key-auth
+                            config:
+                              hide_credentials: true
+                          - name: request-transformer
+                            config:
+                              add:
+                                headers:
+                                  - Content-Profile:graphql_public
+                          - name: acl
+                            config:
+                              hide_groups_header: true
+                              allow:
+                                - admin
+                                - anon
+
+                      ## Secure Realtime routes
+                      - name: realtime-v1-ws
+                        _comment: 'Realtime: /realtime/v1/* -> ws://realtime:4000/socket/*'
+                        url: http://realtime-dev:4000/socket
+                        protocol: ws
+                        routes:
+                          - name: realtime-v1-ws
+                            strip_path: true
+                            paths:
+                              - /realtime/v1/
+                        plugins:
+                          - name: cors
+                          - name: key-auth
+                            config:
+                              hide_credentials: false
+                          - name: acl
+                            config:
+                              hide_groups_header: true
+                              allow:
+                                - admin
+                                - anon
+                      - name: realtime-v1-rest
+                        _comment: 'Realtime: /realtime/v1/* -> http://realtime:4000/api/*'
+                        url: http://realtime-dev:4000/api
+                        protocol: http
+                        routes:
+                          - name: realtime-v1-rest
+                            strip_path: true
+                            paths:
+                              - /realtime/v1/api
+                        plugins:
+                          - name: cors
+                          - name: key-auth
+                            config:
+                              hide_credentials: false
+                          - name: acl
+                            config:
+                              hide_groups_header: true
+                              allow:
+                                - admin
+                                - anon
+
+                      ## Storage routes: the storage server manages its own auth
+                      - name: storage-v1
+                        _comment: 'Storage: /storage/v1/* -> http://storage:5000/*'
+                        url: http://storage:5000/
+                        routes:
+                          - name: storage-v1-all
+                            strip_path: true
+                            paths:
+                              - /storage/v1/
+                        plugins:
+                          - name: cors
+                          - name: request-transformer
+                            config:
+                              add:
+                                headers:
+                                  - 'Forwarded: host=\$(headers.host)/storage/v1;proto=https'
+
+                      ## Secure Database routes
+                      - name: meta
+                        _comment: 'pg-meta: /pg/* -> http://meta:8080/*'
+                        url: http://meta:8080/
+                        routes:
+                          - name: meta-all
+                            strip_path: true
+                            paths:
+                              - /pg/
+                        plugins:
+                          - name: key-auth
+                            config:
+                              hide_credentials: false
+                          - name: acl
+                            config:
+                              hide_groups_header: true
+                              allow:
+                                - admin
+
+                      ## Protected Dashboard - catch all remaining routes
+                      - name: dashboard
+                        _comment: 'Studio: /* -> http://studio:3000/*'
+                        url: http://studio:3000/
+                        routes:
+                          - name: dashboard-all
+                            strip_path: true
+                            paths:
+                              - /
+                        plugins:
+                          - name: cors
+                          - name: basic-auth
+                            config:
+                              hide_credentials: true
+                  permission: null
+                  envsubst: true
+          domainKey: PUBLIC_DOMAIN
+        - name: studio
+          icon: https://icons.zeabur.com/supabase.png
+          template: PREBUILT
+          spec:
+            source:
+                image: supabase/studio:2025.05.19-sha-3487831
+            ports:
+                - id: web
+                  port: 3000
+                  type: HTTP
+            env:
+                DEFAULT_ORGANIZATION_NAME:
+                    default: Default Organization
+                DEFAULT_PROJECT_NAME:
+                    default: Default Project
+                HOSTNAME:
+                    default: 0.0.0.0
+                NEXT_ANALYTICS_BACKEND_PROVIDER:
+                    default: postgres
+                NEXT_PUBLIC_ENABLE_LOGS:
+                    default: "true"
+                PUBLIC_DOMAIN: {}
+                STUDIO_PG_META_URL:
+                    default: http://meta:8080
+                SUPABASE_ANON_KEY:
+                    default: ${ANON_KEY}
+                SUPABASE_PUBLIC_URL:
+                    default: https://${SUPABASE_PUBLIC_DOMAIN}
+                SUPABASE_SERVICE_KEY:
+                    default: ${SERVICE_ROLE_KEY}
+                SUPABASE_URL:
+                    default: http://kong:8000
+        - name: postgresql
+          icon: https://icons.zeabur.com/supabase.png
+          template: PREBUILT
+          spec:
+            source:
+                image: supabase/postgres:15.8.1.060
+            ports:
+                - id: database
+                  port: 5432
+                  type: TCP
+            volumes:
+                - id: data
+                  dir: /var/lib/postgresql
+            instructions:
+                - title: Connection String
+                  content: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DB}
+                - title: PostgreSQL Connect Command
+                  content: psql "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DB}"
+                - title: PostgreSQL username
+                  content: ${POSTGRES_USERNAME}
+                - title: PostgresSQL password
+                  content: ${POSTGRES_PASSWORD}
+                - title: PostgresSQL database
+                  content: ${POSTGRES_DB}
+                - title: PostgreSQL host
+                  content: ${PORT_FORWARDED_HOSTNAME}
+                - title: PostgreSQL port
+                  content: ${DATABASE_PORT_FORWARDED_PORT}
+            env:
+                JWT_EXP:
+                    default: "3600"
+                    expose: true
+                JWT_SECRET:
+                    default: your-super-secret-jwt-token-with-at-least-32-characters-long
+                    expose: true
+                PGDATABASE:
+                    default: postgres
+                PGPASSWORD:
+                    default: ${POSTGRES_PASSWORD}
+                PGPORT:
+                    default: "5432"
+                POSTGRES_DB:
+                    default: ${PGDATABASE}
+                    expose: true
+                POSTGRES_HOST:
+                    default: /var/run/postgresql
+                POSTGRES_PASSWORD:
+                    default: ${PASSWORD}
+                    expose: true
+                POSTGRES_PORT:
+                    default: "5432"
+                    expose: true
+                POSTGRES_USERNAME:
+                    default: supabase_admin
+                    expose: true
+            configs:
+                - path: /docker-entrypoint-initdb.d/migrations/99-realtime.sql
+                  template: |
+                    create schema if not exists _realtime;
+                    alter schema _realtime owner to postgres;
+                  permission: null
+                  envsubst: null
+                - path: /docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql
+                  template: |
+                    BEGIN;
+                      -- Create pg_net extension
+                      CREATE EXTENSION IF NOT EXISTS pg_net SCHEMA extensions;
+                      -- Create supabase_functions schema
+                      CREATE SCHEMA supabase_functions AUTHORIZATION supabase_admin;
+                      GRANT USAGE ON SCHEMA supabase_functions TO postgres, anon, authenticated, service_role;
+                      ALTER DEFAULT PRIVILEGES IN SCHEMA supabase_functions GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
+                      ALTER DEFAULT PRIVILEGES IN SCHEMA supabase_functions GRANT ALL ON FUNCTIONS TO postgres, anon, authenticated, service_role;
+                      ALTER DEFAULT PRIVILEGES IN SCHEMA supabase_functions GRANT ALL ON SEQUENCES TO postgres, anon, authenticated, service_role;
+                      -- supabase_functions.migrations definition
+                      CREATE TABLE supabase_functions.migrations (
+                        version text PRIMARY KEY,
+                        inserted_at timestamptz NOT NULL DEFAULT NOW()
+                      );
+                      -- Initial supabase_functions migration
+                      INSERT INTO supabase_functions.migrations (version) VALUES ('initial');
+                      -- supabase_functions.hooks definition
+                      CREATE TABLE supabase_functions.hooks (
+                        id bigserial PRIMARY KEY,
+                        hook_table_id integer NOT NULL,
+                        hook_name text NOT NULL,
+                        created_at timestamptz NOT NULL DEFAULT NOW(),
+                        request_id bigint
+                      );
+                      CREATE INDEX supabase_functions_hooks_request_id_idx ON supabase_functions.hooks USING btree (request_id);
+                      CREATE INDEX supabase_functions_hooks_h_table_id_h_name_idx ON supabase_functions.hooks USING btree (hook_table_id, hook_name);
+                      COMMENT ON TABLE supabase_functions.hooks IS 'Supabase Functions Hooks: Audit trail for triggered hooks.';
+                      CREATE FUNCTION supabase_functions.http_request()
+                        RETURNS trigger
+                        LANGUAGE plpgsql
+                        AS $function$
+                        DECLARE
+                          request_id bigint;
+                          payload jsonb;
+                          url text := TG_ARGV[0]::text;
+                          method text := TG_ARGV[1]::text;
+                          headers jsonb DEFAULT '{}'::jsonb;
+                          params jsonb DEFAULT '{}'::jsonb;
+                          timeout_ms integer DEFAULT 1000;
+                        BEGIN
+                          IF url IS NULL OR url = 'null' THEN
+                            RAISE EXCEPTION 'url argument is missing';
+                          END IF;
+
+                          IF method IS NULL OR method = 'null' THEN
+                            RAISE EXCEPTION 'method argument is missing';
+                          END IF;
+
+                          IF TG_ARGV[2] IS NULL OR TG_ARGV[2] = 'null' THEN
+                            headers = '{"Content-Type": "application/json"}'::jsonb;
+                          ELSE
+                            headers = TG_ARGV[2]::jsonb;
+                          END IF;
+
+                          IF TG_ARGV[3] IS NULL OR TG_ARGV[3] = 'null' THEN
+                            params = '{}'::jsonb;
+                          ELSE
+                            params = TG_ARGV[3]::jsonb;
+                          END IF;
+
+                          IF TG_ARGV[4] IS NULL OR TG_ARGV[4] = 'null' THEN
+                            timeout_ms = 1000;
+                          ELSE
+                            timeout_ms = TG_ARGV[4]::integer;
+                          END IF;
+
+                          CASE
+                            WHEN method = 'GET' THEN
+                              SELECT http_get INTO request_id FROM net.http_get(
+                                url,
+                                params,
+                                headers,
+                                timeout_ms
+                              );
+                            WHEN method = 'POST' THEN
+                              payload = jsonb_build_object(
+                                'old_record', OLD,
+                                'record', NEW,
+                                'type', TG_OP,
+                                'table', TG_TABLE_NAME,
+                                'schema', TG_TABLE_SCHEMA
+                              );
+
+                              SELECT http_post INTO request_id FROM net.http_post(
+                                url,
+                                payload,
+                                params,
+                                headers,
+                                timeout_ms
+                              );
+                            ELSE
+                              RAISE EXCEPTION 'method argument % is invalid', method;
+                          END CASE;
+
+                          INSERT INTO supabase_functions.hooks
+                            (hook_table_id, hook_name, request_id)
+                          VALUES
+                            (TG_RELID, TG_NAME, request_id);
+
+                          RETURN NEW;
+                        END
+                      $function$;
+                      -- Supabase super admin
+                      DO
+                      $$
+                      BEGIN
+                        IF NOT EXISTS (
+                          SELECT 1
+                          FROM pg_roles
+                          WHERE rolname = 'supabase_functions_admin'
+                        )
+                        THEN
+                          CREATE USER supabase_functions_admin NOINHERIT CREATEROLE LOGIN NOREPLICATION;
+                        END IF;
+                      END
+                      $$;
+                      GRANT ALL PRIVILEGES ON SCHEMA supabase_functions TO supabase_functions_admin;
+                      GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA supabase_functions TO supabase_functions_admin;
+                      GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA supabase_functions TO supabase_functions_admin;
+                      ALTER USER supabase_functions_admin SET search_path = "supabase_functions";
+                      ALTER table "supabase_functions".migrations OWNER TO supabase_functions_admin;
+                      ALTER table "supabase_functions".hooks OWNER TO supabase_functions_admin;
+                      ALTER function "supabase_functions".http_request() OWNER TO supabase_functions_admin;
+                      GRANT supabase_functions_admin TO postgres;
+                      -- Remove unused supabase_pg_net_admin role
+                      DO
+                      $$
+                      BEGIN
+                        IF EXISTS (
+                          SELECT 1
+                          FROM pg_roles
+                          WHERE rolname = 'supabase_pg_net_admin'
+                        )
+                        THEN
+                          REASSIGN OWNED BY supabase_pg_net_admin TO supabase_admin;
+                          DROP OWNED BY supabase_pg_net_admin;
+                          DROP ROLE supabase_pg_net_admin;
+                        END IF;
+                      END
+                      $$;
+                      -- pg_net grants when extension is already enabled
+                      DO
+                      $$
+                      BEGIN
+                        IF EXISTS (
+                          SELECT 1
+                          FROM pg_extension
+                          WHERE extname = 'pg_net'
+                        )
+                        THEN
+                          GRANT USAGE ON SCHEMA net TO supabase_functions_admin, postgres, anon, authenticated, service_role;
+                          ALTER function net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) SECURITY DEFINER;
+                          ALTER function net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) SECURITY DEFINER;
+                          ALTER function net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) SET search_path = net;
+                          ALTER function net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) SET search_path = net;
+                          REVOKE ALL ON FUNCTION net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) FROM PUBLIC;
+                          REVOKE ALL ON FUNCTION net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) FROM PUBLIC;
+                          GRANT EXECUTE ON FUNCTION net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) TO supabase_functions_admin, postgres, anon, authenticated, service_role;
+                          GRANT EXECUTE ON FUNCTION net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) TO supabase_functions_admin, postgres, anon, authenticated, service_role;
+                        END IF;
+                      END
+                      $$;
+                      -- Event trigger for pg_net
+                      CREATE OR REPLACE FUNCTION extensions.grant_pg_net_access()
+                      RETURNS event_trigger
+                      LANGUAGE plpgsql
+                      AS $$
+                      BEGIN
+                        IF EXISTS (
+                          SELECT 1
+                          FROM pg_event_trigger_ddl_commands() AS ev
+                          JOIN pg_extension AS ext
+                          ON ev.objid = ext.oid
+                          WHERE ext.extname = 'pg_net'
+                        )
+                        THEN
+                          GRANT USAGE ON SCHEMA net TO supabase_functions_admin, postgres, anon, authenticated, service_role;
+                          ALTER function net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) SECURITY DEFINER;
+                          ALTER function net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) SECURITY DEFINER;
+                          ALTER function net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) SET search_path = net;
+                          ALTER function net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) SET search_path = net;
+                          REVOKE ALL ON FUNCTION net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) FROM PUBLIC;
+                          REVOKE ALL ON FUNCTION net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) FROM PUBLIC;
+                          GRANT EXECUTE ON FUNCTION net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) TO supabase_functions_admin, postgres, anon, authenticated, service_role;
+                          GRANT EXECUTE ON FUNCTION net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) TO supabase_functions_admin, postgres, anon, authenticated, service_role;
+                        END IF;
+                      END;
+                      $$;
+                      COMMENT ON FUNCTION extensions.grant_pg_net_access IS 'Grants access to pg_net';
+                      DO
+                      $$
+                      BEGIN
+                        IF NOT EXISTS (
+                          SELECT 1
+                          FROM pg_event_trigger
+                          WHERE evtname = 'issue_pg_net_access'
+                        ) THEN
+                          CREATE EVENT TRIGGER issue_pg_net_access ON ddl_command_end WHEN TAG IN ('CREATE EXTENSION')
+                          EXECUTE PROCEDURE extensions.grant_pg_net_access();
+                        END IF;
+                      END
+                      $$;
+                      INSERT INTO supabase_functions.migrations (version) VALUES ('20210809183423_update_grants');
+                      ALTER function supabase_functions.http_request() SECURITY DEFINER;
+                      ALTER function supabase_functions.http_request() SET search_path = supabase_functions;
+                      REVOKE ALL ON FUNCTION supabase_functions.http_request() FROM PUBLIC;
+                      GRANT EXECUTE ON FUNCTION supabase_functions.http_request() TO postgres, anon, authenticated, service_role;
+                    COMMIT;
+                  permission: null
+                  envsubst: null
+                - path: /docker-entrypoint-initdb.d/init-scripts/99-roles.sql
+                  template: |
+                    \set pgpass `echo "$POSTGRES_PASSWORD"`
+
+                    ALTER USER authenticator WITH PASSWORD :'pgpass';
+                    ALTER USER pgbouncer WITH PASSWORD :'pgpass';
+                    ALTER USER supabase_auth_admin WITH PASSWORD :'pgpass';
+                    ALTER USER supabase_functions_admin WITH PASSWORD :'pgpass';
+                    ALTER USER supabase_storage_admin WITH PASSWORD :'pgpass';
+                  permission: null
+                  envsubst: null
+                - path: /docker-entrypoint-initdb.d/init-scripts/99-jwt.sql
+                  template: |
+                    \set jwt_secret `echo "$JWT_SECRET"`
+                    \set jwt_exp `echo "$JWT_EXP"`
+
+                    ALTER DATABASE postgres SET "app.settings.jwt_secret" TO :'jwt_secret';
+                    ALTER DATABASE postgres SET "app.settings.jwt_exp" TO :'jwt_exp';
+                  permission: null
+                  envsubst: null
+                - path: /docker-entrypoint-initdb.d/migrations/99-logs.sql
+                  template: |
+                    \set pguser `echo "$POSTGRES_USER"`
+                    \c _supabase
+                    create schema if not exists _analytics;
+                    alter schema _analytics owner to postgres;
+                    \c postgres
+                  permission: null
+                  envsubst: null
+                - path: /docker-entrypoint-initdb.d/migrations/99-pooler.sql
+                  template: |
+                    \set pguser `echo "$POSTGRES_USER"`
+                    \c _supabase
+                    create schema if not exists _supavisor;
+                    alter schema _supavisor owner to :pguser;
+                    \c postgres
+                  permission: null
+                  envsubst: null
+                - path: /docker-entrypoint-initdb.d/migrations/97-_supabase.sql
+                  template: |
+                    \set pguser `echo "$POSTGRES_USER"`
+                    CREATE DATABASE _supabase WITH OWNER :pguser;
+                  permission: null
+                  envsubst: null
+        - name: meta
+          icon: https://icons.zeabur.com/supabase.png
+          dependencies:
+            - postgresql
+          template: PREBUILT
+          spec:
+            source:
+                image: supabase/postgres-meta:v0.89.0
+            ports:
+                - id: web
+                  port: 8080
+                  type: HTTP
+            env:
+                PG_META_DB_HOST:
+                    default: postgresql
+                PG_META_DB_NAME:
+                    default: ${POSTGRES_DB}
+                PG_META_DB_PASSWORD:
+                    default: ${POSTGRES_PASSWORD}
+                PG_META_DB_PORT:
+                    default: "5432"
+                PG_META_DB_USER:
+                    default: ${POSTGRES_USERNAME}
+                PG_META_PORT:
+                    default: "8080"
+        - name: rest
+          icon: https://icons.zeabur.com/supabase.png
+          template: PREBUILT
+          spec:
+            source:
+                image: postgrest/postgrest:v12.2.12
+            ports:
+                - id: web
+                  port: 3000
+                  type: HTTP
+            env:
+                PGRST_APP_SETTINGS_JWT_EXP:
+                    default: ${JWT_EXP}
+                PGRST_APP_SETTINGS_JWT_SECRET:
+                    default: ${JWT_SECRET}
+                PGRST_DB_ANON_ROLE:
+                    default: anon
+                PGRST_DB_SCHEMAS:
+                    default: public,storage,graphql_public
+                PGRST_DB_URI:
+                    default: postgres://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@postgresql:5432/${POSTGRES_DB}
+                PGRST_DB_USE_LEGACY_GUCS:
+                    default: "false"
+                PGRST_JWT_SECRET:
+                    default: ${JWT_SECRET}
+        - name: auth
+          icon: https://icons.zeabur.com/supabase.png
+          dependencies:
+            - postgresql
+          template: PREBUILT
+          spec:
+            source:
+                image: supabase/gotrue:v2.172.1
+            ports:
+                - id: web
+                  port: 9999
+                  type: HTTP
+            env:
+                API_EXTERNAL_URL:
+                    default: https://${SUPABASE_PUBLIC_DOMAIN}
+                GOTRUE_API_HOST:
+                    default: 0.0.0.0
+                GOTRUE_API_PORT:
+                    default: "9999"
+                GOTRUE_DB_DATABASE_URL:
+                    default: postgres://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@postgresql:5432/${POSTGRES_DB}?sslmode=disable&options=-csearch_path=auth
+                GOTRUE_DB_DRIVER:
+                    default: postgres
+                GOTRUE_DISABLE_SIGNUP:
+                    default: "false"
+                GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED:
+                    default: "false"
+                GOTRUE_EXTERNAL_EMAIL_ENABLED:
+                    default: "true"
+                GOTRUE_EXTERNAL_PHONE_ENABLED:
+                    default: "false"
+                GOTRUE_JWT_ADMIN_ROLES:
+                    default: service_role
+                GOTRUE_JWT_AUD:
+                    default: authenticated
+                GOTRUE_JWT_DEFAULT_GROUP_NAME:
+                    default: authenticated
+                GOTRUE_JWT_EXP:
+                    default: "3600"
+                GOTRUE_JWT_SECRET:
+                    default: your-super-secret-jwt-token-with-at-least-32-characters-long
+                GOTRUE_MAILER_AUTOCONFIRM:
+                    default: "false"
+                GOTRUE_MAILER_URLPATHS_CONFIRMATION:
+                    default: /auth/v1/verify
+                GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE:
+                    default: /auth/v1/verify
+                GOTRUE_MAILER_URLPATHS_INVITE:
+                    default: /auth/v1/verify
+                GOTRUE_MAILER_URLPATHS_RECOVERY:
+                    default: /auth/v1/verify
+                GOTRUE_SITE_URL:
+                    default: http://auth:9999
+                GOTRUE_SMS_AUTOCONFIRM:
+                    default: "false"
+                GOTRUE_SMTP_ADMIN_EMAIL:
+                    default: admin@example.com
+                GOTRUE_SMTP_HOST:
+                    default: smtp.resend.com
+                GOTRUE_SMTP_PASS:
+                    default: fake_mail_password
+                GOTRUE_SMTP_PORT:
+                    default: "25"
+                GOTRUE_SMTP_SENDER_NAME:
+                    default: fake_sender
+                GOTRUE_SMTP_USER:
+                    default: fake_mail_user
+                GOTRUE_URI_ALLOW_LIST:
+                    default: ""
+                PUBLIC_DOMAIN: {}
+        - name: imgproxy
+          icon: https://icons.zeabur.com/supabase.png
+          template: PREBUILT
+          spec:
+            source:
+                image: darthsim/imgproxy:v3.8.0
+            ports:
+                - id: web
+                  port: 5001
+                  type: HTTP
+            env:
+                IMGPROXY_BIND:
+                    default: :5001
+                IMGPROXY_ENABLE_WEBP_DETECTION:
+                    default: "true"
+                IMGPROXY_LOCAL_FILESYSTEM_ROOT:
+                    default: /
+                IMGPROXY_USE_ETAG:
+                    default: "true"
+        - name: minio
+          icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/minio.svg
+          template: PREBUILT
+          spec:
+            source:
+                image: quay.io/minio/minio:latest
+                command:
+                    - /bin/sh
+                args:
+                    - -c
+                    - |
+                      minio server /data --console-address :9090 &
+                      MINIO_PID=$!
+                      while ! curl -s http://localhost:9000/minio/health/live; do
+                        echo 'Waiting for MinIO to start...'
+                        sleep 1
+                      done
+                      sleep 5
+                      mc alias set myminio http://localhost:9000 $MINIO_USERNAME $MINIO_PASSWORD
+                      echo "Creating bucket '$MINIO_DEFAULT_BUCKET'"
+                      mc mb myminio/$MINIO_DEFAULT_BUCKET
+                      wait $MINIO_PID
+            ports:
+                - id: web
+                  port: 9000
+                  type: HTTP
+                - id: console
+                  port: 9090
+                  type: HTTP
+            volumes:
+                - id: data
+                  dir: /data
+            instructions:
+                - title: Go to MinIO Console
+                  content: ${MINIO_CONSOLE_URL}
+                - title: MinIO Username
+                  content: ${MINIO_USERNAME}
+                - title: MinIO Password
+                  content: ${MINIO_PASSWORD}
+            env:
+                MINIO_BROWSER_REDIRECT:
+                    default: "false"
+                MINIO_CONSOLE_URL:
+                    default: ${ZEABUR_CONSOLE_URL}
+                    expose: true
+                MINIO_DEFAULT_BUCKET:
+                    default: stub
+                    expose: true
+                MINIO_PASSWORD:
+                    default: ${MINIO_ROOT_PASSWORD}
+                    expose: true
+                MINIO_ROOT_PASSWORD:
+                    default: ${PASSWORD}
+                MINIO_ROOT_USER:
+                    default: minio
+                MINIO_USERNAME:
+                    default: ${MINIO_ROOT_USER}
+                    expose: true
+        - name: storage
+          icon: https://icons.zeabur.com/supabase.png
+          dependencies:
+            - postgresql
+            - imgproxy
+          template: PREBUILT
+          spec:
+            source:
+                image: supabase/storage-api:v1.22.17
+            ports:
+                - id: web
+                  port: 5000
+                  type: HTTP
+            env:
+                ANON_KEY:
+                    default: ${ANON_KEY}
+                AWS_ACCESS_KEY_ID:
+                    default: ${MINIO_USERNAME}
+                AWS_DEFAULT_REGION:
+                    default: stub
+                AWS_SECRET_ACCESS_KEY:
+                    default: ${MINIO_PASSWORD}
+                DATABASE_URL:
+                    default: postgres://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@postgresql:5432/${POSTGRES_DB}
+                ENABLE_IMAGE_TRANSFORMATION:
+                    default: "true"
+                FILE_SIZE_LIMIT:
+                    default: "52428800"
+                FILE_STORAGE_BACKEND_PATH:
+                    default: /var/lib/storage
+                GLOBAL_S3_BUCKET:
+                    default: ${MINIO_DEFAULT_BUCKET}
+                GLOBAL_S3_ENDPOINT:
+                    default: http://minio:9000
+                GLOBAL_S3_FORCE_PATH_STYLE:
+                    default: "true"
+                GLOBAL_S3_PROTOCOL:
+                    default: http
+                IMGPROXY_URL:
+                    default: http://imgproxy:5001
+                PGRST_JWT_SECRET:
+                    default: ${JWT_SECRET}
+                POSTGREST_URL:
+                    default: http://rest:3000
+                REGION:
+                    default: stub
+                SERVICE_KEY:
+                    default: ${SERVICE_ROLE_KEY}
+                STORAGE_BACKEND:
+                    default: s3
+                TENANT_ID:
+                    default: stub
+        - name: realtime-dev
+          icon: https://icons.zeabur.com/supabase.png
+          dependencies:
+            - postgresql
+          template: PREBUILT
+          spec:
+            source:
+                image: supabase/realtime:v2.34.47
+            ports:
+                - id: web
+                  port: 4000
+                  type: HTTP
+            instructions:
+                - title: Database Encryption Key
+                  content: ${DB_ENC_KEY}
+            env:
+                API_JWT_SECRET:
+                    default: ${JWT_SECRET}
+                APP_NAME:
+                    default: realtime
+                DB_AFTER_CONNECT_QUERY:
+                    default: SET search_path TO _realtime
+                DB_ENC_KEY:
+                    default: lqL2YbZwp5ByGnof
+                DB_HOST:
+                    default: postgresql
+                DB_NAME:
+                    default: ${POSTGRES_DB}
+                DB_PASSWORD:
+                    default: ${POSTGRES_PASSWORD}
+                DB_PORT:
+                    default: "5432"
+                DB_USER:
+                    default: ${POSTGRES_USERNAME}
+                DNS_NODES:
+                    default: ''''''
+                ENABLE_TAILSCALE:
+                    default: "false"
+                ERL_AFLAGS:
+                    default: -proto_dist inet_tcp
+                PORT:
+                    default: "4000"
+                RLIMIT_NOFILE:
+                    default: "65536"
+                RUN_JANITOR:
+                    default: "true"
+                SECRET_KEY_BASE:
+                    default: ${PASSWORD}
+                SEED_SELF_HOST:
+                    default: "true"

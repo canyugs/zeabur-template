@@ -2,7 +2,7 @@
 apiVersion: zeabur.com/v1
 kind: Template
 metadata:
-  name: Supabase (Zeabur Self-hosted)
+  name: Supabase
 spec:
   description: An open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
   coverImage: https://miro.medium.com/v2/resize:fit:1200/1*KllQKJSGK5QruqT8kIElEA.png
@@ -27,93 +27,13 @@ spec:
     This is a demo of Supabase for Zeabur Self-hosted.
     You can use this template to deploy a Supabase instance on Zeabur.
 
-    ## Development Status
+    ## Services
 
-    > ⚠️ **This template is currently in active development.**
-    > Some services may not be fully functional yet. See the status table below for details.
+    This Supabase instance includes **Kong** (API Gateway), **Studio** (Supabase Studio), **PostgreSQL** (Database), **Meta** (Postgres Meta), **REST** (PostgREST), **Auth** (GoTrue), **Supavisor** (Connection Pooler), **Realtime** (Database Change Subscriptions), **Storage** (Storage API), **MinIO** (Object Storage), **ImgProxy** (Image Processing), **Functions** (Edge Functions), **Vector** (Log Aggregation), and **Analytics** (Logflare).
 
-    | Service | Status | Notes |
-    |---------|--------|-------|
-    | PostgreSQL | ✅ Working | Core database fully functional |
-    | Kong | ✅ Working | API Gateway operational |
-    | Studio | ✅ Working | Dashboard accessible |
-    | Auth | ✅ Working | Authentication flows working |
-    | REST | ✅ Working | PostgREST API functional |
-    | Meta | ✅ Working | Database metadata API operational |
-    | Vector | ✅ Working | Log collection operational |
-    | Analytics | ✅ Working | Logflare integration working |
-    | JWT/Keys | ✅ Working | Custom JWT secrets supported |
-    | Realtime | ⚠️ Testing | May be unstable, needs more testing |
-    | Storage | 🚧 In Progress | Not fully tested yet |
-    | Supavisor | 🚧 In Progress | Connection pooler needs testing |
-    | Functions | 🚧 Beta | Edge functions not fully tested |
+    For detailed architecture information, visit the [official Supabase architecture documentation](https://supabase.com/docs/guides/self-hosting/docker#architecture).
 
-    **Legend:**
-    - ✅ Working - Fully tested and operational
-    - ⚠️ Testing - Functional but may have issues
-    - 🚧 In Progress - Under development/testing
-
-    ## Services Overview
-
-    ### Core Services (Required)
-
-    1. **postgresql** - PostgreSQL Database
-       - The core database for Supabase, stores all application data
-       - ⚠️ Required - Cannot be removed
-
-    2. **kong** - API Gateway
-       - Unified API entry point, handles routing, authentication, and rate limiting
-       - ⚠️ Required - Cannot be removed
-
-    3. **studio** - Supabase Dashboard
-       - Web-based admin interface for managing database, auth, storage, etc.
-       - ⚠️ Required - Highly recommended for management
-
-    4. **auth** - GoTrue Authentication
-       - Handles user registration, login, OAuth, and authentication flows
-       - ⚠️ Required - Unless using external authentication system
-
-    5. **rest** - PostgREST API
-       - Automatically converts PostgreSQL database to RESTful API
-       - ⚠️ Required - Cannot be removed
-
-    6. **meta** - Postgres Meta API
-       - Provides database metadata API, used by Studio
-       - ⚠️ Required - Studio depends on this
-
-    ### Optional Services
-
-    7. **vector** - Log Aggregation
-       - Collects and forwards service logs to Analytics
-       - ✅ Optional - Can be removed if log analysis is not needed
-
-    8. **analytics** - Logflare Analytics
-       - Log analysis and query service
-       - ✅ Optional - Can be removed if log analysis is not needed (remove vector too)
-
-    9. **storage** - File Storage
-       - File upload, storage, and management service
-       - ✅ Optional - Can be removed if file storage is not needed
-       - ⚠️ Status: Not fully tested yet
-
-    10. **imgproxy** - Image Transformation
-        - Image conversion and optimization service (for Storage)
-        - ✅ Optional - Can be removed if storage is removed
-
-    11. **realtime** - Real-time Subscriptions
-        - Provides real-time database change subscriptions
-        - ✅ Optional - Can be removed if real-time features are not needed
-        - ⚠️ Status: May be unstable
-
-    12. **functions** - Edge Functions
-        - Serverless function execution environment (similar to AWS Lambda)
-        - ✅ Optional - Can be removed if edge functions are not needed
-        - ⚠️ Status: Beta, not fully tested
-
-    13. **supavisor** - Connection Pooler
-        - PostgreSQL connection pool manager, improves database connection performance
-        - ✅ Optional - Can be removed for small projects
-        - ⚠️ Status: Not fully tested yet
+    If you need additional Supabase services, feel free to implement them according to [the upstream `docker-compose.yaml` file](https://github.com/supabase/supabase/blob/master/docker/docker-compose.yml) and submit your changes to [our Discord server](https://zeabur.com/dc). This applies to our [Contribution Reward Program](https://zeabur.com/docs/en-US/billing/reward).
 
     ## Getting Started
 
@@ -142,7 +62,9 @@ spec:
 
     **How to Generate Secure Keys:**
     1. Visit the [Supabase JWT Generator](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
-    2. Generate new `ANON_KEY` and `SERVICE_ROLE_KEY` using your custom `JWT_SECRET`
+    2. Generate new keys using your custom `JWT_SECRET`:
+       - Generate `anon` key → use as `ANON_KEY`
+       - Generate `service_role` key (shown as `SERVICE_KEY` on the website) → use as `SERVICE_ROLE_KEY`
     3. Update the environment variables in the Kong service
     4. Restart all services to apply changes:
        - Go to your **Project** → **Settings** → **General**
@@ -153,6 +75,141 @@ spec:
     While we provided you with some example secrets for getting started, you should NEVER deploy your Supabase setup using the defaults we have provided. Follow all of the steps in this section to ensure you have a secure setup, and then restart all services to pick up the changes.
 
     [Official Guide](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
+
+    ## Configuration
+
+    ### Add Google OAuth support
+
+    Add the following environment variables to the `auth` service:
+
+    - `GOTRUE_EXTERNAL_GOOGLE_ENABLED=true`
+    - `GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID=xxxxxxxx`
+    - `GOTRUE_EXTERNAL_GOOGLE_SECRET=yyyyyyyy`
+    - `GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI=https://supabase.zeabur.app/auth/v1/callback`
+
+    Update `supabase.zeabur.app` to your public domain, for example: `supabase.example.com`.
+
+    You can find the client ID and secret in the Google Cloud Console.
+
+    Then, restart your `auth` service.
+
+    ### Add Apple OAuth support
+
+    Add the following environment variables to the `auth` service:
+
+    - `GOTRUE_EXTERNAL_APPLE_ENABLED=true`
+    - `GOTRUE_EXTERNAL_APPLE_CLIENT_ID=xxxxxxxx`
+    - `GOTRUE_EXTERNAL_APPLE_SECRET=yyyyyyyy`
+    - `GOTRUE_EXTERNAL_APPLE_REDIRECT_URI=https://supabase.zeabur.app/auth/v1/callback`
+
+    Update `supabase.zeabur.app` to your public domain, for example: `supabase.example.com`.
+
+    You can find the client ID and secret in the Apple Developer Console.
+
+    Then, restart your `auth` service.
+
+    ### Configure SMTP Email Service (Resend Integration)
+
+    To enable email functionality in Supabase (user verification, password reset, etc.), configure SMTP settings using Resend as the email service provider.
+
+    #### Step 1: Resend Setup (Email Service Provider)
+
+    **Domain Verification:**
+    1. Verify your domain (e.g., `mail.yourdomain.com`) in Resend
+    2. Configure DNS records (TXT, CNAME, SPF, MX) as provided by Resend
+    3. Ensure verification status shows "Verified"
+
+    **Sender Email Setup:**
+    1. Configure sender email address: `noreply@mail.yourdomain.com`
+    2. Obtain your Resend API key from the dashboard
+
+    #### Step 2: Supabase Auth SMTP Configuration
+
+    Add the following environment variables to the `auth` service:
+
+    - `GOTRUE_SMTP_HOST=smtp.resend.com` - SMTP server host
+    - `GOTRUE_SMTP_PORT=587` - Use STARTTLS port
+    - `GOTRUE_SMTP_USER=resend` (or leave blank) - Resend doesn't validate username, only API key
+    - `GOTRUE_SMTP_PASS=re_xxx` - Your Resend API Key
+    - `GOTRUE_SMTP_ADMIN_EMAIL=noreply@mail.yourdomain.com` - Admin sender email
+    - `GOTRUE_SMTP_SENDER_NAME=Your App Name` - Display name for emails
+    - `GOTRUE_SITE_URL=https://yourdomain.zeabur.app` - Determines the domain for verification links in emails
+
+    #### Step 3: Zeabur Environment Configuration
+
+    1. Navigate to your Zeabur project
+    2. Go to Service > Auth > Variables
+    3. Add all the SMTP variables listed above
+    4. Restart the `auth` service to apply changes
+
+    #### Step 4: Testing Email Functionality
+
+    **Manual Testing:**
+    ```bash
+    curl -X POST "https://yourdomain.zeabur.app/auth/v1/signup" \
+      -H "Content-Type: application/json" \
+      -H "apikey: YOUR_ANON_KEY" \
+      -d '{
+        "email": "test@example.com",
+        "password": "yourpassword"
+      }'
+    ```
+
+    **Expected Results:**
+    - Verification email sent successfully
+    - Email delivered to recipient (check spam folder initially)
+    - Supabase Auth handles registration verification and password reset emails automatically
+
+    #### Troubleshooting Notes
+
+    - **SPF/DKIM Issues:** Ensure all DNS settings match Resend's requirements to prevent email rejection
+    - **Redirect URI Mismatch:** Make sure `GOTRUE_SITE_URL` matches your actual deployed domain
+    - **Email Delivery:** Initial emails may go to spam; proper DNS configuration improves deliverability
+    - **API Key Security:** Store Resend API key securely in environment variables, never in code
+
+    #### Additional Features (Optional)
+
+    For advanced email customization, you can configure:
+    - Custom email templates
+    - Delivery report webhooks
+    - BIMI (Brand Indicators for Message Identification) settings
+    - Rate limiting and frequency controls
+
+    ### Advanced Auth Configuration (Optional)
+
+    Add these environment variables to the `auth` service for advanced features:
+
+    **Custom Access Token Hook:**
+    - `GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_ENABLED=true`
+    - `GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_URI=pg-functions://postgres/public/custom_access_token_hook`
+    - `GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_SECRETS=<your-base64-secret>`
+
+    **MFA Verification Hook:**
+    - `GOTRUE_HOOK_MFA_VERIFICATION_ATTEMPT_ENABLED=true`
+    - `GOTRUE_HOOK_MFA_VERIFICATION_ATTEMPT_URI=pg-functions://postgres/public/mfa_verification_attempt`
+
+    **Password Verification Hook:**
+    - `GOTRUE_HOOK_PASSWORD_VERIFICATION_ATTEMPT_ENABLED=true`
+    - `GOTRUE_HOOK_PASSWORD_VERIFICATION_ATTEMPT_URI=pg-functions://postgres/public/password_verification_attempt`
+
+    **Custom SMS Hook:**
+    - `GOTRUE_HOOK_SEND_SMS_ENABLED=true`
+    - `GOTRUE_HOOK_SEND_SMS_URI=pg-functions://postgres/public/custom_sms_hook`
+    - `GOTRUE_HOOK_SEND_SMS_SECRETS=v1,whsec_<your-secret>`
+
+    **Custom Email Hook:**
+    - `GOTRUE_HOOK_SEND_EMAIL_ENABLED=true`
+    - `GOTRUE_HOOK_SEND_EMAIL_URI=http://host.docker.internal:54321/functions/v1/email_sender`
+    - `GOTRUE_HOOK_SEND_EMAIL_SECRETS=v1,whsec_<your-secret>`
+
+    **Other Options:**
+    - `GOTRUE_EXTERNAL_SKIP_NONCE_CHECK=true` (for mobile Google Sign In)
+    - `GOTRUE_MAILER_SECURE_EMAIL_CHANGE_ENABLED=true`
+    - `GOTRUE_SMTP_MAX_FREQUENCY=1s`
+
+    **Studio SQL Assistant:**
+    Add to `studio` service:
+    - `OPENAI_API_KEY=your-openai-api-key`
 
   services:
     - name: imgproxy
@@ -221,13 +278,13 @@ spec:
                   inputs:
                     - project_logs
                   route:
-                    kong: '.appname == "supabase-kong"'
-                    auth: '.appname == "supabase-auth"'
-                    rest: '.appname == "supabase-rest"'
-                    realtime: '.appname == "supabase-realtime"'
-                    storage: '.appname == "supabase-storage"'
-                    functions: '.appname == "supabase-edge-functions"'
-                    db: '.appname == "supabase-db"'
+                    kong: '.appname == "kong"'
+                    auth: '.appname == "auth"'
+                    rest: '.appname == "rest"'
+                    realtime-dev: '.appname == "realtime-dev"'
+                    storage: '.appname == "storage"'
+                    functions: '.appname == "functions"'
+                    db: '.appname == "postgresql"'
                 # Ignores non nginx errors since they are related with kong booting up
                 kong_logs:
                   type: remap
@@ -299,7 +356,7 @@ spec:
                 realtime_logs:
                   type: remap
                   inputs:
-                    - router.realtime
+                    - router.realtime-dev
                   source: |-
                     .metadata.project = del(.project)
                     .metadata.external_id = .metadata.project
@@ -449,9 +506,6 @@ spec:
         #   LOGFLARE_PUBLIC_ACCESS_TOKEN:
         #     default: ${LOGFLARE_PUBLIC_ACCESS_TOKEN}
 
-        command:
-          - --config
-          - /etc/vector/vector.yml
     - name: postgresql
       icon: https://icons.zeabur.com/supabase.png
       template: PREBUILT
@@ -834,16 +888,12 @@ spec:
             default: _analytics
           LOGFLARE_FEATURE_FLAG_OVERRIDE:
             default: multibackend=true
-          ANALYTICS_HOST:
-            default: ${CONTAINER_HOSTNAME}
-            expose: true
-            readonly: true
     - name: meta
       icon: https://icons.zeabur.com/supabase.png
       template: PREBUILT
       spec:
         source:
-          image: supabase/postgres-meta:v0.93.0
+          image: supabase/postgres-meta:v0.93.1
         ports:
           - id: web
             port: 8080
@@ -971,10 +1021,6 @@ spec:
             default: ${JWT_SECRET}
           PGRST_APP_SETTINGS_JWT_EXP:
             default: ${JWT_EXPIRY}
-          REST_HOST:
-            default: ${CONTAINER_HOSTNAME}
-            expose: true
-            readonly: true
         command:
           - postgrest
     - name: studio
@@ -982,7 +1028,7 @@ spec:
       template: PREBUILT
       spec:
         source:
-          image: supabase/studio:2025.10.20-sha-5005fc6
+          image: supabase/studio:2025.10.27-sha-85b84e0
         dependencies:
           - analytics
           - postgresql
@@ -1030,12 +1076,76 @@ spec:
             default: "true"
           NEXT_ANALYTICS_BACKEND_PROVIDER:
             default: postgres
+          NEXT_PUBLIC_IS_PLATFORM:
+            default: "false"
+          NEXT_PUBLIC_SITE_URL:
+            default: http://${SUPABASE_PUBLIC_DOMAIN}
+          NEXT_PUBLIC_API_URL:
+            default: http://kong:8000/api
+    - name: minio
+      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/minio.svg
+      template: PREBUILT
+      spec:
+        source:
+            image: quay.io/minio/minio:latest
+            command:
+                - /bin/sh
+            args:
+                - -c
+                - |
+                  minio server /data --console-address :9090 &
+                  MINIO_PID=$!
+                  while ! curl -s http://localhost:9000/minio/health/live; do
+                    echo 'Waiting for MinIO to start...'
+                    sleep 1
+                  done
+                  sleep 5
+                  mc alias set myminio http://localhost:9000 $MINIO_USERNAME $MINIO_PASSWORD
+                  echo "Creating bucket '$MINIO_DEFAULT_BUCKET'"
+                  mc mb myminio/$MINIO_DEFAULT_BUCKET
+                  wait $MINIO_PID
+        ports:
+            - id: web
+              port: 9000
+              type: HTTP
+            - id: console
+              port: 9090
+              type: HTTP
+        volumes:
+            - id: data
+              dir: /data
+        instructions:
+            - title: Go to MinIO Console
+              content: ${MINIO_CONSOLE_URL}
+            - title: MinIO Username
+              content: ${MINIO_USERNAME}
+            - title: MinIO Password
+              content: ${MINIO_PASSWORD}
+        env:
+            MINIO_BROWSER_REDIRECT:
+                default: "false"
+            MINIO_CONSOLE_URL:
+                default: ${ZEABUR_CONSOLE_URL}
+                expose: true
+            MINIO_DEFAULT_BUCKET:
+                default: stub
+                expose: true
+            MINIO_PASSWORD:
+                default: ${MINIO_ROOT_PASSWORD}
+                expose: true
+            MINIO_ROOT_PASSWORD:
+                default: ${PASSWORD}
+            MINIO_ROOT_USER:
+                default: minio
+            MINIO_USERNAME:
+                default: ${MINIO_ROOT_USER}
+                expose: true
     - name: storage
       icon: https://icons.zeabur.com/supabase.png
       template: PREBUILT
       spec:
         source:
-          image: supabase/storage-api:v1.28.1
+          image: supabase/storage-api:v1.28.2
         dependencies:
           - postgresql
           - rest
@@ -1061,19 +1171,31 @@ spec:
           FILE_SIZE_LIMIT:
             default: "52428800"
           STORAGE_BACKEND:
-            default: file
+            default: s3
           FILE_STORAGE_BACKEND_PATH:
             default: /var/lib/storage
-          TENANT_ID:
-            default: stub
-          REGION:
-            default: stub
+          AWS_ACCESS_KEY_ID:
+              default: ${MINIO_USERNAME}
+          AWS_DEFAULT_REGION:
+              default: stub
+          AWS_SECRET_ACCESS_KEY:
+              default: ${MINIO_PASSWORD}
           GLOBAL_S3_BUCKET:
-            default: stub
+              default: ${MINIO_DEFAULT_BUCKET}
+          GLOBAL_S3_ENDPOINT:
+              default: http://minio:9000
+          GLOBAL_S3_FORCE_PATH_STYLE:
+              default: "true"
+          GLOBAL_S3_PROTOCOL:
+              default: http
           ENABLE_IMAGE_TRANSFORMATION:
             default: "true"
           IMGPROXY_URL:
             default: http://imgproxy:5001
+          TENANT_ID:
+            default: stub
+          REGION:
+            default: stub
     - name: kong
       icon: https://icons.zeabur.com/kong.svg
       template: PREBUILT
@@ -1230,8 +1352,8 @@ spec:
 
                 ## Secure Realtime routes
                 - name: realtime-v1-ws
-                  _comment: 'Realtime: /realtime/v1/* -> ws://realtime:4000/socket/*'
-                  url: http://realtime:4000/socket
+                  _comment: 'Realtime: /realtime/v1/* -> ws://realtime-dev:4000/socket/*'
+                  url: http://realtime-dev:4000/socket
                   protocol: ws
                   routes:
                     - name: realtime-v1-ws
@@ -1250,8 +1372,8 @@ spec:
                           - admin
                           - anon
                 - name: realtime-v1-rest
-                  _comment: 'Realtime: /realtime/v1/* -> ws://realtime:4000/socket/*'
-                  url: http://realtime:4000/api
+                  _comment: 'Realtime: /realtime/v1/* -> ws://realtime-dev:4000/socket/*'
+                  url: http://realtime-dev:4000/api
                   protocol: http
                   routes:
                     - name: realtime-v1-rest
@@ -1302,7 +1424,6 @@ spec:
                       strip_path: true
                       paths:
                         - /analytics/v1/
-
                 ## Secure Database routes
                 - name: meta
                   _comment: 'pg-meta: /pg/* -> http://pg-meta:8080/*'
@@ -1321,6 +1442,47 @@ spec:
                         hide_groups_header: true
                         allow:
                           - admin
+                ## Block access to /api/mcp
+                - name: mcp-blocker
+                  _comment: 'Block direct access to /api/mcp'
+                  url: http://studio:3000/api/mcp
+                  routes:
+                    - name: mcp-blocker-route
+                      strip_path: true
+                      paths:
+                        - /api/mcp
+                  plugins:
+                    - name: request-termination
+                      config:
+                        status_code: 403
+                        message: "Access is forbidden."
+
+                ## MCP endpoint - local access
+                - name: mcp
+                  _comment: 'MCP: /mcp -> http://studio:3000/api/mcp (local access)'
+                  url: http://studio:3000/api/mcp
+                  routes:
+                    - name: mcp
+                      strip_path: true
+                      paths:
+                        - /mcp
+                  plugins:
+                    # Block access to /mcp by default
+                    - name: request-termination
+                      config:
+                        status_code: 403
+                        message: "Access is forbidden."
+                    # Enable local access (danger zone!)
+                    # 1. Comment out the 'request-termination' section above
+                    # 2. Uncomment the entire section below, including 'deny'
+                    # 3. Add your local IPs to the 'allow' list
+                    #- name: cors
+                    #- name: ip-restriction
+                    #  config:
+                    #    allow:
+                    #      - 127.0.0.1
+                    #      - ::1
+                    #    deny: []
 
                 ## Protected Dashboard - catch all remaining routes
                 - name: dashboard
@@ -1365,7 +1527,7 @@ spec:
           KONG_DNS_ORDER:
             default: LAST,A,CNAME
           KONG_PLUGINS:
-            default: request-transformer,cors,key-auth,acl,basic-auth
+            default: request-transformer,cors,key-auth,acl,basic-auth,request-termination,ip-restriction
           KONG_NGINX_WORKER_PROCESSES:
             default: "1"
           KONG_NGINX_PROXY_PROXY_BUFFER_SIZE:
@@ -1379,13 +1541,12 @@ spec:
           SUPABASE_PUBLIC_DOMAIN:
             default: ${ZEABUR_WEB_DOMAIN}
             expose: true
-
-    - name: realtime
+    - name: realtime-dev
       icon: https://icons.zeabur.com/supabase.png
       template: PREBUILT
       spec:
         source:
-          image: supabase/realtime:v2.56.0
+          image: supabase/realtime:v2.57.2
         dependencies:
           - postgresql
           - analytics
@@ -1422,15 +1583,11 @@ spec:
           RLIMIT_NOFILE:
             default: "10000"
           APP_NAME:
-            default: realtime
+            default: realtime-dev
           SEED_SELF_HOST:
             default: "true"
           RUN_JANITOR:
             default: "true"
-          REALTIME_HOST:
-            default: ${CONTAINER_HOSTNAME}
-            expose: true
-            readonly: true
     - name: supavisor
       icon: https://icons.zeabur.com/supabase.png
       template: PREBUILT
@@ -1529,7 +1686,12 @@ spec:
       template: PREBUILT
       spec:
         source:
-          image: supabase/edge-runtime:v1.69.14
+          image: supabase/edge-runtime:v1.69.15
+          command:
+            - edge-runtime
+            - start
+            - --main-service
+            - /home/deno/functions/main
         dependencies:
           - postgresql    
         ports:
@@ -1673,14 +1835,6 @@ spec:
           # TODO: Allow configuring VERIFY_JWT per function. This PR might help: https://github.com/supabase/cli/pull/786
           VERIFY_JWT:
             default: "false"
-          FUNCTIONS_HOST:
-            default: ${CONTAINER_HOSTNAME}
-            expose: true
-            readonly: true
-        command:
-          - start
-          - --main-service
-          - /home/deno/functions/main
 
 localization:
   zh-TW:
@@ -1700,93 +1854,13 @@ localization:
       這是 Supabase 在 Zeabur 上的自架版範例。
       你可以使用這個模板在 Zeabur 上部署 Supabase 實例。
 
-      ## 開發狀態
+      ## 服務
 
-      > ⚠️ **此模板目前正在積極開發中。**
-      > 某些服務可能尚未完全正常運作。詳情請參閱下方狀態表。
+      此 Supabase 實例包含 **Kong**（API 閘道）、**Studio**（Supabase Studio）、**PostgreSQL**（資料庫）、**Meta**（Postgres Meta）、**REST**（PostgREST）、**Auth**（GoTrue）、**Supavisor**（連線池）、**Realtime**（資料庫變更訂閱）、**Storage**（儲存 API）、**MinIO**（物件儲存）、**ImgProxy**（圖片處理）、**Functions**（Edge Functions）、**Vector**（日誌聚合）和 **Analytics**（Logflare）。
 
-      | 服務 | 狀態 | 備註 |
-      |---------|--------|-------|
-      | PostgreSQL | ✅ 正常運作 | 核心資料庫完全正常 |
-      | Kong | ✅ 正常運作 | API 閘道運作中 |
-      | Studio | ✅ 正常運作 | 儀表板可存取 |
-      | Auth | ✅ 正常運作 | 身份驗證流程運作中 |
-      | REST | ✅ 正常運作 | PostgREST API 正常 |
-      | Meta | ✅ 正常運作 | 資料庫元數據 API 運作中 |
-      | Vector | ✅ 正常運作 | 日誌收集運作中 |
-      | Analytics | ✅ 正常運作 | Logflare 整合運作中 |
-      | JWT/Keys | ✅ 正常運作 | 支援自訂 JWT 密鑰 |
-      | Realtime | ⚠️ 測試中 | 可能不穩定，需要更多測試 |
-      | Storage | 🚧 開發中 | 尚未完全測試 |
-      | Supavisor | 🚧 開發中 | 連線池需要測試 |
-      | Functions | 🚧 Beta | 邊緣函數尚未完全測試 |
+      詳細架構資訊請參考[官方 Supabase 架構文件](https://supabase.com/docs/guides/self-hosting/docker#architecture)。
 
-      **圖例：**
-      - ✅ 正常運作 - 已完全測試且可運作
-      - ⚠️ 測試中 - 功能可用但可能有問題
-      - 🚧 開發中 - 正在開發/測試中
-
-      ## 服務概覽
-
-      ### 核心服務（必要）
-
-      1. **postgresql** - PostgreSQL 資料庫
-         - Supabase 的核心資料庫，儲存所有應用程式資料
-         - ⚠️ 必要 - 無法移除
-
-      2. **kong** - API 閘道
-         - 統一的 API 入口，處理路由、身份驗證和速率限制
-         - ⚠️ 必要 - 無法移除
-
-      3. **studio** - Supabase 儀表板
-         - 網頁管理介面，用於管理資料庫、身份驗證、儲存等
-         - ⚠️ 必要 - 強烈建議保留以便管理
-
-      4. **auth** - GoTrue 身份驗證
-         - 處理使用者註冊、登入、OAuth 和身份驗證流程
-         - ⚠️ 必要 - 除非使用外部身份驗證系統
-
-      5. **rest** - PostgREST API
-         - 自動將 PostgreSQL 資料庫轉換為 RESTful API
-         - ⚠️ 必要 - 無法移除
-
-      6. **meta** - Postgres Meta API
-         - 提供資料庫元數據 API，供 Studio 使用
-         - ⚠️ 必要 - Studio 依賴此服務
-
-      ### 可選服務
-
-      7. **vector** - 日誌聚合
-         - 收集並轉發服務日誌到 Analytics
-         - ✅ 可選 - 如不需要日誌分析可移除
-
-      8. **analytics** - Logflare 分析
-         - 日誌分析和查詢服務
-         - ✅ 可選 - 如不需要日誌分析可移除（也需移除 vector）
-
-      9. **storage** - 檔案儲存
-         - 檔案上傳、儲存和管理服務
-         - ✅ 可選 - 如不需要檔案儲存功能可移除
-         - ⚠️ 狀態：尚未完全測試
-
-      10. **imgproxy** - 圖片轉換
-          - 圖片轉換和優化服務（用於 Storage）
-          - ✅ 可選 - 如移除 storage 則可一併移除
-
-      11. **realtime** - 即時訂閱
-          - 提供資料庫變更的即時訂閱功能
-          - ✅ 可選 - 如不需要即時功能可移除
-          - ⚠️ 狀態：可能不穩定
-
-      12. **functions** - 邊緣函數
-          - Serverless 函數執行環境（類似 AWS Lambda）
-          - ✅ 可選 - 如不需要邊緣函數可移除
-          - ⚠️ 狀態：Beta 階段，尚未完全測試
-
-      13. **supavisor** - 連線池
-          - PostgreSQL 連線池管理器，提升資料庫連線效能
-          - ✅ 可選 - 小型專案可移除
-          - ⚠️ 狀態：尚未完全測試
+      如果你需要額外的 Supabase 服務，歡迎根據[上游 `docker-compose.yaml` 檔案](https://github.com/supabase/supabase/blob/master/docker/docker-compose.yml)實作，並將你的變更提交到[我們的 Discord 伺服器](https://zeabur.com/dc)。這適用於我們的[貢獻獎勵計畫](https://zeabur.com/docs/zh-TW/billing/reward)。
 
       ## 開始使用
 
@@ -1815,7 +1889,9 @@ localization:
 
       **如何生成安全密鑰：**
       1. 訪問 [Supabase JWT 生成器](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
-      2. 使用你的自訂 `JWT_SECRET` 生成新的 `ANON_KEY` 和 `SERVICE_ROLE_KEY`
+      2. 使用你的自訂 `JWT_SECRET` 生成新的密鑰：
+         - 生成 `anon` 密鑰 → 作為 `ANON_KEY` 使用
+         - 生成 `service_role` 密鑰（網站上顯示為 `SERVICE_KEY`）→ 作為 `SERVICE_ROLE_KEY` 使用
       3. 在 Kong 服務中更新環境變數
       4. 重啟所有服務以套用變更：
          - 進入你的 **專案** → **設定** → **一般設定**
@@ -1827,6 +1903,141 @@ localization:
       雖然我們提供了一些範例密鑰以便快速開始，但你絕對不應該使用我們提供的預設值來部署 Supabase。請依照本節中的所有步驟確保你有安全的設定，然後重啟所有服務以套用變更。
 
       [官方指南](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
+
+      ## 配置
+
+      ### 新增 Google OAuth 支援
+
+      在 `auth` 服務中新增以下環境變數：
+
+      - `GOTRUE_EXTERNAL_GOOGLE_ENABLED=true`
+      - `GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID=xxxxxxxx`
+      - `GOTRUE_EXTERNAL_GOOGLE_SECRET=yyyyyyyy`
+      - `GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI=https://supabase.zeabur.app/auth/v1/callback`
+
+      將 `supabase.zeabur.app` 更新為你的公開網域，例如：`supabase.example.com`。
+
+      你可以在 Google Cloud Console 中找到客戶端 ID 和密鑰。
+
+      然後，重啟你的 `auth` 服務。
+
+      ### 新增 Apple OAuth 支援
+
+      在 `auth` 服務中新增以下環境變數：
+
+      - `GOTRUE_EXTERNAL_APPLE_ENABLED=true`
+      - `GOTRUE_EXTERNAL_APPLE_CLIENT_ID=xxxxxxxx`
+      - `GOTRUE_EXTERNAL_APPLE_SECRET=yyyyyyyy`
+      - `GOTRUE_EXTERNAL_APPLE_REDIRECT_URI=https://supabase.zeabur.app/auth/v1/callback`
+
+      將 `supabase.zeabur.app` 更新為你的公開網域，例如：`supabase.example.com`。
+
+      你可以在 Apple Developer Console 中找到客戶端 ID 和密鑰。
+
+      然後，重啟你的 `auth` 服務。
+
+      ### 配置 SMTP 電子郵件服務（Resend 整合）
+
+      要在 Supabase 中啟用電子郵件功能（使用者驗證、密碼重設等），請使用 Resend 作為電子郵件服務提供商配置 SMTP 設定。
+
+      #### 步驟 1：Resend 設定（電子郵件服務提供商）
+
+      **網域驗證：**
+      1. 在 Resend 中驗證你的網域（例如：`mail.yourdomain.com`）
+      2. 依照 Resend 提供的設定 DNS 記錄（TXT、CNAME、SPF、MX）
+      3. 確保驗證狀態顯示「已驗證」
+
+      **寄件者電子郵件設定：**
+      1. 配置寄件者電子郵件地址：`noreply@mail.yourdomain.com`
+      2. 從儀表板取得你的 Resend API 金鑰
+
+      #### 步驟 2：Supabase Auth SMTP 配置
+
+      在 `auth` 服務中新增以下環境變數：
+
+      - `GOTRUE_SMTP_HOST=smtp.resend.com` - SMTP 伺服器主機
+      - `GOTRUE_SMTP_PORT=587` - 使用 STARTTLS 埠號
+      - `GOTRUE_SMTP_USER=resend`（或留空）- Resend 不驗證使用者名稱，只驗證 API 金鑰
+      - `GOTRUE_SMTP_PASS=re_xxx` - 你的 Resend API 金鑰
+      - `GOTRUE_SMTP_ADMIN_EMAIL=noreply@mail.yourdomain.com` - 管理員寄件者電子郵件
+      - `GOTRUE_SMTP_SENDER_NAME=Your App Name` - 電子郵件的顯示名稱
+      - `GOTRUE_SITE_URL=https://yourdomain.zeabur.app` - 決定電子郵件中驗證連結的網域
+
+      #### 步驟 3：Zeabur 環境配置
+
+      1. 前往你的 Zeabur 專案
+      2. 前往 Service > Auth > Variables
+      3. 新增上述所有 SMTP 變數
+      4. 重啟 `auth` 服務以套用變更
+
+      #### 步驟 4：測試電子郵件功能
+
+      **手動測試：**
+      ```bash
+      curl -X POST "https://yourdomain.zeabur.app/auth/v1/signup" \
+        -H "Content-Type: application/json" \
+        -H "apikey: YOUR_ANON_KEY" \
+        -d '{
+          "email": "test@example.com",
+          "password": "yourpassword"
+        }'
+      ```
+
+      **預期結果：**
+      - 驗證電子郵件成功傳送
+      - 電子郵件送達收件者（最初請檢查垃圾郵件資料夾）
+      - Supabase Auth 自動處理註冊驗證和密碼重設電子郵件
+
+      #### 疑難排解注意事項
+
+      - **SPF/DKIM 問題：** 確保所有 DNS 設定符合 Resend 的要求，以防止電子郵件被拒絕
+      - **重新導向 URI 不符：** 確保 `GOTRUE_SITE_URL` 符合你實際部署的網域
+      - **電子郵件送達：** 初始電子郵件可能會進入垃圾郵件；適當的 DNS 配置可提高送達率
+      - **API 金鑰安全性：** 將 Resend API 金鑰安全地儲存在環境變數中，切勿在程式碼中
+
+      #### 其他功能（可選）
+
+      對於進階電子郵件自訂，你可以配置：
+      - 自訂電子郵件範本
+      - 傳遞報告 webhook
+      - BIMI（訊息識別品牌指標）設定
+      - 速率限制和頻率控制
+
+      ### 進階 Auth 配置（可選）
+
+      在 `auth` 服務中新增這些環境變數以啟用進階功能：
+
+      **自訂存取令牌掛鉤：**
+      - `GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_ENABLED=true`
+      - `GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_URI=pg-functions://postgres/public/custom_access_token_hook`
+      - `GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_SECRETS=<your-base64-secret>`
+
+      **MFA 驗證掛鉤：**
+      - `GOTRUE_HOOK_MFA_VERIFICATION_ATTEMPT_ENABLED=true`
+      - `GOTRUE_HOOK_MFA_VERIFICATION_ATTEMPT_URI=pg-functions://postgres/public/mfa_verification_attempt`
+
+      **密碼驗證掛鉤：**
+      - `GOTRUE_HOOK_PASSWORD_VERIFICATION_ATTEMPT_ENABLED=true`
+      - `GOTRUE_HOOK_PASSWORD_VERIFICATION_ATTEMPT_URI=pg-functions://postgres/public/password_verification_attempt`
+
+      **自訂 SMS 掛鉤：**
+      - `GOTRUE_HOOK_SEND_SMS_ENABLED=true`
+      - `GOTRUE_HOOK_SEND_SMS_URI=pg-functions://postgres/public/custom_sms_hook`
+      - `GOTRUE_HOOK_SEND_SMS_SECRETS=v1,whsec_<your-secret>`
+
+      **自訂電子郵件掛鉤：**
+      - `GOTRUE_HOOK_SEND_EMAIL_ENABLED=true`
+      - `GOTRUE_HOOK_SEND_EMAIL_URI=http://host.docker.internal:54321/functions/v1/email_sender`
+      - `GOTRUE_HOOK_SEND_EMAIL_SECRETS=v1,whsec_<your-secret>`
+
+      **其他選項：**
+      - `GOTRUE_EXTERNAL_SKIP_NONCE_CHECK=true`（用於行動裝置 Google 登入）
+      - `GOTRUE_MAILER_SECURE_EMAIL_CHANGE_ENABLED=true`
+      - `GOTRUE_SMTP_MAX_FREQUENCY=1s`
+
+      **Studio SQL 助手：**
+      新增至 `studio` 服務：
+      - `OPENAI_API_KEY=your-openai-api-key`
 
   zh-CN:
     description: 开源的 Firebase 替代方案。我们使用企业级开源工具来构建 Firebase 的功能。
@@ -1845,93 +2056,13 @@ localization:
       这是 Supabase 在 Zeabur 上的自托管版示例。
       你可以使用这个模板在 Zeabur 上部署 Supabase 实例。
 
-      ## 开发状态
+      ## 服务
 
-      > ⚠️ **此模板目前正在积极开发中。**
-      > 某些服务可能尚未完全正常运作。详情请参阅下方状态表。
+      此 Supabase 实例包含 **Kong**（API 网关）、**Studio**（Supabase Studio）、**PostgreSQL**（数据库）、**Meta**（Postgres Meta）、**REST**（PostgREST）、**Auth**（GoTrue）、**Supavisor**（连接池）、**Realtime**（数据库变更订阅）、**Storage**（存储 API）、**MinIO**（对象存储）、**ImgProxy**（图片处理）、**Functions**（Edge Functions）、**Vector**（日志聚合）和 **Analytics**（Logflare）。
 
-      | 服务 | 状态 | 备注 |
-      |---------|--------|-------|
-      | PostgreSQL | ✅ 正常运作 | 核心数据库完全正常 |
-      | Kong | ✅ 正常运作 | API 网关运作中 |
-      | Studio | ✅ 正常运作 | 仪表板可访问 |
-      | Auth | ✅ 正常运作 | 身份验证流程运作中 |
-      | REST | ✅ 正常运作 | PostgREST API 正常 |
-      | Meta | ✅ 正常运作 | 数据库元数据 API 运作中 |
-      | Vector | ✅ 正常运作 | 日志收集运作中 |
-      | Analytics | ✅ 正常运作 | Logflare 集成运作中 |
-      | JWT/Keys | ✅ 正常运作 | 支持自定义 JWT 密钥 |
-      | Realtime | ⚠️ 测试中 | 可能不稳定，需要更多测试 |
-      | Storage | 🚧 开发中 | 尚未完全测试 |
-      | Supavisor | 🚧 开发中 | 连接池需要测试 |
-      | Functions | 🚧 Beta | 边缘函数尚未完全测试 |
+      详细架构信息请参考[官方 Supabase 架构文档](https://supabase.com/docs/guides/self-hosting/docker#architecture)。
 
-      **图例：**
-      - ✅ 正常运作 - 已完全测试且可运作
-      - ⚠️ 测试中 - 功能可用但可能有问题
-      - 🚧 开发中 - 正在开发/测试中
-
-      ## 服务概览
-
-      ### 核心服务（必要）
-
-      1. **postgresql** - PostgreSQL 数据库
-         - Supabase 的核心数据库，存储所有应用程序数据
-         - ⚠️ 必要 - 无法移除
-
-      2. **kong** - API 网关
-         - 统一的 API 入口，处理路由、身份验证和速率限制
-         - ⚠️ 必要 - 无法移除
-
-      3. **studio** - Supabase 仪表板
-         - 网页管理界面，用于管理数据库、身份验证、存储等
-         - ⚠️ 必要 - 强烈建议保留以便管理
-
-      4. **auth** - GoTrue 身份验证
-         - 处理用户注册、登录、OAuth 和身份验证流程
-         - ⚠️ 必要 - 除非使用外部身份验证系统
-
-      5. **rest** - PostgREST API
-         - 自动将 PostgreSQL 数据库转换为 RESTful API
-         - ⚠️ 必要 - 无法移除
-
-      6. **meta** - Postgres Meta API
-         - 提供数据库元数据 API，供 Studio 使用
-         - ⚠️ 必要 - Studio 依赖此服务
-
-      ### 可选服务
-
-      7. **vector** - 日志聚合
-         - 收集并转发服务日志到 Analytics
-         - ✅ 可选 - 如不需要日志分析可移除
-
-      8. **analytics** - Logflare 分析
-         - 日志分析和查询服务
-         - ✅ 可选 - 如不需要日志分析可移除（也需移除 vector）
-
-      9. **storage** - 文件存储
-         - 文件上传、存储和管理服务
-         - ✅ 可选 - 如不需要文件存储功能可移除
-         - ⚠️ 状态：尚未完全测试
-
-      10. **imgproxy** - 图片转换
-          - 图片转换和优化服务（用于 Storage）
-          - ✅ 可选 - 如移除 storage 则可一并移除
-
-      11. **realtime** - 实时订阅
-          - 提供数据库变更的实时订阅功能
-          - ✅ 可选 - 如不需要实时功能可移除
-          - ⚠️ 状态：可能不稳定
-
-      12. **functions** - 边缘函数
-          - Serverless 函数执行环境（类似 AWS Lambda）
-          - ✅ 可选 - 如不需要边缘函数可移除
-          - ⚠️ 状态：Beta 阶段，尚未完全测试
-
-      13. **supavisor** - 连接池
-          - PostgreSQL 连接池管理器，提升数据库连接性能
-          - ✅ 可选 - 小型项目可移除
-          - ⚠️ 状态：尚未完全测试
+      如果你需要额外的 Supabase 服务，欢迎根据[上游 `docker-compose.yaml` 文件](https://github.com/supabase/supabase/blob/master/docker/docker-compose.yml)实现，并将你的更改提交到[我们的 Discord 服务器](https://zeabur.com/dc)。这适用于我们的[贡献奖励计划](https://zeabur.com/docs/zh-CN/billing/reward)。
 
       ## 开始使用
 
@@ -1960,7 +2091,9 @@ localization:
 
       **如何生成安全密钥：**
       1. 访问 [Supabase JWT 生成器](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
-      2. 使用你的自定义 `JWT_SECRET` 生成新的 `ANON_KEY` 和 `SERVICE_ROLE_KEY`
+      2. 使用你的自定义 `JWT_SECRET` 生成新的密钥：
+         - 生成 `anon` 密钥 → 作为 `ANON_KEY` 使用
+         - 生成 `service_role` 密钥（网站上显示为 `SERVICE_KEY`）→ 作为 `SERVICE_ROLE_KEY` 使用
       3. 在 Kong 服务中更新环境变量
       4. 重启所有服务以应用更改：
          - 进入你的 **项目** → **设置** → **常规设置**
@@ -1973,140 +2106,91 @@ localization:
 
       [官方指南](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
 
+      ## 配置
+
+      ### 添加 Google OAuth 支持
+
+      在 `auth` 服务中添加以下环境变量：`GOTRUE_EXTERNAL_GOOGLE_ENABLED=true`、`GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID`、`GOTRUE_EXTERNAL_GOOGLE_SECRET`、`GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI`。将域名更新为你的公开域名。
+
+      ### 添加 Apple OAuth 支持
+
+      在 `auth` 服务中添加以下环境变量：`GOTRUE_EXTERNAL_APPLE_ENABLED=true`、`GOTRUE_EXTERNAL_APPLE_CLIENT_ID`、`GOTRUE_EXTERNAL_APPLE_SECRET`、`GOTRUE_EXTERNAL_APPLE_REDIRECT_URI`。
+
+      ### 配置 SMTP 邮件服务（Resend 集成）
+
+      要启用邮件功能（用户验证、密码重置等），使用 Resend 配置 SMTP 设置：
+
+      **Resend 设置：**
+      1. 在 Resend 中验证你的域名（如 `mail.yourdomain.com`）
+      2. 配置 DNS 记录（TXT、CNAME、SPF、MX）
+      3. 获取 Resend API 密钥
+
+      **Auth 服务 SMTP 配置：**
+      在 `auth` 服务中添加：`GOTRUE_SMTP_HOST=smtp.resend.com`、`GOTRUE_SMTP_PORT=587`、`GOTRUE_SMTP_PASS=re_xxx`（你的 Resend API 密钥）、`GOTRUE_SMTP_ADMIN_EMAIL`、`GOTRUE_SMTP_SENDER_NAME`、`GOTRUE_SITE_URL`。
+
+      ### 高级 Auth 配置（可选）
+
+      支持自定义访问令牌钩子、MFA 验证钩子、密码验证钩子、自定义 SMS/Email 钩子等。在 `auth` 服务中添加相应的 `GOTRUE_HOOK_*` 环境变量。
+
+      **Studio SQL 助手：**
+      在 `studio` 服务中添加：`OPENAI_API_KEY=your-openai-api-key`
+
   ja-JP:
-    description: オープンソースのFirebase代替。エンタープライズグレードのオープンソースツールを使用してFirebaseの機能を構築しています。
+    description: オープンソースの Firebase 代替。エンタープライズグレードのオープンソースツールを使用して Firebase の機能を構築しています。
     variables:
       - key: DASHBOARD_USERNAME
         type: STRING
         name: ダッシュボードユーザー名
-        description: Supabaseダッシュボードに使用するユーザー名は何ですか？
+        description: Supabase ダッシュボードに使用するユーザー名は何ですか？
       - key: PUBLIC_DOMAIN
         type: DOMAIN
         name: ドメイン
-        description: Supabaseに使用するドメインは何ですか？
+        description: Supabase に使用するドメインは何ですか？
     readme: |
       # Supabase Zeabur セルフホスティング版
 
-      これはZeabur上でのSupabaseセルフホスティング版のデモです。
-      このテンプレートを使用してZeabur上にSupabaseインスタンスをデプロイできます。
+      これは Zeabur 上での Supabase セルフホスティング版のデモです。
+      このテンプレートを使用して Zeabur 上に Supabase インスタンスをデプロイできます。
 
-      ## 開発状況
+      ## サービス
 
-      > ⚠️ **このテンプレートは現在積極的に開発中です。**
-      > 一部のサービスはまだ完全に機能していない可能性があります。詳細は以下のステータステーブルをご覧ください。
+      この Supabase インスタンスには、**Kong**（API ゲートウェイ）、**Studio**（Supabase Studio）、**PostgreSQL**（データベース）、**Meta**（Postgres Meta）、**REST**（PostgREST）、**Auth**（GoTrue）、**Supavisor**（コネクションプーラー）、**Realtime**（データベース変更サブスクリプション）、**Storage**（ストレージ API）、**MinIO**（オブジェクトストレージ）、**ImgProxy**（画像処理）、**Functions**（Edge Functions）、**Vector**（ログ集約）、**Analytics**（Logflare）が含まれています。
 
-      | サービス | ステータス | 備考 |
-      |---------|--------|-------|
-      | PostgreSQL | ✅ 動作中 | コアデータベースは完全に機能 |
-      | Kong | ✅ 動作中 | APIゲートウェイが動作中 |
-      | Studio | ✅ 動作中 | ダッシュボードにアクセス可能 |
-      | Auth | ✅ 動作中 | 認証フローが動作中 |
-      | REST | ✅ 動作中 | PostgREST APIが機能 |
-      | Meta | ✅ 動作中 | データベースメタデータAPIが動作中 |
-      | Vector | ✅ 動作中 | ログ収集が動作中 |
-      | Analytics | ✅ 動作中 | Logflare統合が動作中 |
-      | JWT/Keys | ✅ 動作中 | カスタムJWTシークレットをサポート |
-      | Realtime | ⚠️ テスト中 | 不安定な可能性があり、さらなるテストが必要 |
-      | Storage | 🚧 開発中 | まだ完全にテストされていません |
-      | Supavisor | 🚧 開発中 | コネクションプーラーのテストが必要 |
-      | Functions | 🚧 Beta | エッジ関数はまだ完全にテストされていません |
+      詳細なアーキテクチャ情報については、[公式 Supabase アーキテクチャドキュメント](https://supabase.com/docs/guides/self-hosting/docker#architecture)をご覧ください。
 
-      **凡例：**
-      - ✅ 動作中 - 完全にテスト済みで動作
-      - ⚠️ テスト中 - 機能しているが問題がある可能性
-      - 🚧 開発中 - 開発/テスト中
-
-      ## サービス概要
-
-      ### コアサービス（必須）
-
-      1. **postgresql** - PostgreSQLデータベース
-         - Supabaseのコアデータベース、すべてのアプリケーションデータを保存
-         - ⚠️ 必須 - 削除不可
-
-      2. **kong** - APIゲートウェイ
-         - 統一されたAPIエントリーポイント、ルーティング、認証、レート制限を処理
-         - ⚠️ 必須 - 削除不可
-
-      3. **studio** - Supabaseダッシュボード
-         - データベース、認証、ストレージなどを管理するためのWeb管理インターフェース
-         - ⚠️ 必須 - 管理のために維持することを強く推奨
-
-      4. **auth** - GoTrue認証
-         - ユーザー登録、ログイン、OAuth、認証フローを処理
-         - ⚠️ 必須 - 外部認証システムを使用しない限り
-
-      5. **rest** - PostgREST API
-         - PostgreSQLデータベースを自動的にRESTful APIに変換
-         - ⚠️ 必須 - 削除不可
-
-      6. **meta** - Postgres Meta API
-         - Studioで使用されるデータベースメタデータAPIを提供
-         - ⚠️ 必須 - Studioが依存
-
-      ### オプショナルサービス
-
-      7. **vector** - ログ集約
-         - サービスログを収集してAnalyticsに転送
-         - ✅ オプション - ログ分析が不要な場合は削除可能
-
-      8. **analytics** - Logflare分析
-         - ログ分析とクエリサービス
-         - ✅ オプション - ログ分析が不要な場合は削除可能（vectorも削除）
-
-      9. **storage** - ファイルストレージ
-         - ファイルのアップロード、保存、管理サービス
-         - ✅ オプション - ファイルストレージが不要な場合は削除可能
-         - ⚠️ ステータス：まだ完全にテストされていません
-
-      10. **imgproxy** - 画像変換
-          - 画像変換と最適化サービス（Storageで使用）
-          - ✅ オプション - storageを削除する場合は一緒に削除可能
-
-      11. **realtime** - リアルタイムサブスクリプション
-          - データベース変更のリアルタイムサブスクリプション機能を提供
-          - ✅ オプション - リアルタイム機能が不要な場合は削除可能
-          - ⚠️ ステータス：不安定な可能性
-
-      12. **functions** - エッジ関数
-          - サーバーレス関数実行環境（AWS Lambdaに類似）
-          - ✅ オプション - エッジ関数が不要な場合は削除可能
-          - ⚠️ ステータス：ベータ段階、まだ完全にテストされていません
-
-      13. **supavisor** - コネクションプーラー
-          - PostgreSQLコネクションプールマネージャー、データベース接続のパフォーマンスを向上
-          - ✅ オプション - 小規模プロジェクトでは削除可能
-          - ⚠️ ステータス：まだ完全にテストされていません
+      追加の Supabase サービスが必要な場合は、[上流の `docker-compose.yaml` ファイル](https://github.com/supabase/supabase/blob/master/docker/docker-compose.yml)に従って実装し、[Discord サーバー](https://zeabur.com/dc)に変更を提出してください。これは[貢献報酬プログラム](https://zeabur.com/docs/ja-JP/billing/reward)の対象となります。
 
       ## はじめに
 
       ### ダッシュボードへのアクセス
 
-      デプロイ後、設定したドメインでSupabase Studioダッシュボードが利用可能になります。
+      デプロイ後、設定したドメインで Supabase Studio ダッシュボードが利用可能になります。
 
       **認証情報の確認：**
-      1. Zeaburプロジェクトの **Kongサービス** に移動
+      1. Zeabur プロジェクトの **Kong サービス** に移動
       2. **Instructions（手順）** タブをクリック
       3. 以下が表示されます：
-         - **Supabase Username**：ダッシュボードのユーザー名（`DASHBOARD_USERNAME`変数から）
+         - **Supabase Username**：ダッシュボードのユーザー名（`DASHBOARD_USERNAME` 変数から）
          - **Supabase Password**：自動生成された安全なパスワード
 
       ### 重要なセキュリティキー
 
-      以下のキーは **Kongサービス** の環境変数で公開されています：
+      以下のキーは **Kong サービス** の環境変数で公開されています：
 
       | キー | 場所 | 説明 |
       |-----|----------|-------------|
-      | `JWT_SECRET` | Kongサービス | JWTトークンの署名用シークレット |
-      | `ANON_KEY` | Kongサービス | 匿名アクセス用のパブリックAPIキー |
-      | `SERVICE_ROLE_KEY` | Kongサービス | フルアクセス権限を持つ管理者APIキー |
+      | `JWT_SECRET` | Kong サービス | JWT トークンの署名用シークレット |
+      | `ANON_KEY` | Kong サービス | 匿名アクセス用のパブリック API キー |
+      | `SERVICE_ROLE_KEY` | Kong サービス | フルアクセス権限を持つ管理者 API キー |
 
       **⚠️ 重要**：デフォルトのキーはデモ用です。本番環境で使用する前に、新しいキーを生成**する必要があります**。
 
       **安全なキーの生成方法：**
-      1. [Supabase JWTジェネレーター](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)にアクセス
-      2. カスタムの`JWT_SECRET`を使用して新しい`ANON_KEY`と`SERVICE_ROLE_KEY`を生成
-      3. Kongサービスで環境変数を更新
+      1. [Supabase JWT ジェネレーター](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)にアクセス
+      2. カスタムの `JWT_SECRET` を使用して新しいキーを生成：
+         - `anon` キーを生成 → `ANON_KEY` として使用
+         - `service_role` キーを生成（Web サイトでは `SERVICE_KEY` と表示）→ `SERVICE_ROLE_KEY` として使用
+      3. Kong サービスで環境変数を更新
       4. すべてのサービスを再起動して変更を適用：
          - **プロジェクト** → **設定** → **一般** に移動
          - **バッチアクション** までスクロール
@@ -2114,9 +2198,30 @@ localization:
 
       ## サービスの保護
 
-      開始するためにいくつかのサンプルシークレットを提供していますが、提供されているデフォルトを使用してSupabaseセットアップをデプロイしてはいけません。このセクションのすべての手順に従って安全なセットアップを確保し、すべてのサービスを再起動して変更を適用してください。
+      開始するためにいくつかのサンプルシークレットを提供していますが、提供されているデフォルトを使用して Supabase セットアップをデプロイしてはいけません。このセクションのすべての手順に従って安全なセットアップを確保し、すべてのサービスを再起動して変更を適用してください。
 
       [公式ガイド](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
+
+      ## 設定
+
+      ### Google OAuth サポートの追加
+
+      `auth` サービスに環境変数を追加：`GOTRUE_EXTERNAL_GOOGLE_ENABLED=true`、`GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID`、`GOTRUE_EXTERNAL_GOOGLE_SECRET`、`GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI`。
+
+      ### Apple OAuth サポートの追加
+
+      `auth` サービスに環境変数を追加：`GOTRUE_EXTERNAL_APPLE_ENABLED=true`、`GOTRUE_EXTERNAL_APPLE_CLIENT_ID`、`GOTRUE_EXTERNAL_APPLE_SECRET`、`GOTRUE_EXTERNAL_APPLE_REDIRECT_URI`。
+
+      ### SMTP メールサービスの設定（Resend 統合）
+
+      メール機能を有効にするには、Resend を使用して SMTP 設定を構成します。`auth` サービスに `GOTRUE_SMTP_HOST=smtp.resend.com`、`GOTRUE_SMTP_PORT=587`、`GOTRUE_SMTP_PASS`（Resend API キー）、`GOTRUE_SMTP_ADMIN_EMAIL`、`GOTRUE_SMTP_SENDER_NAME`、`GOTRUE_SITE_URL` を追加します。
+
+      ### 高度な Auth 設定（オプション）
+
+      カスタムアクセストークンフック、MFA 検証フック、パスワード検証フック、カスタム SMS/Email フックなどをサポート。`auth` サービスに対応する `GOTRUE_HOOK_*` 環境変数を追加します。
+
+      **Studio SQL アシスタント：**
+      `studio` サービスに `OPENAI_API_KEY` を追加。
 
   es-ES:
     description: Una alternativa de código abierto a Firebase. Estamos construyendo las características de Firebase utilizando herramientas de código abierto de nivel empresarial.
@@ -2135,93 +2240,13 @@ localization:
       Esta es una demostración de Supabase auto-alojado en Zeabur.
       Puedes usar esta plantilla para desplegar una instancia de Supabase en Zeabur.
 
-      ## Estado de Desarrollo
+      ## Servicios
 
-      > ⚠️ **Esta plantilla está actualmente en desarrollo activo.**
-      > Algunos servicios pueden no estar completamente funcionales todavía. Consulta la tabla de estado a continuación para más detalles.
+      Esta instancia de Supabase incluye **Kong** (Gateway API), **Studio** (Supabase Studio), **PostgreSQL** (Base de Datos), **Meta** (Postgres Meta), **REST** (PostgREST), **Auth** (GoTrue), **Supavisor** (Pool de Conexiones), **Realtime** (Suscripciones a Cambios de Base de Datos), **Storage** (API de Almacenamiento), **MinIO** (Almacenamiento de Objetos), **ImgProxy** (Procesamiento de Imágenes), **Functions** (Edge Functions), **Vector** (Agregación de Registros) y **Analytics** (Logflare).
 
-      | Servicio | Estado | Notas |
-      |---------|--------|-------|
-      | PostgreSQL | ✅ Funcionando | Base de datos principal completamente funcional |
-      | Kong | ✅ Funcionando | Gateway API operativo |
-      | Studio | ✅ Funcionando | Panel accesible |
-      | Auth | ✅ Funcionando | Flujos de autenticación funcionando |
-      | REST | ✅ Funcionando | API PostgREST funcional |
-      | Meta | ✅ Funcionando | API de metadatos de base de datos operativa |
-      | Vector | ✅ Funcionando | Recolección de registros operativa |
-      | Analytics | ✅ Funcionando | Integración de Logflare funcionando |
-      | JWT/Keys | ✅ Funcionando | Secretos JWT personalizados compatibles |
-      | Realtime | ⚠️ En pruebas | Puede ser inestable, necesita más pruebas |
-      | Storage | 🚧 En progreso | Aún no completamente probado |
-      | Supavisor | 🚧 En progreso | El pool de conexiones necesita pruebas |
-      | Functions | 🚧 Beta | Las funciones edge no están completamente probadas |
+      Para información detallada sobre la arquitectura, visita la [documentación oficial de arquitectura de Supabase](https://supabase.com/docs/guides/self-hosting/docker#architecture).
 
-      **Leyenda:**
-      - ✅ Funcionando - Completamente probado y operativo
-      - ⚠️ En pruebas - Funcional pero puede tener problemas
-      - 🚧 En progreso - En desarrollo/pruebas
-
-      ## Resumen de Servicios
-
-      ### Servicios Principales (Requeridos)
-
-      1. **postgresql** - Base de datos PostgreSQL
-         - Base de datos principal de Supabase, almacena todos los datos de la aplicación
-         - ⚠️ Requerido - No se puede eliminar
-
-      2. **kong** - Gateway API
-         - Punto de entrada API unificado, maneja enrutamiento, autenticación y límite de velocidad
-         - ⚠️ Requerido - No se puede eliminar
-
-      3. **studio** - Panel de Supabase
-         - Interfaz de administración web para gestionar base de datos, autenticación, almacenamiento, etc.
-         - ⚠️ Requerido - Altamente recomendado mantener para administración
-
-      4. **auth** - Autenticación GoTrue
-         - Maneja registro de usuarios, inicio de sesión, OAuth y flujos de autenticación
-         - ⚠️ Requerido - A menos que uses un sistema de autenticación externo
-
-      5. **rest** - API PostgREST
-         - Convierte automáticamente la base de datos PostgreSQL en API RESTful
-         - ⚠️ Requerido - No se puede eliminar
-
-      6. **meta** - API Postgres Meta
-         - Proporciona API de metadatos de base de datos, utilizada por Studio
-         - ⚠️ Requerido - Studio depende de esto
-
-      ### Servicios Opcionales
-
-      7. **vector** - Agregación de registros
-         - Recopila y reenvía registros de servicio a Analytics
-         - ✅ Opcional - Se puede eliminar si no se necesita análisis de registros
-
-      8. **analytics** - Analytics Logflare
-         - Servicio de análisis y consulta de registros
-         - ✅ Opcional - Se puede eliminar si no se necesita análisis de registros (eliminar vector también)
-
-      9. **storage** - Almacenamiento de archivos
-         - Servicio de carga, almacenamiento y gestión de archivos
-         - ✅ Opcional - Se puede eliminar si no se necesita almacenamiento de archivos
-         - ⚠️ Estado: Aún no completamente probado
-
-      10. **imgproxy** - Transformación de imágenes
-          - Servicio de conversión y optimización de imágenes (para Storage)
-          - ✅ Opcional - Se puede eliminar si se elimina storage
-
-      11. **realtime** - Suscripciones en tiempo real
-          - Proporciona funcionalidad de suscripción en tiempo real a cambios en la base de datos
-          - ✅ Opcional - Se puede eliminar si no se necesitan características en tiempo real
-          - ⚠️ Estado: Puede ser inestable
-
-      12. **functions** - Funciones Edge
-          - Entorno de ejecución de funciones serverless (similar a AWS Lambda)
-          - ✅ Opcional - Se puede eliminar si no se necesitan funciones edge
-          - ⚠️ Estado: Fase beta, aún no completamente probado
-
-      13. **supavisor** - Pool de conexiones
-          - Gestor de pool de conexiones PostgreSQL, mejora el rendimiento de conexión a la base de datos
-          - ✅ Opcional - Se puede eliminar para proyectos pequeños
-          - ⚠️ Estado: Aún no completamente probado
+      Si necesitas servicios adicionales de Supabase, siéntete libre de implementarlos según el [archivo `docker-compose.yaml` upstream](https://github.com/supabase/supabase/blob/master/docker/docker-compose.yml) y enviar tus cambios a [nuestro servidor de Discord](https://zeabur.com/dc). Esto aplica a nuestro [Programa de Recompensas por Contribución](https://zeabur.com/docs/es-ES/billing/reward).
 
       ## Comenzar
 
@@ -2229,7 +2254,7 @@ localization:
 
       Después del despliegue, tu panel de Supabase Studio estará disponible en tu dominio configurado.
 
-      **Encontrar tus credenciales:**
+      **Encontrar tus Credenciales:**
       1. Ve al **servicio Kong** en tu proyecto Zeabur
       2. Haz clic en la pestaña **Instructions (Instrucciones)**
       3. Encontrarás:
@@ -2248,20 +2273,43 @@ localization:
 
       **⚠️ CRÍTICO**: Las claves predeterminadas son solo para fines de demostración. **DEBES** generar nuevas claves antes del uso en producción.
 
-      **Cómo generar claves seguras:**
+      **Cómo Generar Claves Seguras:**
       1. Visita el [Generador JWT de Supabase](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
-      2. Genera nuevas `ANON_KEY` y `SERVICE_ROLE_KEY` usando tu `JWT_SECRET` personalizado
+      2. Genera nuevas claves usando tu `JWT_SECRET` personalizado:
+         - Genera clave `anon` → úsala como `ANON_KEY`
+         - Genera clave `service_role` (mostrada como `SERVICE_KEY` en el sitio web) → úsala como `SERVICE_ROLE_KEY`
       3. Actualiza las variables de entorno en el servicio Kong
       4. Reinicia todos los servicios para aplicar los cambios:
          - Ve a tu **Proyecto** → **Configuración** → **General**
-         - Desplázate hacia abajo hasta **Acciones por lotes**
-         - Haz clic en **Reiniciar todo** para reiniciar todos los servicios
+         - Desplázate hacia abajo hasta **Acciones por Lotes**
+         - Haz clic en **Reiniciar Todo** para reiniciar todos los servicios
 
-      ## Asegurar tus servicios
+      ## Asegurar tus Servicios
 
       Aunque proporcionamos algunos secretos de ejemplo para comenzar, NUNCA debes desplegar tu configuración de Supabase usando los valores predeterminados que hemos proporcionado. Sigue todos los pasos en esta sección para asegurar que tienes una configuración segura, y luego reinicia todos los servicios para aplicar los cambios.
 
-      [Guía oficial](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
+      [Guía Oficial](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
+
+      ## Configuración
+
+      ### Agregar soporte de Google OAuth
+
+      Agrega variables de entorno al servicio `auth`: `GOTRUE_EXTERNAL_GOOGLE_ENABLED=true`, `GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID`, `GOTRUE_EXTERNAL_GOOGLE_SECRET`, `GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI`.
+
+      ### Agregar soporte de Apple OAuth
+
+      Agrega variables de entorno al servicio `auth`: `GOTRUE_EXTERNAL_APPLE_ENABLED=true`, `GOTRUE_EXTERNAL_APPLE_CLIENT_ID`, `GOTRUE_EXTERNAL_APPLE_SECRET`, `GOTRUE_EXTERNAL_APPLE_REDIRECT_URI`.
+
+      ### Configurar servicio de correo SMTP (Integración con Resend)
+
+      Para habilitar la funcionalidad de correo, configura SMTP usando Resend. Agrega al servicio `auth`: `GOTRUE_SMTP_HOST=smtp.resend.com`, `GOTRUE_SMTP_PORT=587`, `GOTRUE_SMTP_PASS` (tu clave API de Resend), `GOTRUE_SMTP_ADMIN_EMAIL`, `GOTRUE_SMTP_SENDER_NAME`, `GOTRUE_SITE_URL`.
+
+      ### Configuración avanzada de Auth (Opcional)
+
+      Soporta hooks personalizados de token de acceso, hooks de verificación MFA, hooks de verificación de contraseña, hooks personalizados de SMS/Email. Agrega las variables de entorno `GOTRUE_HOOK_*` correspondientes al servicio `auth`.
+
+      **Asistente SQL de Studio:**
+      Agrega `OPENAI_API_KEY` al servicio `studio`.
 
   id-ID:
     description: Alternatif open source untuk Firebase. Kami membangun fitur-fitur Firebase menggunakan alat open source tingkat enterprise.
@@ -2280,93 +2328,13 @@ localization:
       Ini adalah demo Supabase self-hosted untuk Zeabur.
       Anda dapat menggunakan template ini untuk mendeploy instance Supabase di Zeabur.
 
-      ## Status Pengembangan
+      ## Layanan
 
-      > ⚠️ **Template ini saat ini dalam pengembangan aktif.**
-      > Beberapa layanan mungkin belum sepenuhnya berfungsi. Lihat tabel status di bawah untuk detailnya.
+      Instansi Supabase ini mencakup **Kong** (API Gateway), **Studio** (Supabase Studio), **PostgreSQL** (Database), **Meta** (Postgres Meta), **REST** (PostgREST), **Auth** (GoTrue), **Supavisor** (Connection Pooler), **Realtime** (Langganan Perubahan Database), **Storage** (API Penyimpanan), **MinIO** (Penyimpanan Objek), **ImgProxy** (Pemrosesan Gambar), **Functions** (Edge Functions), **Vector** (Agregasi Log), dan **Analytics** (Logflare).
 
-      | Layanan | Status | Catatan |
-      |---------|--------|-------|
-      | PostgreSQL | ✅ Berfungsi | Database inti sepenuhnya berfungsi |
-      | Kong | ✅ Berfungsi | Gateway API operasional |
-      | Studio | ✅ Berfungsi | Dashboard dapat diakses |
-      | Auth | ✅ Berfungsi | Alur autentikasi berfungsi |
-      | REST | ✅ Berfungsi | API PostgREST fungsional |
-      | Meta | ✅ Berfungsi | API metadata database operasional |
-      | Vector | ✅ Berfungsi | Pengumpulan log operasional |
-      | Analytics | ✅ Berfungsi | Integrasi Logflare berfungsi |
-      | JWT/Keys | ✅ Berfungsi | Secret JWT kustom didukung |
-      | Realtime | ⚠️ Pengujian | Mungkin tidak stabil, perlu lebih banyak pengujian |
-      | Storage | 🚧 Dalam Progres | Belum diuji sepenuhnya |
-      | Supavisor | 🚧 Dalam Progres | Connection pooler perlu pengujian |
-      | Functions | 🚧 Beta | Edge functions belum diuji sepenuhnya |
+      Untuk informasi arsitektur yang detail, kunjungi [dokumentasi arsitektur resmi Supabase](https://supabase.com/docs/guides/self-hosting/docker#architecture).
 
-      **Legenda:**
-      - ✅ Berfungsi - Sepenuhnya diuji dan operasional
-      - ⚠️ Pengujian - Fungsional tetapi mungkin memiliki masalah
-      - 🚧 Dalam Progres - Dalam pengembangan/pengujian
-
-      ## Ringkasan Layanan
-
-      ### Layanan Inti (Wajib)
-
-      1. **postgresql** - Database PostgreSQL
-         - Database inti Supabase, menyimpan semua data aplikasi
-         - ⚠️ Wajib - Tidak dapat dihapus
-
-      2. **kong** - Gateway API
-         - Titik masuk API terpadu, menangani routing, autentikasi, dan pembatasan rate
-         - ⚠️ Wajib - Tidak dapat dihapus
-
-      3. **studio** - Dashboard Supabase
-         - Antarmuka administrasi web untuk mengelola database, autentikasi, storage, dll.
-         - ⚠️ Wajib - Sangat direkomendasikan untuk manajemen
-
-      4. **auth** - Autentikasi GoTrue
-         - Menangani pendaftaran pengguna, login, OAuth, dan alur autentikasi
-         - ⚠️ Wajib - Kecuali menggunakan sistem autentikasi eksternal
-
-      5. **rest** - API PostgREST
-         - Secara otomatis mengonversi database PostgreSQL menjadi API RESTful
-         - ⚠️ Wajib - Tidak dapat dihapus
-
-      6. **meta** - API Postgres Meta
-         - Menyediakan API metadata database, digunakan oleh Studio
-         - ⚠️ Wajib - Studio bergantung pada ini
-
-      ### Layanan Opsional
-
-      7. **vector** - Agregasi Log
-         - Mengumpulkan dan meneruskan log layanan ke Analytics
-         - ✅ Opsional - Dapat dihapus jika analisis log tidak diperlukan
-
-      8. **analytics** - Analytics Logflare
-         - Layanan analisis dan query log
-         - ✅ Opsional - Dapat dihapus jika analisis log tidak diperlukan (hapus vector juga)
-
-      9. **storage** - Penyimpanan File
-         - Layanan upload, penyimpanan, dan manajemen file
-         - ✅ Opsional - Dapat dihapus jika penyimpanan file tidak diperlukan
-         - ⚠️ Status: Belum diuji sepenuhnya
-
-      10. **imgproxy** - Transformasi Gambar
-          - Layanan konversi dan optimasi gambar (untuk Storage)
-          - ✅ Opsional - Dapat dihapus jika storage dihapus
-
-      11. **realtime** - Langganan Real-time
-          - Menyediakan fungsionalitas langganan real-time untuk perubahan database
-          - ✅ Opsional - Dapat dihapus jika fitur real-time tidak diperlukan
-          - ⚠️ Status: Mungkin tidak stabil
-
-      12. **functions** - Edge Functions
-          - Lingkungan eksekusi fungsi serverless (mirip AWS Lambda)
-          - ✅ Opsional - Dapat dihapus jika edge functions tidak diperlukan
-          - ⚠️ Status: Fase beta, belum diuji sepenuhnya
-
-      13. **supavisor** - Connection Pooler
-          - Manajer connection pool PostgreSQL, meningkatkan performa koneksi database
-          - ✅ Opsional - Dapat dihapus untuk proyek kecil
-          - ⚠️ Status: Belum diuji sepenuhnya
+      Jika Anda memerlukan layanan Supabase tambahan, silakan implementasikan sesuai dengan [file `docker-compose.yaml` upstream](https://github.com/supabase/supabase/blob/master/docker/docker-compose.yml) dan kirimkan perubahan Anda ke [server Discord kami](https://zeabur.com/dc). Ini berlaku untuk [Program Hadiah Kontribusi](https://zeabur.com/docs/id-ID/billing/reward) kami.
 
       ## Memulai
 
@@ -2374,7 +2342,7 @@ localization:
 
       Setelah deployment, dashboard Supabase Studio Anda akan tersedia di domain yang telah dikonfigurasi.
 
-      **Menemukan kredensial Anda:**
+      **Menemukan Kredensial Anda:**
       1. Buka **layanan Kong** di proyek Zeabur Anda
       2. Klik tab **Instructions (Instruksi)**
       3. Anda akan menemukan:
@@ -2393,17 +2361,40 @@ localization:
 
       **⚠️ PENTING**: Kunci default hanya untuk tujuan demo. Anda **HARUS** menghasilkan kunci baru sebelum penggunaan produksi.
 
-      **Cara menghasilkan kunci yang aman:**
+      **Cara Menghasilkan Kunci yang Aman:**
       1. Kunjungi [Generator JWT Supabase](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
-      2. Hasilkan `ANON_KEY` dan `SERVICE_ROLE_KEY` baru menggunakan `JWT_SECRET` kustom Anda
+      2. Hasilkan kunci baru menggunakan `JWT_SECRET` kustom Anda:
+         - Hasilkan kunci `anon` → gunakan sebagai `ANON_KEY`
+         - Hasilkan kunci `service_role` (ditampilkan sebagai `SERVICE_KEY` di situs web) → gunakan sebagai `SERVICE_ROLE_KEY`
       3. Perbarui variabel lingkungan di layanan Kong
       4. Restart semua layanan untuk menerapkan perubahan:
          - Buka **Proyek** Anda → **Pengaturan** → **Umum**
          - Gulir ke bawah ke **Tindakan Batch**
          - Klik **Restart Semua** untuk me-restart semua layanan
 
-      ## Mengamankan layanan Anda
+      ## Mengamankan Layanan Anda
 
       Meskipun kami menyediakan beberapa secret contoh untuk memulai, Anda TIDAK BOLEH mendeploy setup Supabase Anda menggunakan default yang kami sediakan. Ikuti semua langkah di bagian ini untuk memastikan Anda memiliki setup yang aman, lalu restart semua layanan untuk menerapkan perubahan.
 
-      [Panduan resmi](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
+      [Panduan Resmi](https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys)
+
+      ## Konfigurasi
+
+      ### Menambahkan dukungan Google OAuth
+
+      Tambahkan variabel lingkungan ke layanan `auth`: `GOTRUE_EXTERNAL_GOOGLE_ENABLED=true`, `GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID`, `GOTRUE_EXTERNAL_GOOGLE_SECRET`, `GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI`.
+
+      ### Menambahkan dukungan Apple OAuth
+
+      Tambahkan variabel lingkungan ke layanan `auth`: `GOTRUE_EXTERNAL_APPLE_ENABLED=true`, `GOTRUE_EXTERNAL_APPLE_CLIENT_ID`, `GOTRUE_EXTERNAL_APPLE_SECRET`, `GOTRUE_EXTERNAL_APPLE_REDIRECT_URI`.
+
+      ### Mengonfigurasi layanan email SMTP (Integrasi Resend)
+
+      Untuk mengaktifkan fungsi email, konfigurasikan SMTP menggunakan Resend. Tambahkan ke layanan `auth`: `GOTRUE_SMTP_HOST=smtp.resend.com`, `GOTRUE_SMTP_PORT=587`, `GOTRUE_SMTP_PASS` (kunci API Resend Anda), `GOTRUE_SMTP_ADMIN_EMAIL`, `GOTRUE_SMTP_SENDER_NAME`, `GOTRUE_SITE_URL`.
+
+      ### Konfigurasi Auth lanjutan (Opsional)
+
+      Mendukung hook token akses kustom, hook verifikasi MFA, hook verifikasi password, hook SMS/Email kustom. Tambahkan variabel lingkungan `GOTRUE_HOOK_*` yang sesuai ke layanan `auth`.
+
+      **Asisten SQL Studio:**
+      Tambahkan `OPENAI_API_KEY` ke layanan `studio`.
