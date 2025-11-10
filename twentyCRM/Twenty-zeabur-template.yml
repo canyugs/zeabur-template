@@ -1,0 +1,398 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: Twenty
+spec:
+    description: A modern Open Source CRM platform that helps you manage contacts, deals, and tasks efficiently.
+    coverImage: https://raw.githubusercontent.com/twentyhq/twenty/refs/heads/main/packages/twenty-website/public/images/readme/github-cover-dark.png
+    icon: https://github.com/twentyhq/twenty/raw/main/packages/twenty-website/public/images/core/logo.svg
+    variables:
+        - key: TWENTY_DOMAIN
+          type: DOMAIN
+          name: Domain
+          description: The domain where your Twenty CRM will be accessible
+    tags:
+        - CRM
+        - Business
+        - Database
+    readme: |-
+        # Twenty CRM
+
+        Twenty is a modern Open Source CRM platform built with React, Node.js, and PostgreSQL. It provides a complete solution for managing contacts, deals, companies, and tasks.
+
+        ## Features
+
+        - **Contact Management**: Track and organize your contacts with detailed information
+        - **Deal Pipeline**: Visual pipeline to manage sales opportunities
+        - **Task Management**: Assign and track tasks across teams
+        - **Activity Timeline**: Complete activity history for each contact and deal
+        - **Custom Fields**: Add custom fields to adapt to your business needs
+        - **Multi-language Support**: Available in multiple languages
+        - **Open Source**: Full access to source code
+
+        ## Deployment
+
+        This template automatically deploys:
+        - Twenty Web Application (React frontend)
+        - Twenty Server (Node.js backend)
+        - Background Worker for task processing
+        - PostgreSQL Database
+        - Redis for caching and session storage
+
+        ## Default Credentials
+
+        After deployment, create your admin account by visiting the application domain.
+
+        ## External Access
+
+        The application will be available on the domain you specified during deployment.
+    resourceUsage:
+        cpu: 1
+        memory: 2048
+    services:
+        - name: PostgreSQL
+          icon: https://cdn.zeabur.com/marketplace/postgresql.svg
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: postgres:18
+                command:
+                    - docker-entrypoint.sh
+                    - -c
+                    - config_file=/etc/postgresql/postgresql.conf
+            ports:
+                - id: database
+                  port: 5432
+                  type: TCP
+            volumes:
+                - id: data
+                  dir: /var/lib/postgresql/18/docker
+            instructions:
+                - title: Connection String
+                  content: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DATABASE}
+                - title: PostgreSQL Connect Command
+                  content: psql "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DATABASE}"
+                - title: PostgreSQL username
+                  content: ${POSTGRES_USERNAME}
+                - title: PostgresSQL password
+                  content: ${POSTGRES_PASSWORD}
+                - title: PostgresSQL database
+                  content: ${POSTGRES_DATABASE}
+                - title: PostgreSQL host
+                  content: ${PORT_FORWARDED_HOSTNAME}
+                - title: PostgreSQL port
+                  content: ${DATABASE_PORT_FORWARDED_PORT}
+            env:
+                PGDATA:
+                    default: /var/lib/postgresql/18/docker/pgdata
+                    expose: false
+                POSTGRES_CONNECTION_STRING:
+                    default: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}
+                    expose: true
+                POSTGRES_DATABASE:
+                    default: ${POSTGRES_DB}
+                    expose: true
+                POSTGRES_DB:
+                    default: twenty
+                    expose: false
+                POSTGRES_HOST:
+                    default: ${CONTAINER_HOSTNAME}
+                    expose: true
+                POSTGRES_PASSWORD:
+                    default: ${PASSWORD}
+                    expose: true
+                POSTGRES_PORT:
+                    default: ${DATABASE_PORT}
+                    expose: true
+                POSTGRES_URI:
+                    default: ${POSTGRES_CONNECTION_STRING}
+                    expose: true
+                POSTGRES_USER:
+                    default: root
+                    expose: false
+                POSTGRES_USERNAME:
+                    default: ${POSTGRES_USER}
+                    expose: true
+            configs:
+                - path: /etc/postgresql/postgresql.conf
+                  template: |
+                    # https://github.com/postgres/postgres/blob/master/src/backend/utils/misc/postgresql.conf.sample
+                    listen_addresses = '*'
+                    max_connections = 256
+                    shared_buffers = 256MB
+                    dynamic_shared_memory_type = posix
+                    max_wal_size = 1GB
+                    min_wal_size = 80MB
+                    log_timezone = 'UTC'
+                    datestyle = 'iso, mdy'
+                    timezone = 'UTC'
+                    lc_messages = 'en_US.UTF-8'
+                    lc_monetary = 'en_US.UTF-8'
+                    lc_numeric = 'en_US.UTF-8'
+                    lc_time = 'en_US.UTF-8'
+                    default_text_search_config = 'pg_catalog.english'
+                  permission: null
+                  envsubst: null
+            portForwarding:
+                enabled: true
+        - name: Redis
+          icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/redis.svg
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: redis/redis-stack-server:latest
+            ports:
+                - id: database
+                  port: 6379
+                  type: TCP
+            volumes:
+                - id: data
+                  dir: /data
+            instructions:
+                - title: Command to connect to your Redis
+                  content: redis-cli -h ${PORT_FORWARDED_HOSTNAME} -p ${DATABASE_PORT_FORWARDED_PORT} -a ${REDIS_PASSWORD}
+                - title: Redis Connection String
+                  content: redis://:${REDIS_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}
+                - title: Redis password
+                  content: ${REDIS_PASSWORD}
+                - title: Redis host
+                  content: ${PORT_FORWARDED_HOSTNAME}
+                - title: Redis port
+                  content: ${DATABASE_PORT_FORWARDED_PORT}
+            env:
+                CONFFILE:
+                    default: /etc/redis-stack.conf
+                    expose: false
+                REDIS_ARGS:
+                    default: --requirepass ${REDIS_PASSWORD}
+                    expose: false
+                REDIS_CONNECTION_STRING:
+                    default: redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
+                    expose: true
+                REDIS_HOST:
+                    default: ${CONTAINER_HOSTNAME}
+                    expose: true
+                REDIS_PASSWORD:
+                    default: ${PASSWORD}
+                    expose: true
+                REDIS_PORT:
+                    default: ${DATABASE_PORT}
+                    expose: true
+                REDIS_URI:
+                    default: ${REDIS_CONNECTION_STRING}
+                    expose: true
+            configs:
+                - path: /etc/redis-stack.conf
+                  template: |
+                    port 6379
+                    daemonize no
+                  permission: null
+                  envsubst: null
+            portForwarding:
+                enabled: true
+        - name: Twenty Worker
+          dependencies:
+            - PostgreSQL
+            - Redis
+          template: PREBUILT
+          spec:
+            source:
+                image: twentycrm/twenty:latest
+            volumes:
+                - id: storage
+                  dir: /app/packages/twenty-server/.local-storage
+            env:
+                APP_SECRET:
+                    default: ${PASSWORD}
+                    expose: false
+                DISABLE_CRON_JOBS_REGISTRATION:
+                    default: "true"
+                    expose: false
+                DISABLE_DB_MIGRATIONS:
+                    default: "true"
+                    expose: false
+                PG_DATABASE_URL:
+                    default: ${POSTGRES_CONNECTION_STRING}
+                    expose: true
+                REDIS_URL:
+                    default: ${REDIS_CONNECTION_STRING}
+                    expose: true
+                STORAGE_TYPE:
+                    default: local
+                    expose: false
+            command:
+                - yarn
+                - worker:prod
+        - name: Twenty
+          icon: https://github.com/twentyhq/twenty/raw/main/packages/twenty-website/public/images/core/logo.svg
+          dependencies:
+            - PostgreSQL
+            - Redis
+            - Twenty Worker
+          template: PREBUILT
+          spec:
+            source:
+                image: twentycrm/twenty:latest
+            ports:
+                - id: web
+                  port: 3000
+                  type: HTTP
+            volumes:
+                - id: storage
+                  dir: /app/packages/twenty-server/.local-storage
+            instructions:
+                - title: Open Twenty CRM
+                  content: https://${TWENTY_DOMAIN}.zeabur.app
+            env:
+                APP_SECRET:
+                    default: ${PASSWORD}
+                    expose: false
+                DISABLE_CRON_JOBS_REGISTRATION:
+                    default: "false"
+                    expose: false
+                DISABLE_DB_MIGRATIONS:
+                    default: "false"
+                    expose: false
+                NODE_PORT:
+                    default: "3000"
+                    expose: false
+                PG_DATABASE_URL:
+                    default: ${POSTGRES_CONNECTION_STRING}
+                    expose: true
+                REDIS_URL:
+                    default: ${REDIS_CONNECTION_STRING}
+                    expose: true
+                SERVER_URL:
+                    default: https://${TWENTY_DOMAIN}.zeabur.app
+                    expose: false
+                STORAGE_S3_ENDPOINT:
+                    default: ${STORAGE_S3_ENDPOINT}
+                    expose: false
+                STORAGE_S3_NAME:
+                    default: ${STORAGE_S3_NAME}
+                    expose: false
+                STORAGE_S3_REGION:
+                    default: ${STORAGE_S3_REGION}
+                    expose: false
+                STORAGE_TYPE:
+                    default: local
+                    expose: false
+          domainKey:
+            - port: web
+              variable: TWENTY_DOMAIN
+localization:
+    es-ES:
+        description: Una plataforma CRM de código abierto moderna que te ayuda a gestionar contactos, negociaciones y tareas de manera eficiente.
+        variables:
+            - key: TWENTY_DOMAIN
+              type: DOMAIN
+              name: Dominio
+              description: El dominio donde tu Twenty CRM será accesible
+        readme: |
+            # Twenty CRM
+
+            Twenty es una plataforma CRM de código abierto moderna construida con React, Node.js y PostgreSQL. Proporciona una solución completa para gestionar contactos, negociaciones, empresas y tareas.
+
+            ## Características
+
+            - **Gestión de Contactos**: Rastrea y organiza tus contactos con información detallada
+            - **Pipeline de Negociaciones**: Pipeline visual para gestionar oportunidades de venta
+            - **Gestión de Tareas**: Asigna y rastrea tareas entre equipos
+            - **Línea de Tiempo de Actividades**: Historial completo de actividades para cada contacto y negociación
+            - **Campos Personalizados**: Agrega campos personalizados para adaptar a tus necesidades comerciales
+            - **Soporte Multilenguaje**: Disponible en múltiples idiomas
+            - **Código Abierto**: Acceso completo al código fuente
+
+            ## Despliegue
+
+            Esta plantilla despliega automáticamente:
+            - Aplicación Web Twenty (Frontend React)
+            - Servidor Twenty (Backend Node.js)
+            - Proceso Worker en segundo plano para procesamiento de tareas
+            - Base de Datos PostgreSQL
+            - Redis para caché y almacenamiento de sesiones
+
+            ## Credenciales por Defecto
+
+            Después del despliegue, visita el dominio de la aplicación para crear tu cuenta de administrador.
+
+            ## Acceso Externo
+
+            La aplicación estará disponible en el dominio que especificaste durante el despliegue.
+    ja-JP:
+        description: 連絡先、取引、タスクを効率的に管理できるモダンなオープンソース CRM プラットフォーム。
+        variables:
+            - key: TWENTY_DOMAIN
+              type: DOMAIN
+              name: ドメイン
+              description: Twenty CRM にアクセス可能なドメイン
+        readme: |
+            # Twenty CRM
+
+            Twenty は、React、Node.js、PostgreSQL で構築されたモダンなオープンソース CRM プラットフォームです。連絡先、取引、企業、タスクを管理するための完全なソリューションを提供します。
+
+            ## 機能
+
+            - **連絡先管理**：詳細な情報で連絡先をトラッキング・整理
+            - **取引パイプライン**：販売機会を管理する視覚的なパイプライン
+            - **タスク管理**：チーム間でタスクを割り当て・トラッキング
+            - **アクティビティタイムライン**：各連絡先・取引の完全な活動履歴
+            - **カスタムフィールド**：ビジネスニーズに適応するカスタムフィールドの追加
+            - **多言語サポート**：複数の言語で利用可能
+            - **オープンソース**：ソースコードへのフルアクセス
+
+            ## デプロイ
+
+            このテンプレートは以下を自動的にデプロイします：
+            - Twenty Web アプリケーション（React フロントエンド）
+            - Twenty サーバー（Node.js バックエンド）
+            - タスク処理のためのバックグラウンドワーカー
+            - PostgreSQL データベース
+            - キャッシュとセッションストレージ用の Redis
+
+            ## デフォルト認証情報
+
+            デプロイ後、アプリケーションドメインにアクセスして管理者アカウントを作成してください。
+
+            ## 外部アクセス
+
+            デプロイ中に指定したドメインでアプリケーションが利用可能になります。
+    zh-CN:
+        description: 一个现代化的开源 CRM 平台，帮助您高效管理联系人、交易和任务。
+        variables:
+            - key: TWENTY_DOMAIN
+              type: DOMAIN
+              name: 域名
+              description: 您的 Twenty CRM 可访问的域名
+        readme: |
+            # Twenty CRM
+
+            Twenty 是一个基于 React、Node.js 和 PostgreSQL 构建的现代化开源 CRM 平台。它提供了管理联系人、交易、公司和任务的完整解决方案。
+
+            ## 功能特性
+
+            - **联系人管理**：追踪和组织您的联系人，包含详细信息
+            - **销售管道**：可视化管道管理销售机会
+            - **任务管理**：跨团队分配和追踪任务
+            - **活动时间线**：每个联系人和交易的完整活动历史
+            - **自定义字段**：添加自定义字段以适应您的业务需求
+            - **多语言支持**：支持多种语言
+            - **开源**：完全访问源代码
+
+            ## 部署
+
+            此模板自动部署：
+            - Twenty Web 应用（React 前端）
+            - Twenty 服务器（Node.js 后端）
+            - 后台任务处理工作进程
+            - PostgreSQL 数据库
+            - Redis 缓存和会话存储
+
+            ## 默认凭据
+
+            部署完成后，请访问应用域名创建管理员账户。
+
+            ## 外部访问
+
+            应用将在部署期间指定的域名上可用。
