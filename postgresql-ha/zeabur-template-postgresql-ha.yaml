@@ -7,7 +7,7 @@ spec:
   description: |
     High Availability PostgreSQL cluster with Patroni and etcd. Provides automatic failover and replication for production-grade database deployments.
   icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
-  coverImage: https://kinsta.com/wp-content/uploads/2022/03/what-is-postgresql.png
+  coverImage: https://raw.githubusercontent.com/canyugs/zeabur-template/20df3e7b93396520856b783f62ef9836c90522bb/postgresql-ha/cover.png
   tags:
     - Database
     - PostgreSQL
