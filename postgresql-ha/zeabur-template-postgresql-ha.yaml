@@ -1,0 +1,278 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: PostgreSQL HA
+spec:
+  description: |
+    High Availability PostgreSQL cluster with Patroni and etcd. Provides automatic failover and replication for production-grade database deployments.
+  icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+  coverImage: https://raw.githubusercontent.com/zeabur/zeabur/main/postgresql-ha/screenshot.webp
+  tags:
+    - Database
+    - PostgreSQL
+    - High Availability
+    - Patroni
+  variables: []
+  readme: |
+    # PostgreSQL High Availability Cluster
+
+    This template deploys a highly available PostgreSQL cluster using:
+    - **Patroni**: PostgreSQL HA solution with automatic failover
+    - **Spilo**: Docker image combining PostgreSQL and Patroni
+    - **etcd**: Distributed configuration and service discovery
+
+    ## Architecture
+
+    - 1x etcd instance for distributed consensus
+    - 3x PostgreSQL nodes with Patroni for automatic failover
+    - Built-in replication and health monitoring
+
+    ## Connection Information
+
+    Use any of the Patroni nodes to connect to the cluster:
+    - **Host**: Use the hostname of patroni1, patroni2, or patroni3
+    - **Port**: 5432
+    - **Username**: postgres (superuser) or admin
+    - **Password**: Check the environment variables in Zeabur dashboard
+
+    Patroni will automatically route connections to the master node.
+
+    ## Features
+
+    - **Automatic Failover**: If the master fails, Patroni automatically promotes a replica
+    - **Synchronous Replication**: Data consistency across nodes
+    - **Health Monitoring**: REST API on port 8008 for each node
+    - **Rolling Updates**: Update nodes without downtime
+
+    ## Management
+
+    Access Patroni REST API for cluster status:
+    - `http://patroni1:8008/`
+    - `http://patroni2:8008/`
+    - `http://patroni3:8008/`
+
+    ## Documentation
+
+    - [Patroni Documentation](https://patroni.readthedocs.io/)
+    - [Spilo GitHub](https://github.com/zalando/spilo)
+    - [etcd Documentation](https://etcd.io/docs/)
+
+  services:
+    - name: etcd
+      icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
+      template: PREBUILT
+      spec:
+        source:
+          image: quay.io/coreos/etcd:v3.5.13
+        ports:
+          - id: client
+            port: 2379
+            type: TCP
+          - id: peer
+            port: 2380
+            type: TCP
+        env:
+          ETCD_NAME:
+            default: etcd
+          ETCD_ADVERTISE_CLIENT_URLS:
+            default: http://${CONTAINER_HOSTNAME}:2379
+          ETCD_LISTEN_CLIENT_URLS:
+            default: http://0.0.0.0:2379
+          ETCD_INITIAL_ADVERTISE_PEER_URLS:
+            default: http://${CONTAINER_HOSTNAME}:2380
+          ETCD_LISTEN_PEER_URLS:
+            default: http://0.0.0.0:2380
+          ETCD_INITIAL_CLUSTER:
+            default: etcd=http://${CONTAINER_HOSTNAME}:2380
+          ETCD_ENABLE_V2:
+            default: "true"
+
+    - name: patroni1
+      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+      template: PREBUILT
+      dependencies:
+        - etcd
+      spec:
+        source:
+          image: ghcr.io/zalando/spilo-15:3.2-p1
+          command:
+            - sh
+            - -c
+            - |
+              # Wrapper to fix ownership after basebackup
+              (
+                while sleep 10; do
+                  if [ -d /home/postgres/pgdata/pgroot ]; then
+                    chown -R postgres:postgres /home/postgres/pgdata/pgroot 2>/dev/null || true
+                  fi
+                done
+              ) &
+              exec /launch.sh init
+        ports:
+          - id: database
+            port: 5432
+            type: TCP
+          - id: api
+            port: 8008
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /home/postgres/pgdata
+        env:
+          SCOPE:
+            default: pg-ha
+          PATRONI_NAME:
+            default: patroni1
+          PATRONI_RESTAPI_LISTEN:
+            default: 0.0.0.0:8008
+          PATRONI_RESTAPI_CONNECT_ADDRESS:
+            default: ${CONTAINER_HOSTNAME}:8008
+          PATRONI_POSTGRESQL_LISTEN:
+            default: 0.0.0.0:5432
+          PATRONI_POSTGRESQL_CONNECT_ADDRESS:
+            default: ${CONTAINER_HOSTNAME}:5432
+          PATRONI_SUPERUSER_USERNAME:
+            default: postgres
+          PATRONI_SUPERUSER_PASSWORD:
+            default: zalando
+          PATRONI_REPLICATION_USERNAME:
+            default: replicator
+          PATRONI_REPLICATION_PASSWORD:
+            default: replicator_pass
+          PATRONI_admin_USERNAME:
+            default: admin
+          PATRONI_admin_PASSWORD:
+            default: admin_pass
+          DCS_TYPE:
+            default: etcd
+          PATRONI_ETCD_HOSTS:
+            default: etcd:2379
+          ETCD_HOSTS:
+            default: etcd:2379
+
+    - name: patroni2
+      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+      template: PREBUILT
+      dependencies:
+        - etcd
+      spec:
+        source:
+          image: ghcr.io/zalando/spilo-15:3.2-p1
+          command:
+            - sh
+            - -c
+            - |
+              # Wrapper to fix ownership after basebackup
+              (
+                while sleep 10; do
+                  if [ -d /home/postgres/pgdata/pgroot ]; then
+                    chown -R postgres:postgres /home/postgres/pgdata/pgroot 2>/dev/null || true
+                  fi
+                done
+              ) &
+              exec /launch.sh init
+        ports:
+          - id: database
+            port: 5432
+            type: TCP
+          - id: api
+            port: 8008
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /home/postgres/pgdata
+        env:
+          SCOPE:
+            default: pg-ha
+          PATRONI_NAME:
+            default: patroni2
+          PATRONI_RESTAPI_LISTEN:
+            default: 0.0.0.0:8008
+          PATRONI_RESTAPI_CONNECT_ADDRESS:
+            default: ${CONTAINER_HOSTNAME}:8008
+          PATRONI_POSTGRESQL_LISTEN:
+            default: 0.0.0.0:5432
+          PATRONI_POSTGRESQL_CONNECT_ADDRESS:
+            default: ${CONTAINER_HOSTNAME}:5432
+          PATRONI_SUPERUSER_USERNAME:
+            default: postgres
+          PATRONI_SUPERUSER_PASSWORD:
+            default: zalando
+          PATRONI_REPLICATION_USERNAME:
+            default: replicator
+          PATRONI_REPLICATION_PASSWORD:
+            default: replicator_pass
+          PATRONI_admin_USERNAME:
+            default: admin
+          PATRONI_admin_PASSWORD:
+            default: admin_pass
+          DCS_TYPE:
+            default: etcd
+          PATRONI_ETCD_HOSTS:
+            default: etcd:2379
+          ETCD_HOSTS:
+            default: etcd:2379
+
+    - name: patroni3
+      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+      template: PREBUILT
+      dependencies:
+        - etcd
+      spec:
+        source:
+          image: ghcr.io/zalando/spilo-15:3.2-p1
+          command:
+            - sh
+            - -c
+            - |
+              # Wrapper to fix ownership after basebackup
+              (
+                while sleep 10; do
+                  if [ -d /home/postgres/pgdata/pgroot ]; then
+                    chown -R postgres:postgres /home/postgres/pgdata/pgroot 2>/dev/null || true
+                  fi
+                done
+              ) &
+              exec /launch.sh init
+        ports:
+          - id: database
+            port: 5432
+            type: TCP
+          - id: api
+            port: 8008
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /home/postgres/pgdata
+        env:
+          SCOPE:
+            default: pg-ha
+          PATRONI_NAME:
+            default: patroni3
+          PATRONI_RESTAPI_LISTEN:
+            default: 0.0.0.0:8008
+          PATRONI_RESTAPI_CONNECT_ADDRESS:
+            default: ${CONTAINER_HOSTNAME}:8008
+          PATRONI_POSTGRESQL_LISTEN:
+            default: 0.0.0.0:5432
+          PATRONI_POSTGRESQL_CONNECT_ADDRESS:
+            default: ${CONTAINER_HOSTNAME}:5432
+          PATRONI_SUPERUSER_USERNAME:
+            default: postgres
+          PATRONI_SUPERUSER_PASSWORD:
+            default: zalando
+          PATRONI_REPLICATION_USERNAME:
+            default: replicator
+          PATRONI_REPLICATION_PASSWORD:
+            default: replicator_pass
+          PATRONI_admin_USERNAME:
+            default: admin
+          PATRONI_admin_PASSWORD:
+            default: admin_pass
+          DCS_TYPE:
+            default: etcd
+          PATRONI_ETCD_HOSTS:
+            default: etcd:2379
+          ETCD_HOSTS:
+            default: etcd:2379
