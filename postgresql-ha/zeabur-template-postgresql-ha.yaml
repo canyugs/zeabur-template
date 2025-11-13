@@ -36,7 +36,7 @@ spec:
 
     ## Architecture
 
-    - 1x etcd instance for distributed consensus
+    - 3x etcd cluster nodes for distributed consensus
     - 3x PostgreSQL nodes with Patroni for automatic failover
     - Built-in replication and health monitoring
 
@@ -71,12 +71,12 @@ spec:
     - [etcd Documentation](https://etcd.io/docs/)
 
   services:
-    - name: etcd
+    - name: etcd1
       icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
       template: PREBUILT
       spec:
         source:
-          image: quay.io/coreos/etcd:v3.5.13
+          image: gcr.io/etcd-development/etcd:v3.6.0
         ports:
           - id: client
             port: 2379
@@ -84,32 +84,123 @@ spec:
           - id: peer
             port: 2380
             type: TCP
-        healthCheck:
-          type: HTTP
-          port: client
-          http:
-            path: /health
+          - id: metrics
+            port: 2381
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /etcd-data
         env:
           ETCD_NAME:
-            default: etcd
-          ETCD_ADVERTISE_CLIENT_URLS:
-            default: http://${CONTAINER_HOSTNAME}:2379
-          ETCD_LISTEN_CLIENT_URLS:
-            default: http://0.0.0.0:2379
+            default: etcd1
+          ETCD_DATA_DIR:
+            default: /etcd-data
           ETCD_INITIAL_ADVERTISE_PEER_URLS:
-            default: http://${CONTAINER_HOSTNAME}:2380
+            default: http://etcd1:2380
           ETCD_LISTEN_PEER_URLS:
             default: http://0.0.0.0:2380
+          ETCD_LISTEN_CLIENT_URLS:
+            default: http://0.0.0.0:2379
+          ETCD_ADVERTISE_CLIENT_URLS:
+            default: http://etcd1:2379
+          ETCD_LISTEN_METRICS_URLS:
+            default: http://0.0.0.0:2381
           ETCD_INITIAL_CLUSTER:
-            default: etcd=http://${CONTAINER_HOSTNAME}:2380
-          ETCD_ENABLE_V2:
-            default: "true"
+            default: etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+          ETCD_INITIAL_CLUSTER_STATE:
+            default: new
+          ETCD_INITIAL_CLUSTER_TOKEN:
+            default: etcd-cluster-pg-ha
+
+    - name: etcd2
+      icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
+      template: PREBUILT
+      spec:
+        source:
+          image: gcr.io/etcd-development/etcd:v3.6.0
+        ports:
+          - id: client
+            port: 2379
+            type: TCP
+          - id: peer
+            port: 2380
+            type: TCP
+          - id: metrics
+            port: 2381
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /etcd-data
+        env:
+          ETCD_NAME:
+            default: etcd2
+          ETCD_DATA_DIR:
+            default: /etcd-data
+          ETCD_INITIAL_ADVERTISE_PEER_URLS:
+            default: http://etcd2:2380
+          ETCD_LISTEN_PEER_URLS:
+            default: http://0.0.0.0:2380
+          ETCD_LISTEN_CLIENT_URLS:
+            default: http://0.0.0.0:2379
+          ETCD_ADVERTISE_CLIENT_URLS:
+            default: http://etcd2:2379
+          ETCD_LISTEN_METRICS_URLS:
+            default: http://0.0.0.0:2381
+          ETCD_INITIAL_CLUSTER:
+            default: etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+          ETCD_INITIAL_CLUSTER_STATE:
+            default: new
+          ETCD_INITIAL_CLUSTER_TOKEN:
+            default: etcd-cluster-pg-ha
+
+    - name: etcd3
+      icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
+      template: PREBUILT
+      spec:
+        source:
+          image: gcr.io/etcd-development/etcd:v3.6.0
+        ports:
+          - id: client
+            port: 2379
+            type: TCP
+          - id: peer
+            port: 2380
+            type: TCP
+          - id: metrics
+            port: 2381
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /etcd-data
+        env:
+          ETCD_NAME:
+            default: etcd3
+          ETCD_DATA_DIR:
+            default: /etcd-data
+          ETCD_INITIAL_ADVERTISE_PEER_URLS:
+            default: http://etcd3:2380
+          ETCD_LISTEN_PEER_URLS:
+            default: http://0.0.0.0:2380
+          ETCD_LISTEN_CLIENT_URLS:
+            default: http://0.0.0.0:2379
+          ETCD_ADVERTISE_CLIENT_URLS:
+            default: http://etcd3:2379
+          ETCD_LISTEN_METRICS_URLS:
+            default: http://0.0.0.0:2381
+          ETCD_INITIAL_CLUSTER:
+            default: etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+          ETCD_INITIAL_CLUSTER_STATE:
+            default: new
+          ETCD_INITIAL_CLUSTER_TOKEN:
+            default: etcd-cluster-pg-ha
 
     - name: patroni1
       icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
       template: PREBUILT
       dependencies:
-        - etcd
+        - etcd1
+        - etcd2
+        - etcd3
       spec:
         source:
           image: ghcr.io/zalando/spilo-15:3.2-p1
@@ -172,12 +263,8 @@ spec:
             default: ${POSTGRES_REPLICATION_PASSWORD}
           PGPASSWORD_ADMIN:
             default: ${POSTGRES_ADMIN_PASSWORD}
-          DCS_TYPE:
-            default: etcd
-          PATRONI_ETCD_HOSTS:
-            default: etcd:2379
-          ETCD_HOSTS:
-            default: etcd:2379
+          ETCD3_HOSTS:
+            default: etcd1:2379,etcd2:2379,etcd3:2379
         instructions:
           - title: Database Host
             content: "${CONTAINER_HOSTNAME}"
@@ -202,7 +289,9 @@ spec:
       icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
       template: PREBUILT
       dependencies:
-        - etcd
+        - etcd1
+        - etcd2
+        - etcd3
       spec:
         source:
           image: ghcr.io/zalando/spilo-15:3.2-p1
@@ -265,12 +354,8 @@ spec:
             default: ${POSTGRES_REPLICATION_PASSWORD}
           PGPASSWORD_ADMIN:
             default: ${POSTGRES_ADMIN_PASSWORD}
-          DCS_TYPE:
-            default: etcd
-          PATRONI_ETCD_HOSTS:
-            default: etcd:2379
-          ETCD_HOSTS:
-            default: etcd:2379
+          ETCD3_HOSTS:
+            default: etcd1:2379,etcd2:2379,etcd3:2379
         instructions:
           - title: Database Host
             content: "${CONTAINER_HOSTNAME}"
@@ -295,7 +380,9 @@ spec:
       icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
       template: PREBUILT
       dependencies:
-        - etcd
+        - etcd1
+        - etcd2
+        - etcd3
       spec:
         source:
           image: ghcr.io/zalando/spilo-15:3.2-p1
@@ -358,12 +445,8 @@ spec:
             default: ${POSTGRES_REPLICATION_PASSWORD}
           PGPASSWORD_ADMIN:
             default: ${POSTGRES_ADMIN_PASSWORD}
-          DCS_TYPE:
-            default: etcd
-          PATRONI_ETCD_HOSTS:
-            default: etcd:2379
-          ETCD_HOSTS:
-            default: etcd:2379
+          ETCD3_HOSTS:
+            default: etcd1:2379,etcd2:2379,etcd3:2379
         instructions:
           - title: Database Host
             content: "${CONTAINER_HOSTNAME}"

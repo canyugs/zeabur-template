@@ -1,0 +1,287 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: Etcd Cluster (developing)
+spec:
+  description: |
+    High availability etcd cluster with 3 nodes for distributed key-value store and service discovery. Provides consensus, configuration management, and distributed coordination for cloud-native applications.
+  icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
+  coverImage: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/horizontal/color/etcd-horizontal-color.png
+  tags:
+    - Database
+    - Key-Value Store
+    - Distributed System
+    - Service Discovery
+    - etcd
+  readme: |
+    # etcd High Availability Cluster
+
+    This template deploys a highly available etcd cluster with 3 nodes for distributed consensus and configuration management.
+
+    ## What is etcd?
+
+    etcd is a distributed, reliable key-value store for the most critical data of a distributed system. It's used by:
+    - **Kubernetes**: For cluster configuration and service discovery
+    - **Cloud Foundry**: For application configuration
+    - **CoreOS**: For distributed system coordination
+    - **Many others**: As a configuration backend
+
+    ## Architecture
+
+    - **3-node cluster**: Provides fault tolerance and high availability
+    - **Raft consensus**: Ensures data consistency across nodes
+    - **Automatic leader election**: Self-healing cluster
+    - **Data persistence**: Each node has dedicated storage
+
+    ## Connection Information
+
+    You can connect to any node in the cluster:
+    - **etcd1**: Port 2379 (client), 2380 (peer)
+    - **etcd2**: Port 2379 (client), 2380 (peer)
+    - **etcd3**: Port 2379 (client), 2380 (peer)
+
+    All nodes share the same data through replication.
+
+    ## Usage Examples
+
+    ### Using etcdctl
+
+    ```bash
+    # Set a value
+    etcdctl put mykey "myvalue"
+
+    # Get a value
+    etcdctl get mykey
+
+    # List all keys
+    etcdctl get "" --prefix
+
+    # Check cluster health
+    etcdctl endpoint health --cluster
+
+    # List cluster members
+    etcdctl member list
+    ```
+
+    ### Using HTTP API
+
+    ```bash
+    # Put a key
+    curl http://etcd1:2379/v3/kv/put \
+      -X POST -d '{"key":"Zm9v","value":"YmFy"}'
+
+    # Get a key
+    curl http://etcd1:2379/v3/kv/range \
+      -X POST -d '{"key":"Zm9v"}'
+    ```
+
+    ## Features
+
+    - **High Availability**: 3-node cluster survives single node failures
+    - **Strong Consistency**: Raft consensus algorithm ensures data accuracy
+    - **Watch Support**: Get notified of key changes in real-time
+    - **Lease/TTL**: Automatic key expiration
+    - **Transaction Support**: Atomic multi-key operations
+    - **Authentication & RBAC**: Secure access control (configurable)
+
+    ## Use Cases
+
+    1. **Service Discovery**: Register and discover microservices
+    2. **Configuration Management**: Centralized configuration store
+    3. **Distributed Locking**: Coordinate distributed systems
+    4. **Leader Election**: Automatic failover coordination
+    5. **Message Queue**: Lightweight coordination primitives
+
+    ## Monitoring
+
+    Each node exposes metrics and health endpoints:
+    - **Readiness Check**: `http://etcd1:2379/readyz` (is the node ready to serve traffic?)
+    - **Liveness Check**: `http://etcd1:2379/livez` (does the node need a restart?)
+    - **Health Check**: `http://etcd1:2379/health` (legacy, general health status)
+    - **Metrics**: `http://etcd1:2379/metrics` (Prometheus metrics)
+
+    ### Health Check Endpoints (v3.4.29+)
+
+    - `/readyz` - Check if ready to serve traffic (recommended for load balancers)
+    - `/livez` - Check if process is alive (recommended for container orchestration)
+    - `/health` - Legacy health check (available since v3.3.0)
+
+    Use `?verbose` parameter for detailed check information:
+    ```bash
+    curl http://etcd1:2379/readyz?verbose
+    # Output:
+    # [+]data_corruption ok
+    # [+]serializable_read ok
+    # [+]linearizable_read ok
+    # ok
+    ```
+
+    ## Best Practices
+
+    1. **Use all endpoints**: Configure clients with all node addresses for failover
+    2. **Monitor cluster health**: Regularly check `/health` endpoint
+    3. **Backup regularly**: Use snapshot command for data backup
+    4. **Keep cluster odd-sized**: 3, 5, or 7 nodes for proper quorum
+    5. **Watch resource usage**: Monitor disk I/O and network latency
+
+    ## Documentation
+
+    - [Official etcd Documentation](https://etcd.io/docs/v3.6/)
+    - [etcd API Reference](https://etcd.io/docs/v3.6/learning/api/)
+    - [Best Practices](https://etcd.io/docs/v3.6/op-guide/performance/)
+
+  services:
+    - name: etcd1
+      icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
+      template: PREBUILT
+      spec:
+        source:
+          image: gcr.io/etcd-development/etcd:v3.6.0
+        ports:
+          - id: client
+            port: 2379
+            type: TCP
+          - id: peer
+            port: 2380
+            type: TCP
+          - id: metrics
+            port: 2381
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /etcd-data
+        env:
+          ETCD_NAME:
+            default: etcd1
+          ETCD_DATA_DIR:
+            default: /etcd-data
+          ETCD_INITIAL_ADVERTISE_PEER_URLS:
+            default: http://etcd1:2380
+          ETCD_LISTEN_PEER_URLS:
+            default: http://0.0.0.0:2380
+          ETCD_LISTEN_CLIENT_URLS:
+            default: http://0.0.0.0:2379
+          ETCD_ADVERTISE_CLIENT_URLS:
+            default: http://etcd1:2379
+          ETCD_LISTEN_METRICS_URLS:
+            default: http://0.0.0.0:2381
+          ETCD_INITIAL_CLUSTER:
+            default: etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+          ETCD_INITIAL_CLUSTER_STATE:
+            default: new
+          ETCD_INITIAL_CLUSTER_TOKEN:
+            default: etcd-cluster-zeabur
+        instructions:
+          - title: Client Endpoint
+            content: "http://${CONTAINER_HOSTNAME}:2379"
+          - title: Peer Endpoint
+            content: "http://${CONTAINER_HOSTNAME}:2380"
+          - title: Metrics Endpoint
+            content: "http://${CONTAINER_HOSTNAME}:2381/metrics"
+          - title: Health Check
+            content: "http://${CONTAINER_HOSTNAME}:2381/health"
+          - title: Usage Example
+            content: "etcdctl --endpoints=${CONTAINER_HOSTNAME}:2379 put mykey myvalue"
+
+    - name: etcd2
+      icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
+      template: PREBUILT
+      spec:
+        source:
+          image: gcr.io/etcd-development/etcd:v3.6.0
+        ports:
+          - id: client
+            port: 2379
+            type: TCP
+          - id: peer
+            port: 2380
+            type: TCP
+          - id: metrics
+            port: 2381
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /etcd-data
+        env:
+          ETCD_NAME:
+            default: etcd2
+          ETCD_DATA_DIR:
+            default: /etcd-data
+          ETCD_INITIAL_ADVERTISE_PEER_URLS:
+            default: http://etcd2:2380
+          ETCD_LISTEN_PEER_URLS:
+            default: http://0.0.0.0:2380
+          ETCD_LISTEN_CLIENT_URLS:
+            default: http://0.0.0.0:2379
+          ETCD_ADVERTISE_CLIENT_URLS:
+            default: http://etcd2:2379
+          ETCD_LISTEN_METRICS_URLS:
+            default: http://0.0.0.0:2381
+          ETCD_INITIAL_CLUSTER:
+            default: etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+          ETCD_INITIAL_CLUSTER_STATE:
+            default: new
+          ETCD_INITIAL_CLUSTER_TOKEN:
+            default: etcd-cluster-zeabur
+        instructions:
+          - title: Client Endpoint
+            content: "http://${CONTAINER_HOSTNAME}:2379"
+          - title: Peer Endpoint
+            content: "http://${CONTAINER_HOSTNAME}:2380"
+          - title: Metrics Endpoint
+            content: "http://${CONTAINER_HOSTNAME}:2381/metrics"
+          - title: Health Check
+            content: "http://${CONTAINER_HOSTNAME}:2381/health"
+
+    - name: etcd3
+      icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
+      template: PREBUILT
+      spec:
+        source:
+          image: gcr.io/etcd-development/etcd:v3.6.0
+        ports:
+          - id: client
+            port: 2379
+            type: TCP
+          - id: peer
+            port: 2380
+            type: TCP
+          - id: metrics
+            port: 2381
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /etcd-data
+        env:
+          ETCD_NAME:
+            default: etcd3
+          ETCD_DATA_DIR:
+            default: /etcd-data
+          ETCD_INITIAL_ADVERTISE_PEER_URLS:
+            default: http://etcd3:2380
+          ETCD_LISTEN_PEER_URLS:
+            default: http://0.0.0.0:2380
+          ETCD_LISTEN_CLIENT_URLS:
+            default: http://0.0.0.0:2379
+          ETCD_ADVERTISE_CLIENT_URLS:
+            default: http://etcd3:2379
+          ETCD_LISTEN_METRICS_URLS:
+            default: http://0.0.0.0:2381
+          ETCD_INITIAL_CLUSTER:
+            default: etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+          ETCD_INITIAL_CLUSTER_STATE:
+            default: new
+          ETCD_INITIAL_CLUSTER_TOKEN:
+            default: etcd-cluster-zeabur
+        instructions:
+          - title: Client Endpoint
+            content: "http://${CONTAINER_HOSTNAME}:2379"
+          - title: Peer Endpoint
+            content: "http://${CONTAINER_HOSTNAME}:2380"
+          - title: Metrics Endpoint
+            content: "http://${CONTAINER_HOSTNAME}:2381/metrics"
+          - title: Health Check
+            content: "http://${CONTAINER_HOSTNAME}:2381/health"
+          - title: Cluster Status
+            content: "etcdctl --endpoints=etcd1:2379,etcd2:2379,etcd3:2379 endpoint health --cluster"
