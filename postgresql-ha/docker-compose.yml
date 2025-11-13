@@ -1,0 +1,103 @@
+services:
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.13
+    container_name: etcd
+    environment:
+      ETCD_NAME: etcd
+      ETCD_ADVERTISE_CLIENT_URLS: http://etcd:2379
+      ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: http://etcd:2380
+      ETCD_LISTEN_PEER_URLS: http://0.0.0.0:2380
+      ETCD_INITIAL_CLUSTER: etcd=http://etcd:2380
+      ETCD_ENABLE_V2: "true"
+    ports:
+      - "2379:2379"
+    networks:
+      - pg-ha
+
+  patroni1:
+    image: ghcr.io/zalando/spilo-15:3.2-p1
+    container_name: patroni1
+    depends_on:
+      - etcd
+    environment:
+      SCOPE: pg-ha
+      PATRONI_NAME: patroni1
+      PATRONI_RESTAPI_LISTEN: 0.0.0.0:8008
+      PATRONI_RESTAPI_CONNECT_ADDRESS: patroni1:8008
+      PATRONI_POSTGRESQL_LISTEN: 0.0.0.0:5432
+      PATRONI_POSTGRESQL_CONNECT_ADDRESS: patroni1:5432
+      PATRONI_SUPERUSER_USERNAME: postgres
+      PATRONI_SUPERUSER_PASSWORD: zalando
+      PATRONI_REPLICATION_USERNAME: replicator
+      PATRONI_REPLICATION_PASSWORD: replicator_pass
+      PATRONI_admin_USERNAME: admin
+      PATRONI_admin_PASSWORD: admin_pass
+      DCS_TYPE: etcd
+      PATRONI_ETCD_HOSTS: etcd:2379
+      ETCD_HOSTS: etcd:2379
+    volumes:
+      - patroni1-data:/home/postgres/pgdata
+    networks:
+      - pg-ha
+
+  patroni2:
+    image: ghcr.io/zalando/spilo-15:3.2-p1
+    container_name: patroni2
+    depends_on:
+      - etcd
+    environment:
+      SCOPE: pg-ha
+      PATRONI_NAME: patroni2
+      PATRONI_RESTAPI_LISTEN: 0.0.0.0:8008
+      PATRONI_RESTAPI_CONNECT_ADDRESS: patroni2:8008
+      PATRONI_POSTGRESQL_LISTEN: 0.0.0.0:5432
+      PATRONI_POSTGRESQL_CONNECT_ADDRESS: patroni2:5432
+      PATRONI_SUPERUSER_USERNAME: postgres
+      PATRONI_SUPERUSER_PASSWORD: zalando
+      PATRONI_REPLICATION_USERNAME: replicator
+      PATRONI_REPLICATION_PASSWORD: replicator_pass
+      PATRONI_admin_USERNAME: admin
+      PATRONI_admin_PASSWORD: admin_pass
+      DCS_TYPE: etcd
+      PATRONI_ETCD_HOSTS: etcd:2379
+      ETCD_HOSTS: etcd:2379
+    volumes:
+      - patroni2-data:/home/postgres/pgdata
+    networks:
+      - pg-ha
+
+  patroni3:
+    image: ghcr.io/zalando/spilo-15:3.2-p1
+    container_name: patroni3
+    depends_on:
+      - etcd
+    environment:
+      SCOPE: pg-ha
+      PATRONI_NAME: patroni3
+      PATRONI_RESTAPI_LISTEN: 0.0.0.0:8008
+      PATRONI_RESTAPI_CONNECT_ADDRESS: patroni3:8008
+      PATRONI_POSTGRESQL_LISTEN: 0.0.0.0:5432
+      PATRONI_POSTGRESQL_CONNECT_ADDRESS: patroni3:5432
+      PATRONI_SUPERUSER_USERNAME: postgres
+      PATRONI_SUPERUSER_PASSWORD: zalando
+      PATRONI_REPLICATION_USERNAME: replicator
+      PATRONI_REPLICATION_PASSWORD: replicator_pass
+      PATRONI_admin_USERNAME: admin
+      PATRONI_admin_PASSWORD: admin_pass
+      DCS_TYPE: etcd
+      PATRONI_ETCD_HOSTS: etcd:2379
+      ETCD_HOSTS: etcd:2379
+    volumes:
+      - patroni3-data:/home/postgres/pgdata
+    networks:
+      - pg-ha
+  
+networks:
+  pg-ha:
+    driver: bridge
+
+volumes:
+  patroni1-data:
+  patroni2-data:
+  patroni3-data:

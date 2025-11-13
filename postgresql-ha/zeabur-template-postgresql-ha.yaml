@@ -2,18 +2,30 @@
 apiVersion: zeabur.com/v1
 kind: Template
 metadata:
-  name: PostgreSQL HA
+  name: PostgreSQL HA (developing)
 spec:
   description: |
     High Availability PostgreSQL cluster with Patroni and etcd. Provides automatic failover and replication for production-grade database deployments.
   icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
-  coverImage: https://raw.githubusercontent.com/zeabur/zeabur/main/postgresql-ha/screenshot.webp
+  coverImage: https://kinsta.com/wp-content/uploads/2022/03/what-is-postgresql.png
   tags:
     - Database
     - PostgreSQL
     - High Availability
     - Patroni
-  variables: []
+  variables:
+    - key: POSTGRES_SUPERUSER_PASSWORD
+      type: PASSWORD
+      name: Superuser Password
+      description: Password for PostgreSQL superuser (postgres user)
+    - key: POSTGRES_REPLICATION_PASSWORD
+      type: PASSWORD
+      name: Replication Password
+      description: Password for PostgreSQL replication user
+    - key: POSTGRES_ADMIN_PASSWORD
+      type: PASSWORD
+      name: Admin Password
+      description: Password for PostgreSQL admin user
   readme: |
     # PostgreSQL High Availability Cluster
 
@@ -72,6 +84,11 @@ spec:
           - id: peer
             port: 2380
             type: TCP
+        healthCheck:
+          type: HTTP
+          port: client
+          http:
+            path: /health
         env:
           ETCD_NAME:
             default: etcd
@@ -116,6 +133,11 @@ spec:
           - id: api
             port: 8008
             type: HTTP
+        healthCheck:
+          type: HTTP
+          port: api
+          http:
+            path: /health
         volumes:
           - id: data
             dir: /home/postgres/pgdata
@@ -135,21 +157,46 @@ spec:
           PATRONI_SUPERUSER_USERNAME:
             default: postgres
           PATRONI_SUPERUSER_PASSWORD:
-            default: zalando
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
           PATRONI_REPLICATION_USERNAME:
             default: replicator
           PATRONI_REPLICATION_PASSWORD:
-            default: replicator_pass
+            default: ${POSTGRES_REPLICATION_PASSWORD}
           PATRONI_admin_USERNAME:
             default: admin
           PATRONI_admin_PASSWORD:
-            default: admin_pass
+            default: ${POSTGRES_ADMIN_PASSWORD}
+          PGPASSWORD_SUPERUSER:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
+          PGPASSWORD_STANDBY:
+            default: ${POSTGRES_REPLICATION_PASSWORD}
+          PGPASSWORD_ADMIN:
+            default: ${POSTGRES_ADMIN_PASSWORD}
           DCS_TYPE:
             default: etcd
           PATRONI_ETCD_HOSTS:
             default: etcd:2379
           ETCD_HOSTS:
             default: etcd:2379
+        instructions:
+          - title: Database Host
+            content: "${CONTAINER_HOSTNAME}"
+          - title: Database Port
+            content: "5432"
+          - title: Superuser Username
+            content: "postgres"
+          - title: Superuser Password
+            content: "${POSTGRES_SUPERUSER_PASSWORD}"
+          - title: Admin Username
+            content: "admin"
+          - title: Admin Password
+            content: "${POSTGRES_ADMIN_PASSWORD}"
+          - title: Superuser Connection String
+            content: "postgresql://postgres:${POSTGRES_SUPERUSER_PASSWORD}@${CONTAINER_HOSTNAME}:5432/postgres"
+          - title: Admin Connection String
+            content: "postgresql://admin:${POSTGRES_ADMIN_PASSWORD}@${CONTAINER_HOSTNAME}:5432/postgres"
+          - title: Health Check API
+            content: "http://${CONTAINER_HOSTNAME}:8008/health"
 
     - name: patroni2
       icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
@@ -179,6 +226,11 @@ spec:
           - id: api
             port: 8008
             type: HTTP
+        healthCheck:
+          type: HTTP
+          port: api
+          http:
+            path: /health
         volumes:
           - id: data
             dir: /home/postgres/pgdata
@@ -198,21 +250,46 @@ spec:
           PATRONI_SUPERUSER_USERNAME:
             default: postgres
           PATRONI_SUPERUSER_PASSWORD:
-            default: zalando
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
           PATRONI_REPLICATION_USERNAME:
             default: replicator
           PATRONI_REPLICATION_PASSWORD:
-            default: replicator_pass
+            default: ${POSTGRES_REPLICATION_PASSWORD}
           PATRONI_admin_USERNAME:
             default: admin
           PATRONI_admin_PASSWORD:
-            default: admin_pass
+            default: ${POSTGRES_ADMIN_PASSWORD}
+          PGPASSWORD_SUPERUSER:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
+          PGPASSWORD_STANDBY:
+            default: ${POSTGRES_REPLICATION_PASSWORD}
+          PGPASSWORD_ADMIN:
+            default: ${POSTGRES_ADMIN_PASSWORD}
           DCS_TYPE:
             default: etcd
           PATRONI_ETCD_HOSTS:
             default: etcd:2379
           ETCD_HOSTS:
             default: etcd:2379
+        instructions:
+          - title: Database Host
+            content: "${CONTAINER_HOSTNAME}"
+          - title: Database Port
+            content: "5432"
+          - title: Superuser Username
+            content: "postgres"
+          - title: Superuser Password
+            content: "${POSTGRES_SUPERUSER_PASSWORD}"
+          - title: Admin Username
+            content: "admin"
+          - title: Admin Password
+            content: "${POSTGRES_ADMIN_PASSWORD}"
+          - title: Superuser Connection String
+            content: "postgresql://postgres:${POSTGRES_SUPERUSER_PASSWORD}@${CONTAINER_HOSTNAME}:5432/postgres"
+          - title: Admin Connection String
+            content: "postgresql://admin:${POSTGRES_ADMIN_PASSWORD}@${CONTAINER_HOSTNAME}:5432/postgres"
+          - title: Health Check API
+            content: "http://${CONTAINER_HOSTNAME}:8008/health"
 
     - name: patroni3
       icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
@@ -242,6 +319,11 @@ spec:
           - id: api
             port: 8008
             type: HTTP
+        healthCheck:
+          type: HTTP
+          port: api
+          http:
+            path: /health
         volumes:
           - id: data
             dir: /home/postgres/pgdata
@@ -261,18 +343,43 @@ spec:
           PATRONI_SUPERUSER_USERNAME:
             default: postgres
           PATRONI_SUPERUSER_PASSWORD:
-            default: zalando
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
           PATRONI_REPLICATION_USERNAME:
             default: replicator
           PATRONI_REPLICATION_PASSWORD:
-            default: replicator_pass
+            default: ${POSTGRES_REPLICATION_PASSWORD}
           PATRONI_admin_USERNAME:
             default: admin
           PATRONI_admin_PASSWORD:
-            default: admin_pass
+            default: ${POSTGRES_ADMIN_PASSWORD}
+          PGPASSWORD_SUPERUSER:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
+          PGPASSWORD_STANDBY:
+            default: ${POSTGRES_REPLICATION_PASSWORD}
+          PGPASSWORD_ADMIN:
+            default: ${POSTGRES_ADMIN_PASSWORD}
           DCS_TYPE:
             default: etcd
           PATRONI_ETCD_HOSTS:
             default: etcd:2379
           ETCD_HOSTS:
             default: etcd:2379
+        instructions:
+          - title: Database Host
+            content: "${CONTAINER_HOSTNAME}"
+          - title: Database Port
+            content: "5432"
+          - title: Superuser Username
+            content: "postgres"
+          - title: Superuser Password
+            content: "${POSTGRES_SUPERUSER_PASSWORD}"
+          - title: Admin Username
+            content: "admin"
+          - title: Admin Password
+            content: "${POSTGRES_ADMIN_PASSWORD}"
+          - title: Superuser Connection String
+            content: "postgresql://postgres:${POSTGRES_SUPERUSER_PASSWORD}@${CONTAINER_HOSTNAME}:5432/postgres"
+          - title: Admin Connection String
+            content: "postgresql://admin:${POSTGRES_ADMIN_PASSWORD}@${CONTAINER_HOSTNAME}:5432/postgres"
+          - title: Health Check API
+            content: "http://${CONTAINER_HOSTNAME}:8008/health"
