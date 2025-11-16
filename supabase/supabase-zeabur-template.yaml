@@ -255,9 +255,9 @@ spec:
               dir: /var/lib/postgresql
         instructions:
             - title: Connection String
-              content: postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}
+              content: postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${DATABASE_NAME}
             - title: PostgreSQL Connect Command
-              content: psql "postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}"
+              content: psql "postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${DATABASE_NAME}"
             - title: PostgreSQL username
               content: ${DATABASE_USER}
             - title: PostgresSQL password
@@ -265,9 +265,9 @@ spec:
             - title: PostgresSQL database
               content: ${DATABASE_NAME}
             - title: PostgreSQL host
-              content: ${DATABASE_HOST}
+              content: ${PORT_FORWARDED_HOSTNAME}
             - title: PostgreSQL port
-              content: ${DATABASE_PORT}
+              content: ${DATABASE_PORT_FORWARDED_PORT}
         configs:
           - path: /docker-entrypoint-initdb.d/migrations/99-realtime.sql
             template: |
