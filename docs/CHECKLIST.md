@@ -34,8 +34,9 @@
 - [ ] 已準備服務圖示（SVG 或 PNG，512x512px+）
 - [ ] 已準備封面圖片（WebP，1200x630px）
 - [ ] 所有圖片 URL 可公開存取
-- [ ] 已測試圖片 URL（`curl -I <URL>` 回傳 200 OK）
-- [ ] 圖片顯示正常（在瀏覽器測試）
+- [ ] 已測試圖片 URL
+  - 方法 1: 在瀏覽器開啟 URL，確認圖片正常顯示
+  - 方法 2: 使用 `curl -I <URL>` 檢查回傳 200 OK
 
 ---
 
@@ -65,7 +66,7 @@
 - [ ] 🔴 至少有一個服務
 - [ ] 每個服務都有唯一的 `name`（小寫）
 - [ ] 每個服務都有 `icon`
-- [ ] 🔴 `template` 設為 `PREBUILT`
+- [ ] 🔴 `template` 設為 `PREBUILT_V2`
 - [ ] Docker `image` 名稱和標籤正確（避免使用 `latest`）
 - [ ] `ports` 定義正確（id, port, type）
 - [ ] `volumes` 路徑正確（如適用）
@@ -166,7 +167,15 @@ services:
 - [ ] 圖片格式正確（SVG/PNG/WebP）
 - [ ] 圖片大小合理（< 1MB）
 
-**測試指令：**
+**測試方法：**
+
+**方法 1: 瀏覽器測試（推薦）**
+```
+1. 複製圖片 URL 到瀏覽器
+2. 確認圖片正常顯示，沒有 404 錯誤
+```
+
+**方法 2: 命令列測試**
 ```bash
 curl -I https://example.com/icon.svg
 # 預期：HTTP/2 200
@@ -349,6 +358,8 @@ git push origin add-{service-name}-template
 
 ```bash
 # 1. 測試所有圖片 URL
+# 方法 A: 在瀏覽器中開啟每個 URL，確認圖片顯示正常
+# 方法 B: 使用命令列
 curl -I <icon-url>
 curl -I <cover-image-url>
 

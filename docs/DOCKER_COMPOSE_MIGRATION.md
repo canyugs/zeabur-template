@@ -182,7 +182,7 @@ services:
 services:
   - name: db
     icon: https://example.com/postgres-icon.svg
-    template: PREBUILT
+    template: PREBUILT_V2
     spec:
       source:
         image: postgres:16
@@ -310,7 +310,7 @@ volumes:
 services:
   - name: postgresql
     icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
-    template: PREBUILT
+    template: PREBUILT_V2
     spec:
       source:
         image: postgres:16-alpine
@@ -371,7 +371,7 @@ volumes:
 services:
   - name: redis
     icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/redis.svg
-    template: PREBUILT
+    template: PREBUILT_V2
     spec:
       source:
         image: redis:alpine
@@ -477,7 +477,7 @@ spec:
       # PostgreSQL 資料庫
       - name: db
         icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
-        template: PREBUILT
+        template: PREBUILT_V2
         spec:
           source:
             image: postgres:16-alpine
@@ -510,7 +510,7 @@ spec:
       # Redis 快取
       - name: redis
         icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/redis.svg
-        template: PREBUILT
+        template: PREBUILT_V2
         spec:
           source:
             image: redis:alpine
@@ -535,7 +535,7 @@ spec:
       # Server 服務
       - name: server
         icon: https://example.com/twenty-icon.svg
-        template: PREBUILT
+        template: PREBUILT_V2
         domainKey: PUBLIC_DOMAIN
         dependencies:
           - db
@@ -573,7 +573,7 @@ spec:
       # Worker 服務
       - name: worker
         icon: https://example.com/twenty-icon.svg
-        template: PREBUILT
+        template: PREBUILT_V2
         dependencies:
           - db
           - server

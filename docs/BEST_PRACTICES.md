@@ -540,14 +540,22 @@ services:
 ### 圖片驗證檢查清單
 
 - [ ] 所有圖片 URL 在瀏覽器中可以開啟
-- [ ] 使用 `curl -I` 測試 URL 回傳 200 OK
+- [ ] 圖片正常顯示（沒有 404 或其他錯誤）
 - [ ] 圖片格式正確（SVG/PNG/WebP）
 - [ ] 圖片大小合理（< 1MB）
 - [ ] URL 使用 HTTPS
 - [ ] URL 不含認證資訊
 
-### 圖片最佳實踐
+### 圖片驗證方法
 
+**方法 1: 瀏覽器測試（推薦）**
+```
+1. 複製每個圖片 URL
+2. 在瀏覽器新分頁中開啟
+3. 確認圖片正常顯示
+```
+
+**方法 2: 命令列測試**
 ```bash
 # 測試所有圖片 URL
 curl -I https://example.com/icon.svg
@@ -855,7 +863,7 @@ services:
 x-postgresql: &postgresql
   name: postgresql
   icon: https://...
-  template: PREBUILT
+  template: PREBUILT_V2
   spec:
     # ...
 

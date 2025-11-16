@@ -441,20 +441,30 @@ services:
 
 #### 檢查步驟
 
+**方法 1: 使用瀏覽器（推薦，最簡單）**
+```
+1. 複製圖片 URL
+2. 在瀏覽器新分頁貼上並開啟
+3. 確認圖片正常顯示（不是 404 頁面或錯誤訊息）
+```
+
+**方法 2: 使用命令列**
 ```bash
-# 1. 測試圖片 URL
+# 測試圖片 URL
 curl -I https://example.com/icon.svg
 
 # 預期輸出：
 HTTP/2 200
 content-type: image/svg+xml
+```
 
-# 2. 在瀏覽器開啟 URL
-# 應該能直接看到圖片
+**檢查 URL 格式：**
+```
+# ✅ 正確: GitHub raw URL
+https://raw.githubusercontent.com/user/repo/main/icon.svg
 
-# 3. 檢查 URL 格式
-# ✅ 正確: https://raw.githubusercontent.com/user/repo/main/icon.svg
-# ❌ 錯誤: https://github.com/user/repo/blob/main/icon.svg
+# ❌ 錯誤: GitHub blob URL（會顯示網頁而非圖片）
+https://github.com/user/repo/blob/main/icon.svg
 ```
 
 #### 解決方案

@@ -41,7 +41,7 @@ spec:
   services:
     - name: service-name
       icon: https://example.com/icon.svg
-      template: PREBUILT
+      template: PREBUILT_V2
       domainKey: VARIABLE_NAME
       dependencies:
         - other-service
@@ -78,7 +78,7 @@ localization:
   zh-TW:
     description: |
       繁體中文描述
-    coverImage: ./cover-zh-TW.webp
+    # coverImage: https://example.com/cover-zh-TW.webp  # 可選，必須是完整 URL
     variables:
       - key: VARIABLE_NAME
         name: 顯示名稱
@@ -354,7 +354,7 @@ variables:
 |------|------|------|------|
 | `name` | string | ✅ | 服務名稱（小寫） |
 | `icon` | string | 建議 | 服務圖示 URL |
-| `template` | enum | ✅ | 固定為 `PREBUILT` |
+| `template` | enum | ✅ | 固定為 `PREBUILT_V2` |
 | `domainKey` | string/object | 選填 | 網域變數綁定 |
 | `dependencies` | array | 選填 | 依賴的服務列表 |
 | `spec` | object | ✅ | 服務規格 |

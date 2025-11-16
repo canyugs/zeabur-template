@@ -121,9 +121,18 @@ POSTGRES_DB: 資料庫名稱
 
 **⚠️ 重要：確保圖片 URL 可公開存取**
 
+**方法 1: 使用瀏覽器測試（推薦，最直觀）**
+```
+1. 複製圖片 URL
+2. 在瀏覽器新分頁貼上並開啟
+3. 確認圖片正常顯示，沒有出現 404 或其他錯誤
+```
+
+**方法 2: 使用命令列測試**
 ```bash
 # 測試圖片 URL 是否可存取
 curl -I https://example.com/icon.svg
+# 預期回應: HTTP/2 200
 ```
 
 ### 1.4 查看類似模板
@@ -321,12 +330,17 @@ icon: https://random-cdn.com/icon.svg
 **封面圖片（coverImage）：**
 
 ```yaml
-# ✅ 推薦：放在你的服務目錄中
+# ✅ 正確：使用完整的 HTTPS URL
 coverImage: https://raw.githubusercontent.com/username/zeabur-template/main/my-service/screenshot.webp
 
-# 本地路徑（會被轉換成 GitHub raw URL）
-coverImage: ./screenshot.webp
+# ❌ 錯誤：本地相對路徑無法使用
+# coverImage: ./screenshot.webp
 ```
+
+**重要提醒：**
+- 必須使用完整的 HTTPS URL
+- 不支援相對路徑（如 `./screenshot.webp`）
+- 圖片必須上傳到可公開存取的位置（如 GitHub）
 
 ### ✅ 基本資訊檢查清單
 
@@ -368,14 +382,14 @@ description: |
 spec:
     services:
       - name: database      # 第一個服務（資料庫）
-        template: PREBUILT
+        template: PREBUILT_V2
         spec:
           source:
             image: postgres:16-alpine
           # ... 其他配置
 
       - name: app           # 第二個服務（應用）
-        template: PREBUILT
+        template: PREBUILT_V2
         dependencies:
           - database        # 依賴資料庫
         spec:
@@ -390,7 +404,7 @@ spec:
 services:
   - name: postgresql
     icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
-    template: PREBUILT
+    template: PREBUILT_V2
     spec:
       source:
         image: postgres:16-alpine
@@ -435,7 +449,7 @@ services:
 |------|------|------|
 | `name` | 服務名稱（小寫） | `postgresql` |
 | `icon` | 服務圖示 | URL |
-| `template` | 固定為 `PREBUILT` | - |
+| `template` | 固定為 `PREBUILT_V2` | - |
 | `spec.source.image` | Docker 映像 | `postgres:16-alpine` |
 | `spec.ports` | 埠號定義 | 見下方說明 |
 | `spec.volumes` | 資料卷 | 見下方說明 |
@@ -497,13 +511,284 @@ volumes:
 - ❌ 不要期望 Volume 裡有預設檔案
 - ✅ 如需配置檔，使用 `configs` 注入
 
-### 4.5 定義應用服務
+### 4.5 添加連線說明（Instructions）
+
+`instructions` 可以在 Zeabur 介面上顯示連線資訊，讓使用者方便複製使用，特別適合資料庫服務。
+
+#### 基本結構
+
+```yaml
+spec:
+  instructions:
+    - title: Connection String
+      content: postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${DATABASE_NAME}
+
+    - title: PostgreSQL host
+      content: ${PORT_FORWARDED_HOSTNAME}
+
+    - title: PostgreSQL port
+      content: ${DATABASE_PORT_FORWARDED_PORT}
+```
+
+#### 欄位說明
+
+| 欄位 | 說明 | 範例 |
+|------|------|------|
+| `title` | 說明標題 | `Connection String` |
+| `content` | 內容（支援變數） | `${PORT_FORWARDED_HOSTNAME}` |
+
+#### Port Forwarding 內建變數
+
+Zeabur 提供特殊的內建變數用於外部連線：
+
+**`${PORT_FORWARDED_HOSTNAME}`**
+- 外部可訪問的主機名稱
+- 用於從本地或外部環境連接到 Zeabur 上的服務
+
+**`${[PORTNAME]_PORT_FORWARDED_PORT}`**
+- 對應 port id 的轉發埠號
+- 命名規則：將 port id 轉為大寫，加上 `_PORT_FORWARDED_PORT`
+
+**Port ID 對應範例：**
+
+```yaml
+ports:
+  - id: database          # port id
+    port: 5432
+    type: TCP
+
+# 在 instructions 中使用：
+instructions:
+  - title: Port
+    content: ${DATABASE_PORT_FORWARDED_PORT}  # id: database → DATABASE_PORT_FORWARDED_PORT
+```
+
+```yaml
+ports:
+  - id: redis             # port id
+    port: 6379
+    type: TCP
+
+# 對應變數：
+# ${REDIS_PORT_FORWARDED_PORT}
+```
+
+#### 完整範例（PostgreSQL）
+
+```yaml
+services:
+  - name: postgresql
+    template: PREBUILT_V2
+    spec:
+      source:
+        image: postgres:16-alpine
+
+      ports:
+        - id: database    # ← 定義 port id
+          port: 5432
+          type: TCP
+
+      env:
+        POSTGRES_USER:
+          default: postgres
+          expose: true
+
+        POSTGRES_PASSWORD:
+          default: ${PASSWORD}
+          expose: true
+
+        POSTGRES_DB:
+          default: postgres
+          expose: true
+
+      instructions:
+        # 完整連線字串
+        - title: Connection String
+          content: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DB}
+
+        # psql 命令
+        - title: PostgreSQL Connect Command
+          content: psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DB}"
+
+        # 分開的連線資訊
+        - title: Host
+          content: ${PORT_FORWARDED_HOSTNAME}
+
+        - title: Port
+          content: ${DATABASE_PORT_FORWARDED_PORT}
+
+        - title: Username
+          content: ${POSTGRES_USER}
+
+        - title: Password
+          content: ${POSTGRES_PASSWORD}
+
+        - title: Database
+          content: ${POSTGRES_DB}
+```
+
+#### 使用場景
+
+**✅ 適合使用 instructions 的情況：**
+
+- 資料庫服務（PostgreSQL, MySQL, MongoDB, Redis）
+- 需要從外部連接的服務
+- 需要提供連線字串或憑證的服務
+- 有管理後台需要顯示登入資訊
+
+**範例應用：**
+
+```yaml
+# Redis
+instructions:
+  - title: Redis Connection
+    content: redis://:${REDIS_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${REDIS_PORT_FORWARDED_PORT}
+
+# MongoDB
+instructions:
+  - title: MongoDB URI
+    content: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${MONGO_PORT_FORWARDED_PORT}/${MONGO_DB}
+
+# MySQL
+instructions:
+  - title: MySQL Connection
+    content: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${MYSQL_PORT_FORWARDED_PORT}/${MYSQL_DATABASE}
+```
+
+#### 與內部連線的區別
+
+**內部連線（服務間）：**
+```yaml
+env:
+  DATABASE_HOST:
+    default: ${CONTAINER_HOSTNAME}  # 內部主機名稱
+  DATABASE_PORT:
+    default: ${DATABASE_PORT}       # 內部埠號（如 5432）
+```
+
+**外部連線（instructions）：**
+```yaml
+instructions:
+  - title: Host
+    content: ${PORT_FORWARDED_HOSTNAME}        # 外部主機名稱
+  - title: Port
+    content: ${DATABASE_PORT_FORWARDED_PORT}   # 轉發後的埠號
+```
+
+**⚠️ 重要：不要混用**
+- `CONTAINER_HOSTNAME` 和 `DATABASE_PORT` 用於服務間內部連線
+- `PORT_FORWARDED_HOSTNAME` 和 `DATABASE_PORT_FORWARDED_PORT` 用於外部連線
+
+#### ✅ Instructions 檢查清單
+
+- [ ] port 有定義唯一的 `id`
+- [ ] port id 正確轉換為大寫變數名（如 `database` → `DATABASE_PORT_FORWARDED_PORT`）
+- [ ] 所有使用的環境變數都有 `expose: true`
+- [ ] title 清楚說明用途
+- [ ] 連線字串格式正確
+- [ ] 測試複製後可以正常連線
+
+#### 💡 最佳實踐
+
+**提供多種格式：**
+```yaml
+instructions:
+  # 1. 完整連線字串（方便複製）
+  - title: Connection String
+    content: postgresql://...
+
+  # 2. 命令列格式（方便執行）
+  - title: Connect Command
+    content: psql "postgresql://..."
+
+  # 3. 分開的參數（方便填入其他工具）
+  - title: Host
+    content: ${PORT_FORWARDED_HOSTNAME}
+  - title: Port
+    content: ${DATABASE_PORT_FORWARDED_PORT}
+```
+
+**清楚的標題：**
+```yaml
+# ✅ 推薦：具體說明
+- title: PostgreSQL Connection String
+- title: Redis Connection URL
+- title: MongoDB URI
+
+# ❌ 避免：太簡短
+- title: Connection
+- title: URL
+```
+
+#### ⚠️ 常見錯誤
+
+❌ **錯誤 1: Port ID 對應錯誤**
+```yaml
+ports:
+  - id: database
+    port: 5432
+
+instructions:
+  - title: Port
+    content: ${DB_PORT_FORWARDED_PORT}  # 錯誤！應該是 DATABASE_PORT_FORWARDED_PORT
+```
+
+✅ **正確做法**
+```yaml
+ports:
+  - id: database
+    port: 5432
+
+instructions:
+  - title: Port
+    content: ${DATABASE_PORT_FORWARDED_PORT}  # port id "database" → "DATABASE"
+```
+
+❌ **錯誤 2: 使用內部連線變數**
+```yaml
+instructions:
+  - title: Connection
+    content: postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/db  # 這是內部連線！
+```
+
+✅ **正確做法**
+```yaml
+instructions:
+  - title: Connection
+    content: postgresql://${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/db
+```
+
+❌ **錯誤 3: 引用未 expose 的變數**
+```yaml
+env:
+  POSTGRES_PASSWORD:
+    default: ${PASSWORD}
+    # 忘記 expose: true
+
+instructions:
+  - title: Password
+    content: ${POSTGRES_PASSWORD}  # 無法取得值！
+```
+
+✅ **正確做法**
+```yaml
+env:
+  POSTGRES_PASSWORD:
+    default: ${PASSWORD}
+    expose: true  # ← 必須加上
+
+instructions:
+  - title: Password
+    content: ${POSTGRES_PASSWORD}
+```
+
+### 4.6 定義應用服務
 
 ```yaml
 services:
   - name: app
     icon: https://example.com/app-icon.svg
-    template: PREBUILT
+    template: PREBUILT_V2
 
     # 綁定網域到這個服務
     domainKey: PUBLIC_DOMAIN
@@ -559,7 +844,7 @@ services:
 
 - [ ] 每個服務都有唯一的 `name`
 - [ ] 每個服務都有 `icon`
-- [ ] `template` 設為 `PREBUILT`
+- [ ] `template` 設為 `PREBUILT_V2`
 - [ ] Docker `image` 名稱和標籤正確
 - [ ] `ports` 定義正確（id、port、type）
 - [ ] `volumes` 路徑正確
@@ -1260,14 +1545,21 @@ readme: |
 - [ ] `spec.services` 至少有一個服務
 
 **圖片資源：**
+
+**方法 1: 使用瀏覽器測試**
+```
+1. 在瀏覽器中分別開啟每個圖片 URL
+2. 確認圖片正常顯示
+```
+
+**方法 2: 使用命令列測試**
 ```bash
 # 測試所有圖片 URL
 curl -I https://example.com/icon.svg
 curl -I https://example.com/cover.webp
 curl -I https://example.com/service-icon.svg
+# 預期回應: HTTP/2 200
 ```
-
-預期結果：`200 OK`
 
 ### 8.2 使用 Zeabur CLI 部署
 
@@ -1366,15 +1658,25 @@ npx zeabur@latest template deploy zeabur-template-my-service.yaml
 #### 問題 4: 圖片無法顯示
 
 **檢查：**
+
+**方法 1: 瀏覽器測試**
+```
+1. 複製圖片 URL 到瀏覽器
+2. 確認圖片可以正常顯示
+3. 檢查是否有 404、403 等錯誤
+```
+
+**方法 2: 命令列測試**
 ```bash
 # 測試圖片 URL
 curl -I https://example.com/icon.svg
-
-# 常見問題：
-# - URL 錯誤或失效
-# - CORS 限制
-# - 檔案不存在
+# 預期: HTTP/2 200
 ```
+
+**常見問題：**
+- URL 錯誤或失效
+- CORS 限制
+- 檔案不存在
 
 ### ✅ 測試部署檢查清單
 
@@ -1427,7 +1729,7 @@ localization:
       description: |
         繁體中文描述
 
-      coverImage: ./screenshot-zh-TW.webp  # 可選：語言專屬圖片
+      # coverImage: https://example.com/screenshot-zh-TW.webp  # 可選：語言專屬圖片（必須是完整 URL）
 
       variables:
         - key: PUBLIC_DOMAIN
@@ -1707,6 +2009,8 @@ localization:
 # VS Code 應該沒有錯誤提示
 
 # 2. 測試所有圖片
+# 方法 A: 在瀏覽器中開啟每個 URL，確認圖片顯示
+# 方法 B: 使用命令列
 curl -I https://example.com/icon.svg
 curl -I https://example.com/cover.webp
 
