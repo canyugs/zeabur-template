@@ -1,0 +1,175 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: Postiz
+spec:
+    description: All-in-one open-source platform to schedule, publish, and manage content across 19+ social media platforms — with AI assistance, powerful scheduling, and full self-hosting control.
+    coverImage: https://cdn.zeabur.com/postiz-banner.jpg
+    icon: https://cdn.zeabur.com/postiz.png
+    variables:
+        - key: PUBLIC_DOMAIN
+          type: DOMAIN
+          name: Public Domain
+          description: The main public domain used to access your Postiz instance.
+    readme: |-
+        # Postiz
+
+        Your ultimate social media scheduling tool: Features seamless integration with various social media platforms, advanced scheduling options, analytics, and more. Completely open-source for self-hosting.
+    services:
+        - name: redis
+          icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/redis.svg
+          template: PREBUILT
+          spec:
+            source:
+                image: redis:7.2
+                command:
+                    - redis-server
+                    - /usr/local/etc/redis/redis.conf
+            ports:
+                - id: database
+                  port: 6379
+                  type: TCP
+            volumes:
+                - id: data
+                  dir: /data
+                - id: config
+                  dir: /usr/local/etc/redis
+            env:
+                REDIS_PASSWORD:
+                    default: ${PASSWORD}
+                    expose: true
+                REDIS_URI:
+                    default: redis://:${REDIS_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}
+                    expose: true
+            configs:
+                - path: /usr/local/etc/redis/redis.conf
+                  template: |
+                    port 6379
+                    daemonize no
+                    requirepass ${REDIS_PASSWORD}
+                    maxmemory 256mb
+                    maxmemory-policy allkeys-lru
+                  permission: null
+                  envsubst: true
+        - name: postgres
+          icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+          template: PREBUILT
+          spec:
+            source:
+                image: postgres:17-alpine
+            ports:
+                - id: database
+                  port: 5432
+                  type: TCP
+            volumes:
+                - id: data
+                  dir: /var/lib/postgresql/data
+            env:
+                POSTGRES_CONNECTION_STRING:
+                    default: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DB}
+                    expose: true
+                POSTGRES_DB:
+                    default: postiz
+                POSTGRES_PASSWORD:
+                    default: postiz
+                POSTGRES_USER:
+                    default: postiz
+            configs:
+                - path: /etc/postgresql/postgresql.conf
+                  template: |
+                    # https://github.com/postgres/postgres/blob/master/src/backend/utils/misc/postgresql.conf.sample
+                    listen_addresses = '*'
+                    max_connections = 100
+                    shared_buffers = 128MB
+                    dynamic_shared_memory_type = posix
+                    max_wal_size = 1GB
+                    min_wal_size = 80MB
+                    log_timezone = 'Etc/UTC'
+                    datestyle = 'iso, mdy'
+                    timezone = 'Etc/UTC'
+                    lc_messages = 'en_US.utf8'
+                    lc_monetary = 'en_US.utf8'
+                    lc_numeric = 'en_US.utf8'
+                    lc_time = 'en_US.utf8'
+                    default_text_search_config = 'pg_catalog.english'
+                  permission: null
+                  envsubst: null
+            healthCheck:
+                type: TCP
+                port: database
+        - name: postiz
+          icon: https://cdn.zeabur.com/postiz.png
+          dependencies:
+            - redis
+            - postgres
+          template: PREBUILT
+          spec:
+            source:
+                image: ghcr.io/gitroomhq/postiz-app:latest
+            ports:
+                - id: web
+                  port: 5000
+                  type: HTTP
+            volumes:
+                - id: uploads
+                  dir: /uploads/
+            env:
+                BACKEND_INTERNAL_URL:
+                    default: http://localhost:3000
+                DATABASE_URL:
+                    default: ${POSTGRES_CONNECTION_STRING}
+                FRONTEND_URL:
+                    default: https://${ZEABUR_WEB_DOMAIN}
+                HOST:
+                    default: 0.0.0.0
+                JWT_SECRET:
+                    default: ${PASSWORD}
+                MAIN_URL:
+                    default: https://${ZEABUR_WEB_DOMAIN}
+                NEXT_PUBLIC_BACKEND_URL:
+                    default: https://${ZEABUR_WEB_DOMAIN}/api
+                NEXT_PUBLIC_UPLOAD_DIRECTORY:
+                    default: /uploads
+                NODE_ENV:
+                    default: production
+                REDIS_URL:
+                    default: ${REDIS_URI}
+                STORAGE_PROVIDER:
+                    default: local
+                UPLOAD_DIRECTORY:
+                    default: /uploads
+            configs:
+                - path: /app/apps/backend/dist/libraries/helpers/src/subdomain/subdomain.management.js
+                  template: |
+                    "use strict";
+                    Object.defineProperty(exports, "__esModule", { value: true });
+                    exports.getCookieUrlFromDomain = getCookieUrlFromDomain;
+                    const tldts_1 = require("tldts");
+                    function getCookieUrlFromDomain(domain) {
+                        const url = (0, tldts_1.parse)(domain);
+                        return url.hostname;
+                    }
+                    //# sourceMappingURL=subdomain.management.js.map
+                  permission: null
+                  envsubst: null
+            healthCheck:
+                type: TCP
+                port: web
+          domainKey: PUBLIC_DOMAIN
+localization:
+    en-US:
+        description: All-in-one open-source platform to schedule, publish, and manage content across 19+ social media platforms — with AI assistance, powerful scheduling, and full self-hosting control.
+        readme: "# Postiz\n\nPostiz is your all-in-one open-source social media scheduling platform.\n\nSeamlessly schedule, publish, and manage content across over 19 platforms — including Threads, X (Twitter), Facebook, Instagram, Reddit, Telegram, and more.\n\n## ✨ Key Features\n\n- \U0001F9E0 Built-in AI Assistant  \n  Generate post content and images with AI, directly in the editor.\n\n- \U0001F4C5 Advanced Scheduling  \n  Visual calendar, post repeats, time zone support, and drag & drop rescheduling.\n\n- \U0001F9E9 Platform Integration  \n  Connect 19+ major platforms — Threads, Mastodon, Bluesky, Nostr, Lemmy, Discord, etc.\n\n- \U0001F4CA Basic Analytics  \n  Track post performance and engagement across platforms.\n\n- \U0001F6E0️ Fully Open-Source & Self-Hosted  \n  No vendor lock-in. Keep control of your data with Docker-based deployment.\n\n- \U0001F465 Team Collaboration  \n  Invite team members, assign roles, and work together on shared content plans.\n\nPerfect for indie creators, agencies, or any team managing social media workflows.\n\n→ Website: https://postiz.com  \n→ Source Code: https://github.com/gitroomhq/postiz-app"
+    es-ES:
+        description: Plataforma todo-en-uno y de código abierto para programar, publicar y gestionar contenido en más de 19 redes sociales — con IA integrada y control total de autoalojamiento.
+        readme: "# Postiz\n\nPostiz es una plataforma de programación de redes sociales todo-en-uno, completamente de código abierto y autoalojada.\n\nPrograma y gestiona contenido en más de 19 plataformas, incluyendo Threads, X (Twitter), Facebook, Instagram, Reddit, Telegram y más.\n\n## ✨ Funcionalidades clave\n\n- \U0001F9E0 Asistente de IA integrado  \n  Genera textos e imágenes con IA directamente desde el editor.\n\n- \U0001F4C5 Programación avanzada  \n  Calendario visual, publicaciones repetidas, soporte para zonas horarias, reprogramación por arrastrar y soltar.\n\n- \U0001F9E9 Integración multiplataforma  \n  Compatible con Threads, Mastodon, Bluesky, Nostr, Lemmy, Discord, etc.\n\n- \U0001F4CA Análisis básico  \n  Monitorea el rendimiento y la interacción de tus publicaciones.\n\n- \U0001F6E0️ Código abierto y autoalojado  \n  Control total de tus datos con despliegue basado en Docker, sin dependencia de terceros.\n\n- \U0001F465 Colaboración en equipo  \n  Invita miembros, asigna roles y planifica contenido de forma colaborativa.\n\nIdeal para creadores, agencias y equipos que gestionan redes sociales.\n\n→ Sitio web: https://postiz.com  \n→ Código fuente: https://github.com/gitroomhq/postiz-app"
+    ja-JP:
+        description: 19以上のSNSに対応した、AI搭載・セルフホスト可能なオールインワンのオープンソース投稿管理プラットフォーム。
+        readme: "# Postiz\n\nPostiz は、オープンソースで自分でホスティングできるソーシャルメディアスケジューリングツールです。\n\nThreads、X（旧Twitter）、Facebook、Instagram、Reddit、Telegram など、19以上のプラットフォームに対応。\n\n## ✨ 主な機能\n\n- \U0001F9E0 AI アシスタント内蔵  \n  AI を使って投稿コンテンツや画像を自動生成。\n\n- \U0001F4C5 高度なスケジューリング  \n  ビジュアルカレンダー、投稿の繰り返し、タイムゾーン対応、ドラッグ＆ドロップ再配置。\n\n- \U0001F9E9 マルチプラットフォーム統合  \n  Threads、Mastodon、Bluesky、Nostr、Lemmy、Discord などと連携。\n\n- \U0001F4CA 基本的な分析機能  \n  各SNSでのパフォーマンスとエンゲージメントを確認。\n\n- \U0001F6E0️ 完全オープンソース & セルフホスティング  \n  ベンダーロックなし。Dockerベースで自由にデプロイ可能。\n\n- \U0001F465 チームコラボレーション  \n  メンバーを招待し、役割を割り当てて共同管理可能。\n\n個人クリエイター、マーケター、SNS運用チームに最適です。\n\n→ Webサイト: https://postiz.com  \n→ ソースコード: https://github.com/gitroomhq/postiz-app"
+    zh-CN:
+        description: 开源一体化平台，支持跨 19+ 社交平台智能排程、自动发布和内容管理，搭载 AI 助手，完全可自托管。
+        readme: "# Postiz\n\nPostiz 是一款开源的社交媒体排程工具，支持自托管部署。\n\n一次整合 Threads、X（推特）、Facebook、Instagram、Reddit、Telegram 等 19+ 平台，实现智能排程与自动发布。\n\n## ✨ 核心功能\n\n- \U0001F9E0 内建 AI 助手  \n  自动生成贴文内容与配图，提升内容产出效率。\n\n- \U0001F4C5 高级排程系统  \n  可视化日历、重复贴文、时区支持、拖放重新排序。\n\n- \U0001F9E9 多平台整合  \n  原生支持 Threads、Mastodon、Bluesky、Nostr、Lemmy、Discord 等热门平台。\n\n- \U0001F4CA 贴文分析  \n  跟踪各平台贴文效果与互动情况。\n\n- \U0001F6E0️ 完全开源 + 自托管  \n  基于 Docker 部署，无供应商锁定，自由掌控数据。\n\n- \U0001F465 团队协作  \n  邀请成员、分配角色，共同管理贴文与计划。\n\n非常适合自媒体、行销团队或内容工作者使用！\n\n→ 官网：https://postiz.com  \n→ 源码：https://github.com/gitroomhq/postiz-app"
+    zh-TW:
+        description: 開源的一站式平台，支援跨 19+ 社群平台智能排程、自動發布與內容管理，搭載 AI 助手並支援完全自架。
+        readme: "# Postiz\n\nPostiz 是一款完全開源、可自架設的社群媒體排程平台。\n\n支援 Threads、X（推特）、Facebook、Instagram、Reddit、Telegram 等 19+ 平台，一次排程、自動發佈。\n\n## ✨ 主要特色\n\n- \U0001F9E0 內建 AI 助手  \n  自動產生貼文與圖片，提升創作效率。\n\n- \U0001F4C5 進階排程功能  \n  可視化日曆、重複貼文、時區處理、拖拉排程。\n\n- \U0001F9E9 多平台整合  \n  原生整合 Threads、Mastodon、Bluesky、Nostr、Lemmy、Discord 等。\n\n- \U0001F4CA 數據分析  \n  查看各平台貼文表現與互動數據。\n\n- \U0001F6E0️ 完全開源與自架設  \n  支援 Docker 部署，沒有供應商綁定，數據完全掌握在自己手上。\n\n- \U0001F465 團隊協作  \n  多人協作、角色權限管理，一起完成貼文計劃。\n\n適合創作者、行銷團隊、自媒體工作者等各種社群經營者使用。\n\n→ 官方網站：https://postiz.com  \n→ 原始碼：https://github.com/gitroomhq/postiz-app"
