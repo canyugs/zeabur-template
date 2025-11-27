@@ -5,7 +5,7 @@ metadata:
     name: postgresql-ai-query (dev version)
 spec:
     description: PostgreSQL with pg_ai_query extension for natural language SQL generation powered by OpenAI and Anthropic AI models
-    coverImage: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+    coverImage: https://raw.githubusercontent.com/canyugs/zeabur-template/refs/heads/main/postgresql-ai-query/postgresql-ai-query.webp
     icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
     variables:
         - key: OPENAI_API_KEY
