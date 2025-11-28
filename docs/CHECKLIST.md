@@ -250,33 +250,57 @@ curl -I https://example.com/icon.svg
 ### 翻譯準備
 
 - [ ] 英文版已完成並測試成功
-- [ ] 準備翻譯至少 3 種語言（en-US, zh-TW, zh-CN）
+- [ ] 🔴 準備翻譯全部 5 種語言（zh-TW, zh-CN, ja-JP, es-ES, id-ID）
 
 ### 繁體中文（zh-TW）
 
-- [ ] `localization.zh-TW.description` 已翻譯
+- [ ] 🔴 `localization.zh-TW.description` 已翻譯
 - [ ] `localization.zh-TW.variables` 包含所有變數
 - [ ] 所有變數的 `key` 和 `type` 與英文版相同
-- [ ] `localization.zh-TW.readme` 已翻譯
+- [ ] 🔴 `localization.zh-TW.readme` 已翻譯
 - [ ] 術語使用正確（伺服器、資料庫、網域等）
 - [ ] 變數名稱（`${}`）未被翻譯
 - [ ] URL 未被翻譯
 
 ### 簡體中文（zh-CN）
 
-- [ ] `localization.zh-CN.description` 已翻譯
+- [ ] 🔴 `localization.zh-CN.description` 已翻譯
 - [ ] `localization.zh-CN.variables` 包含所有變數
 - [ ] 所有變數的 `key` 和 `type` 與英文版相同
-- [ ] `localization.zh-CN.readme` 已翻譯
+- [ ] 🔴 `localization.zh-CN.readme` 已翻譯
 - [ ] 術語使用正確（服务器、数据库、域名等）
 - [ ] 變數名稱（`${}`）未被翻譯
 - [ ] URL 未被翻譯
 
-### 其他語言（選填）
+### 日文（ja-JP）
 
-- [ ] 日文（ja-JP）
-- [ ] 西班牙文（es-ES）
-- [ ] 印尼文（id-ID）
+- [ ] 🔴 `localization.ja-JP.description` 已翻譯
+- [ ] `localization.ja-JP.variables` 包含所有變數
+- [ ] 所有變數的 `key` 和 `type` 與英文版相同
+- [ ] 🔴 `localization.ja-JP.readme` 已翻譯
+- [ ] 術語使用正確
+- [ ] 變數名稱（`${}`）未被翻譯
+- [ ] URL 未被翻譯
+
+### 西班牙文（es-ES）
+
+- [ ] 🔴 `localization.es-ES.description` 已翻譯
+- [ ] `localization.es-ES.variables` 包含所有變數
+- [ ] 所有變數的 `key` 和 `type` 與英文版相同
+- [ ] 🔴 `localization.es-ES.readme` 已翻譯
+- [ ] 術語使用正確
+- [ ] 變數名稱（`${}`）未被翻譯
+- [ ] URL 未被翻譯
+
+### 印尼文（id-ID）
+
+- [ ] 🔴 `localization.id-ID.description` 已翻譯
+- [ ] `localization.id-ID.variables` 包含所有變數
+- [ ] 所有變數的 `key` 和 `type` 與英文版相同
+- [ ] 🔴 `localization.id-ID.readme` 已翻譯
+- [ ] 術語使用正確
+- [ ] 變數名稱（`${}`）未被翻譯
+- [ ] URL 未被翻譯
 
 ### 多語系驗證
 
@@ -306,7 +330,7 @@ curl -I https://example.com/icon.svg
 ### PR 檢查清單
 
 - [ ] 🔴 模板通過 schema 驗證
-- [ ] 🔴 包含完整的多語系翻譯（至少 en-US, zh-TW, zh-CN）
+- [ ] 🔴 包含完整的多語系翻譯（zh-TW, zh-CN, ja-JP, es-ES, id-ID）
 - [ ] 提供截圖（`screenshot.webp`）
 - [ ] 🔴 所有圖片資源可正常存取且無破圖
 - [ ] 🔴 已在 Zeabur 平台測試部署成功
