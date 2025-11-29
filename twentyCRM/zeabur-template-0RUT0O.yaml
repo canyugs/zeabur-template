@@ -41,6 +41,22 @@ spec:
         - Redis for caching and session storage
         - MinIO for S3-compatible object storage
 
+        ## Configuration Notes
+
+        ### Environment Variable Sharing
+
+        The Twenty Worker service requires access to the same configuration as the Twenty server to function properly. Key variables like `PG_DATABASE_URL`, `REDIS_URL`, `APP_SECRET`, and storage settings (`STORAGE_*`) must be exposed and shared between both services.
+
+        ### Configuration Mode
+
+        Twenty supports two configuration approaches:
+
+        - **Database-Driven (Default)**: When `IS_CONFIG_VARIABLES_IN_DB_ENABLED=true`, most settings can be managed through the admin UI and automatically sync between server and worker.
+
+        - **Environment-Only**: Set `IS_CONFIG_VARIABLES_IN_DB_ENABLED=false` to manage all configuration through environment variables. This requires container restarts for changes to take effect, but provides more predictable deployments.
+
+        For self-hosted deployments where you want full control via environment variables, it's recommended to set `IS_CONFIG_VARIABLES_IN_DB_ENABLED=false` on both the Twenty server and Twenty Worker services.
+
         ## Default Credentials
 
         After deployment, create your admin account by visiting the application domain.
@@ -405,6 +421,22 @@ localization:
             - Redis para caché y almacenamiento de sesiones
             - MinIO para almacenamiento de objetos compatible con S3
 
+            ## Notas de Configuración
+
+            ### Compartición de Variables de Entorno
+
+            El servicio Twenty Worker requiere acceso a la misma configuración que el servidor Twenty para funcionar correctamente. Variables clave como `PG_DATABASE_URL`, `REDIS_URL`, `APP_SECRET` y configuraciones de almacenamiento (`STORAGE_*`) deben exponerse y compartirse entre ambos servicios.
+
+            ### Modo de Configuración
+
+            Twenty soporta dos enfoques de configuración:
+
+            - **Basado en Base de Datos (Por defecto)**: Cuando `IS_CONFIG_VARIABLES_IN_DB_ENABLED=true`, la mayoría de configuraciones se gestionan a través de la UI de administración y se sincronizan automáticamente entre servidor y worker.
+
+            - **Solo Variables de Entorno**: Establece `IS_CONFIG_VARIABLES_IN_DB_ENABLED=false` para gestionar toda la configuración mediante variables de entorno. Esto requiere reiniciar los contenedores para que los cambios surtan efecto, pero proporciona despliegues más predecibles.
+
+            Para despliegues autoalojados donde deseas control total mediante variables de entorno, se recomienda establecer `IS_CONFIG_VARIABLES_IN_DB_ENABLED=false` en los servicios Twenty servidor y Twenty Worker.
+
             ## Credenciales por Defecto
 
             Después del despliegue, visita el dominio de la aplicación para crear tu cuenta de administrador.
@@ -443,6 +475,22 @@ localization:
             - Database PostgreSQL
             - Redis untuk caching dan penyimpanan sesi
             - MinIO untuk penyimpanan objek yang kompatibel dengan S3
+
+            ## Catatan Konfigurasi
+
+            ### Berbagi Variabel Lingkungan
+
+            Layanan Twenty Worker memerlukan akses ke konfigurasi yang sama dengan server Twenty agar dapat berfungsi dengan baik. Variabel kunci seperti `PG_DATABASE_URL`, `REDIS_URL`, `APP_SECRET`, dan pengaturan penyimpanan (`STORAGE_*`) harus diekspos dan dibagikan antara kedua layanan.
+
+            ### Mode Konfigurasi
+
+            Twenty mendukung dua pendekatan konfigurasi:
+
+            - **Berbasis Database (Default)**: Ketika `IS_CONFIG_VARIABLES_IN_DB_ENABLED=true`, sebagian besar pengaturan dapat dikelola melalui UI admin dan secara otomatis tersinkronisasi antara server dan worker.
+
+            - **Hanya Variabel Lingkungan**: Atur `IS_CONFIG_VARIABLES_IN_DB_ENABLED=false` untuk mengelola semua konfigurasi melalui variabel lingkungan. Ini memerlukan restart container agar perubahan berlaku, tetapi memberikan deployment yang lebih dapat diprediksi.
+
+            Untuk deployment self-hosted di mana Anda menginginkan kontrol penuh melalui variabel lingkungan, disarankan untuk mengatur `IS_CONFIG_VARIABLES_IN_DB_ENABLED=false` pada layanan Twenty server dan Twenty Worker.
 
             ## Kredensial Default
 
@@ -483,6 +531,22 @@ localization:
             - キャッシュとセッションストレージ用の Redis
             - MinIO S3互換オブジェクトストレージ
 
+            ## 設定に関する注意事項
+
+            ### 環境変数の共有
+
+            Twenty Worker サービスが正常に機能するためには、Twenty サーバーと同じ設定にアクセスする必要があります。`PG_DATABASE_URL`、`REDIS_URL`、`APP_SECRET`、ストレージ設定（`STORAGE_*`）などの主要な変数は、両方のサービス間で公開および共有する必要があります。
+
+            ### 設定モード
+
+            Twenty は2つの設定アプローチをサポートしています：
+
+            - **データベース駆動（デフォルト）**：`IS_CONFIG_VARIABLES_IN_DB_ENABLED=true` の場合、ほとんどの設定は管理UIを通じて管理でき、サーバーとワーカー間で自動的に同期されます。
+
+            - **環境変数のみ**：すべての設定を環境変数で管理するには、`IS_CONFIG_VARIABLES_IN_DB_ENABLED=false` を設定します。変更を反映するにはコンテナの再起動が必要ですが、より予測可能なデプロイメントを提供します。
+
+            環境変数で完全に制御したいセルフホスティングデプロイメントの場合、Twenty サーバーと Twenty Worker の両方のサービスで `IS_CONFIG_VARIABLES_IN_DB_ENABLED=false` を設定することをお勧めします。
+
             ## デフォルト認証情報
 
             デプロイ後、アプリケーションドメインにアクセスして管理者アカウントを作成してください。
@@ -522,6 +586,22 @@ localization:
             - Redis 缓存和会话存储
             - MinIO S3 兼容对象存储
 
+            ## 配置说明
+
+            ### 环境变量共享
+
+            Twenty Worker 服务需要访问与 Twenty 服务器相同的配置才能正常工作。关键变量如 `PG_DATABASE_URL`、`REDIS_URL`、`APP_SECRET` 和存储设置（`STORAGE_*`）必须在两个服务之间暴露和共享。
+
+            ### 配置模式
+
+            Twenty 支持两种配置方式：
+
+            - **数据库驱动（默认）**：当 `IS_CONFIG_VARIABLES_IN_DB_ENABLED=true` 时，大多数设置可以通过管理界面进行管理，并在服务器和 Worker 之间自动同步。
+
+            - **仅环境变量**：设置 `IS_CONFIG_VARIABLES_IN_DB_ENABLED=false` 以通过环境变量管理所有配置。这需要重启容器才能使更改生效，但提供更可预测的部署。
+
+            对于希望通过环境变量完全控制的自托管部署，建议在 Twenty 服务器和 Twenty Worker 服务上都设置 `IS_CONFIG_VARIABLES_IN_DB_ENABLED=false`。
+
             ## 默认凭据
 
             部署完成后，请访问应用域名创建管理员账户。
@@ -560,6 +640,22 @@ localization:
             - PostgreSQL 資料庫
             - Redis 快取和會話儲存
             - MinIO S3 相容物件儲存
+
+            ## 設定說明
+
+            ### 環境變數共享
+
+            Twenty Worker 服務需要存取與 Twenty 伺服器相同的設定才能正常運作。關鍵變數如 `PG_DATABASE_URL`、`REDIS_URL`、`APP_SECRET` 和儲存設定（`STORAGE_*`）必須在兩個服務之間暴露和共享。
+
+            ### 設定模式
+
+            Twenty 支援兩種設定方式：
+
+            - **資料庫驅動（預設）**：當 `IS_CONFIG_VARIABLES_IN_DB_ENABLED=true` 時，大多數設定可以透過管理介面進行管理，並在伺服器和 Worker 之間自動同步。
+
+            - **僅環境變數**：設定 `IS_CONFIG_VARIABLES_IN_DB_ENABLED=false` 以透過環境變數管理所有設定。這需要重新啟動容器才能使變更生效，但提供更可預測的部署。
+
+            對於希望透過環境變數完全控制的自架部署，建議在 Twenty 伺服器和 Twenty Worker 服務上都設定 `IS_CONFIG_VARIABLES_IN_DB_ENABLED=false`。
 
             ## 預設憑證
 
