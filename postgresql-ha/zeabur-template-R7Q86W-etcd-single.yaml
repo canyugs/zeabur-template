@@ -1,0 +1,551 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: etcd Node (Single node, for postgresql-ha)
+spec:
+  description: |
+    Add additional etcd nodes to an existing etcd cluster. Use this to scale your cluster for higher availability or replace failed nodes.
+  icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
+  coverImage: https://etcd.io/img/etcd-horizontal-color.svg
+  tags:
+    - Database
+    - etcd
+    - Distributed System
+    - High Availability
+  variables:
+    - key: ETCD_NODE_NAME
+      type: STRING
+      name: Node Name
+      description: Unique name for this etcd node (e.g., etcd4, etcd5)
+    - key: ETCD_CLUSTER_TOKEN
+      type: STRING
+      name: Cluster Token
+      description: Cluster token (must match existing cluster if joining)
+    - key: ETCD_INITIAL_CLUSTER
+      type: STRING
+      name: Initial Cluster
+      description: All cluster members (e.g., etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd4=http://etcd4:2380)
+  readme: |
+    # etcd Node (Cluster Expansion)
+
+    This template allows you to add additional etcd nodes to an existing etcd cluster. Use this to scale your cluster for higher availability or replace failed nodes.
+
+    ## 🎯 Designed For
+
+    This template is specifically designed to expand the **[PostgreSQL HA](https://zeabur.com/zh-TW/templates/IOYTRN)** template cluster.
+
+    If you haven't deployed the base cluster yet, please deploy the [PostgreSQL HA template](https://zeabur.com/zh-TW/templates/IOYTRN) first.
+
+    ## Use Cases
+
+    1. **Expand existing cluster**: Scale from 3 to 5 nodes for higher availability
+    2. **Replace failed node**: Deploy a new node to replace a failed cluster member
+    3. **Create new cluster**: Start a new etcd cluster (advanced use)
+
+    ## Prerequisites
+
+    - **Existing etcd cluster** (if joining): You need an operational etcd cluster
+    - **Cluster information**: You need to know:
+      - Cluster token (e.g., `etcd-cluster-pg-ha`)
+      - All existing member endpoints
+      - Whether adding to existing cluster or creating new one
+
+    ## Configuration Variables
+
+    ### Node Identity
+
+    - **Node Name**: Unique identifier for this etcd node
+      - **Must be unique** within the cluster
+      - Examples: `etcd4`, `etcd5`, `etcd-node-4`, etc.
+      - **Avoid conflicts**: Check existing node names before deploying
+
+    ### Cluster Configuration
+
+    - **Cluster Token**: Shared secret for the cluster
+      - **Join existing cluster**: Use the same token as existing nodes (e.g., `etcd-cluster-pg-ha`)
+      - **New cluster**: Create a unique token
+
+    - **Initial Cluster**: Comma-separated list of all cluster members
+      - **Format**: `name1=http://host1:2380,name2=http://host2:2380,...`
+      - **Must include this new node** and all existing nodes
+      - **Example**: `etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380,etcd4=http://etcd4:2380`
+
+    ## ⚠️ Important: Rename Service After Deployment
+
+    When you deploy this template, the service will be named `etcd` by default. **You must rename both the service and the internal network** to match your desired node name.
+
+    For example, if you're adding the 4th etcd node:
+    1. **Rename service**: `etcd` → `etcd4`
+    2. **Rename internal network**: `etcd` → `etcd4`
+
+    This ensures the service hostname matches the node name configured in the cluster.
+
+    ## Adding to Existing Cluster (Recommended Process)
+
+    ### Step 1: Add Member to Cluster
+
+    Before deploying this template, add the new member to the existing cluster:
+
+    ```bash
+    # Using HTTP API (from any machine with access to etcd):
+    # Note: Replace "etcd4" with your actual service name
+    curl -X POST http://etcd1:2379/v3/cluster/member/add \
+      -d '{"peerURLs":["http://etcd4:2380"]}'
+    ```
+
+    This will output the updated cluster configuration.
+
+    ### Step 2: Deploy This Template
+
+    Use the configuration from Step 1:
+
+    ```
+    Node Name: etcd4
+    Cluster Token: etcd-cluster-pg-ha      # Same as existing cluster
+    Initial Cluster: etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380,etcd4=http://etcd4:2380
+    ```
+
+    ### Step 3: Verify
+
+    Check cluster health:
+
+    ```bash
+    curl http://etcd1:2379/health
+    curl -X POST http://etcd1:2379/v3/cluster/member/list
+    ```
+
+    ## Example: 3-Node to 5-Node Expansion
+
+    Assuming you've deployed the [PostgreSQL HA template](https://zeabur.com/zh-TW/templates/IOYTRN):
+
+    ### Current 3-Node Cluster
+
+    - etcd1: http://etcd1:2380
+    - etcd2: http://etcd2:2380
+    - etcd3: http://etcd3:2380
+    - Cluster Token: `etcd-cluster-pg-ha` (default token used by PostgreSQL HA template)
+
+    ### Adding Node 4
+
+    1. Add member:
+       ```bash
+       curl -X POST http://etcd1:2379/v3/cluster/member/add -d '{"peerURLs":["http://etcd4:2380"]}'
+       ```
+    2. Deploy with:
+       - Node Name: `etcd4`
+       - Cluster Token: `etcd-cluster-pg-ha`
+       - Initial Cluster: `etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380,etcd4=http://etcd4:2380`
+
+    ### Adding Node 5
+
+    1. Add member:
+       ```bash
+       curl -X POST http://etcd1:2379/v3/cluster/member/add -d '{"peerURLs":["http://etcd5:2380"]}'
+       ```
+    2. Deploy with:
+       - Node Name: `etcd5`
+       - Cluster Token: `etcd-cluster-pg-ha`
+       - Initial Cluster: `etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380,etcd4=http://etcd4:2380,etcd5=http://etcd5:2380`
+
+    ## Cluster Sizing Recommendations
+
+    | Nodes | Fault Tolerance | Quorum | Use Case |
+    |-------|----------------|--------|----------|
+    | 1     | 0 failures     | 1/1    | Development only |
+    | 3     | 1 failure      | 2/3    | Production (standard) ✅ |
+    | 5     | 2 failures     | 3/5    | Production (high availability) ✅ |
+
+    ⚠️ **Do not use 2 or 4 nodes**: Even-numbered clusters don't improve fault tolerance over n-1 nodes.
+
+    ## Network Ports
+
+    This node exposes:
+    - **2379**: Client requests (HTTP/gRPC)
+    - **2380**: Peer communication
+    - **2381**: Metrics endpoint
+
+    Ensure these ports are accessible from:
+    - Other etcd nodes (peer communication)
+    - Patroni/PostgreSQL nodes (client access)
+    - Monitoring systems (metrics)
+
+    ## Removing a Node
+
+    To remove this node from the cluster:
+
+    ```bash
+    # 1. Get member ID (using HTTP API)
+    curl -X POST http://etcd1:2379/v3/cluster/member/list
+
+    # 2. Remove member (using HTTP API)
+    curl -X POST http://etcd1:2379/v3/cluster/member/remove -d '{"ID":"<member-id>"}'
+
+    # 3. Stop/delete this service in Zeabur
+    ```
+
+    ⚠️ **Never reduce below 3 nodes in production** - this breaks HA guarantees
+
+    ## Important Notes
+
+    ⚠️ **Add members one at a time**: Wait for each new node to sync before adding the next
+
+    ⚠️ **Cluster token must match**: When joining existing cluster, use the same token
+
+    ⚠️ **Update Patroni configuration**: After adding etcd nodes, update `ETCD3_HOSTS` in all Patroni services to include new nodes
+
+    ## Monitoring
+
+    Check node health:
+    - Metrics: `http://<node-hostname>:2381/metrics`
+    - Health: `curl http://<node-hostname>:2379/health`
+    - Member list: `curl -X POST http://<node-hostname>:2379/v3/cluster/member/list`
+
+    ## Documentation
+
+    - [etcd Documentation](https://etcd.io/docs/)
+    - [Runtime Reconfiguration](https://etcd.io/docs/latest/op-guide/runtime-configuration/)
+    - [Clustering Guide](https://etcd.io/docs/latest/op-guide/clustering/)
+
+  services:
+    - name: etcd
+      icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
+      template: PREBUILT
+      spec:
+        source:
+          image: gcr.io/etcd-development/etcd:v3.6.6
+        ports:
+          - id: client
+            port: 2379
+            type: TCP
+          - id: peer
+            port: 2380
+            type: TCP
+          - id: metrics
+            port: 2381
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /etcd-data
+        env:
+          ETCD_NAME:
+            default: ${ETCD_NODE_NAME}
+          ETCD_DATA_DIR:
+            default: /etcd-data
+          ETCD_INITIAL_ADVERTISE_PEER_URLS:
+            default: http://${CONTAINER_HOSTNAME}:2380
+          ETCD_LISTEN_PEER_URLS:
+            default: http://0.0.0.0:2380
+          ETCD_LISTEN_CLIENT_URLS:
+            default: http://0.0.0.0:2379
+          ETCD_ADVERTISE_CLIENT_URLS:
+            default: http://${CONTAINER_HOSTNAME}:2379
+          ETCD_LISTEN_METRICS_URLS:
+            default: http://0.0.0.0:2381
+          ETCD_INITIAL_CLUSTER:
+            default: ${ETCD_INITIAL_CLUSTER}
+          ETCD_INITIAL_CLUSTER_STATE:
+            default: existing
+          ETCD_INITIAL_CLUSTER_TOKEN:
+            default: ${ETCD_CLUSTER_TOKEN}
+        instructions:
+          - title: Client Endpoint
+            content: "http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}"
+          - title: List Members
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/cluster/member/list"
+          - title: Add Member (replace service name)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/cluster/member/add -d '{\"peerURLs\":[\"http://etcd4:2380\"]}'"
+          - title: Delete Member (replace member-id)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/cluster/member/remove -d '{\"ID\":\"<member-id>\"}'"
+          - title: Cluster Health
+            content: "curl http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/health"
+          - title: Put Key (test=hello)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/kv/put -d '{\"key\":\"dGVzdA==\",\"value\":\"aGVsbG8=\"}'"
+          - title: Get Key (test)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/kv/range -d '{\"key\":\"dGVzdA==\"}'"
+
+  localization:
+    zh-TW:
+      description: |
+        將額外的 etcd 節點新增到現有的 etcd 叢集。使用此模板來擴展叢集以獲得更高可用性或替換故障節點。
+      variables:
+        - key: ETCD_NODE_NAME
+          type: STRING
+          name: 節點名稱
+          description: 此 etcd 節點的唯一名稱（例如 etcd4、etcd5）
+        - key: ETCD_CLUSTER_TOKEN
+          type: STRING
+          name: 叢集令牌
+          description: 叢集令牌（加入現有叢集時必須相符）
+        - key: ETCD_INITIAL_CLUSTER
+          type: STRING
+          name: 初始叢集
+          description: 所有叢集成員（例如 etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd4=http://etcd4:2380）
+      readme: |
+        # etcd 節點（叢集擴展）
+
+        此模板允許您將額外的 etcd 節點新增到現有的 etcd 叢集。
+
+        ## 使用場景
+
+        1. **擴展現有叢集**：從 3 節點擴展到 5 節點以獲得更高可用性
+        2. **替換故障節點**：部署新節點以替換故障的叢集成員
+
+        ## 重要：部署後重新命名服務
+
+        部署此模板後，服務預設名稱為 `etcd`。**您必須重新命名服務和內部網路**以匹配您想要的節點名稱。
+
+        例如，如果要新增第 4 個 etcd 節點：
+        1. **重新命名服務**：`etcd` → `etcd4`
+        2. **重新命名內部網路**：`etcd` → `etcd4`
+
+        ## 新增到現有叢集
+
+        ### 步驟 1：新增成員到叢集
+
+        ```bash
+        curl -X POST http://etcd1:2379/v3/cluster/member/add -d '{"peerURLs":["http://etcd4:2380"]}'
+        ```
+
+        ### 步驟 2：部署此模板
+
+        ```
+        節點名稱：etcd4
+        叢集令牌：etcd-cluster-pg-ha
+        初始叢集：etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380,etcd4=http://etcd4:2380
+        ```
+
+        ### 步驟 3：驗證
+
+        ```bash
+        curl http://etcd1:2379/health
+        curl -X POST http://etcd1:2379/v3/cluster/member/list
+        ```
+
+    zh-CN:
+      description: |
+        将额外的 etcd 节点添加到现有的 etcd 集群。使用此模板来扩展集群以获得更高可用性或替换故障节点。
+      variables:
+        - key: ETCD_NODE_NAME
+          type: STRING
+          name: 节点名称
+          description: 此 etcd 节点的唯一名称（例如 etcd4、etcd5）
+        - key: ETCD_CLUSTER_TOKEN
+          type: STRING
+          name: 集群令牌
+          description: 集群令牌（加入现有集群时必须匹配）
+        - key: ETCD_INITIAL_CLUSTER
+          type: STRING
+          name: 初始集群
+          description: 所有集群成员（例如 etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd4=http://etcd4:2380）
+      readme: |
+        # etcd 节点（集群扩展）
+
+        此模板允许您将额外的 etcd 节点添加到现有的 etcd 集群。
+
+        ## 使用场景
+
+        1. **扩展现有集群**：从 3 节点扩展到 5 节点以获得更高可用性
+        2. **替换故障节点**：部署新节点以替换故障的集群成员
+
+        ## 重要：部署后重命名服务
+
+        部署此模板后，服务默认名称为 `etcd`。**您必须重命名服务和内部网络**以匹配您想要的节点名称。
+
+        例如，如果要添加第 4 个 etcd 节点：
+        1. **重命名服务**：`etcd` → `etcd4`
+        2. **重命名内部网络**：`etcd` → `etcd4`
+
+        ## 添加到现有集群
+
+        ### 步骤 1：添加成员到集群
+
+        ```bash
+        curl -X POST http://etcd1:2379/v3/cluster/member/add -d '{"peerURLs":["http://etcd4:2380"]}'
+        ```
+
+        ### 步骤 2：部署此模板
+
+        ```
+        节点名称：etcd4
+        集群令牌：etcd-cluster-pg-ha
+        初始集群：etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380,etcd4=http://etcd4:2380
+        ```
+
+        ### 步骤 3：验证
+
+        ```bash
+        curl http://etcd1:2379/health
+        curl -X POST http://etcd1:2379/v3/cluster/member/list
+        ```
+
+    ja-JP:
+      description: |
+        既存の etcd クラスターに追加の etcd ノードを追加します。このテンプレートを使用して、より高い可用性のためにクラスターを拡張したり、障害ノードを置き換えたりできます。
+      variables:
+        - key: ETCD_NODE_NAME
+          type: STRING
+          name: ノード名
+          description: この etcd ノードの一意の名前（例：etcd4、etcd5）
+        - key: ETCD_CLUSTER_TOKEN
+          type: STRING
+          name: クラスタートークン
+          description: クラスタートークン（既存のクラスターに参加する場合は一致する必要があります）
+        - key: ETCD_INITIAL_CLUSTER
+          type: STRING
+          name: 初期クラスター
+          description: すべてのクラスターメンバー（例：etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd4=http://etcd4:2380）
+      readme: |
+        # etcd ノード（クラスター拡張）
+
+        このテンプレートを使用して、既存の etcd クラスターに追加のノードを追加できます。
+
+        ## 使用ケース
+
+        1. **既存クラスターの拡張**：より高い可用性のために 3 ノードから 5 ノードに拡張
+        2. **障害ノードの置き換え**：障害のあるクラスターメンバーを置き換えるための新しいノードをデプロイ
+
+        ## 重要：デプロイ後のサービス名変更
+
+        このテンプレートをデプロイすると、サービスはデフォルトで `etcd` という名前になります。**サービスと内部ネットワークの両方を**希望のノード名に合わせて名前を変更する必要があります。
+
+        例えば、4 番目の etcd ノードを追加する場合：
+        1. **サービス名を変更**：`etcd` → `etcd4`
+        2. **内部ネットワーク名を変更**：`etcd` → `etcd4`
+
+        ## 既存クラスターへの追加
+
+        ### ステップ 1：クラスターにメンバーを追加
+
+        ```bash
+        curl -X POST http://etcd1:2379/v3/cluster/member/add -d '{"peerURLs":["http://etcd4:2380"]}'
+        ```
+
+        ### ステップ 2：このテンプレートをデプロイ
+
+        ```
+        ノード名：etcd4
+        クラスタートークン：etcd-cluster-pg-ha
+        初期クラスター：etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380,etcd4=http://etcd4:2380
+        ```
+
+        ### ステップ 3：確認
+
+        ```bash
+        curl http://etcd1:2379/health
+        curl -X POST http://etcd1:2379/v3/cluster/member/list
+        ```
+
+    es-ES:
+      description: |
+        Agregue nodos etcd adicionales a un clúster etcd existente. Use esto para escalar su clúster para mayor disponibilidad o reemplazar nodos fallidos.
+      variables:
+        - key: ETCD_NODE_NAME
+          type: STRING
+          name: Nombre del nodo
+          description: Nombre único para este nodo etcd (ej. etcd4, etcd5)
+        - key: ETCD_CLUSTER_TOKEN
+          type: STRING
+          name: Token del clúster
+          description: Token del clúster (debe coincidir con el clúster existente si se une)
+        - key: ETCD_INITIAL_CLUSTER
+          type: STRING
+          name: Clúster inicial
+          description: Todos los miembros del clúster (ej. etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd4=http://etcd4:2380)
+      readme: |
+        # Nodo etcd (Expansión de clúster)
+
+        Esta plantilla le permite agregar nodos etcd adicionales a un clúster etcd existente.
+
+        ## Casos de uso
+
+        1. **Expandir clúster existente**: Escalar de 3 a 5 nodos para mayor disponibilidad
+        2. **Reemplazar nodo fallido**: Desplegar un nuevo nodo para reemplazar un miembro fallido
+
+        ## Importante: Renombrar servicio después del despliegue
+
+        Cuando despliegue esta plantilla, el servicio se llamará `etcd` por defecto. **Debe renombrar tanto el servicio como la red interna** para que coincidan con el nombre de nodo deseado.
+
+        Por ejemplo, si agrega el 4º nodo etcd:
+        1. **Renombrar servicio**: `etcd` → `etcd4`
+        2. **Renombrar red interna**: `etcd` → `etcd4`
+
+        ## Agregar al clúster existente
+
+        ### Paso 1: Agregar miembro al clúster
+
+        ```bash
+        curl -X POST http://etcd1:2379/v3/cluster/member/add -d '{"peerURLs":["http://etcd4:2380"]}'
+        ```
+
+        ### Paso 2: Desplegar esta plantilla
+
+        ```
+        Nombre del nodo: etcd4
+        Token del clúster: etcd-cluster-pg-ha
+        Clúster inicial: etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380,etcd4=http://etcd4:2380
+        ```
+
+        ### Paso 3: Verificar
+
+        ```bash
+        curl http://etcd1:2379/health
+        curl -X POST http://etcd1:2379/v3/cluster/member/list
+        ```
+
+    id-ID:
+      description: |
+        Tambahkan node etcd tambahan ke kluster etcd yang ada. Gunakan ini untuk memperluas kluster Anda untuk ketersediaan lebih tinggi atau mengganti node yang gagal.
+      variables:
+        - key: ETCD_NODE_NAME
+          type: STRING
+          name: Nama Node
+          description: Nama unik untuk node etcd ini (contoh etcd4, etcd5)
+        - key: ETCD_CLUSTER_TOKEN
+          type: STRING
+          name: Token Kluster
+          description: Token kluster (harus cocok dengan kluster yang ada jika bergabung)
+        - key: ETCD_INITIAL_CLUSTER
+          type: STRING
+          name: Kluster Awal
+          description: Semua anggota kluster (contoh etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd4=http://etcd4:2380)
+      readme: |
+        # Node etcd (Ekspansi Kluster)
+
+        Template ini memungkinkan Anda menambahkan node etcd tambahan ke kluster etcd yang ada.
+
+        ## Kasus Penggunaan
+
+        1. **Perluas kluster yang ada**: Skala dari 3 ke 5 node untuk ketersediaan lebih tinggi
+        2. **Ganti node yang gagal**: Deploy node baru untuk mengganti anggota kluster yang gagal
+
+        ## Penting: Ganti nama layanan setelah deployment
+
+        Saat Anda mendeploy template ini, layanan akan dinamai `etcd` secara default. **Anda harus mengganti nama layanan dan jaringan internal** agar sesuai dengan nama node yang diinginkan.
+
+        Misalnya, jika menambahkan node etcd ke-4:
+        1. **Ganti nama layanan**: `etcd` → `etcd4`
+        2. **Ganti nama jaringan internal**: `etcd` → `etcd4`
+
+        ## Menambah ke kluster yang ada
+
+        ### Langkah 1: Tambahkan anggota ke kluster
+
+        ```bash
+        curl -X POST http://etcd1:2379/v3/cluster/member/add -d '{"peerURLs":["http://etcd4:2380"]}'
+        ```
+
+        ### Langkah 2: Deploy template ini
+
+        ```
+        Nama Node: etcd4
+        Token Kluster: etcd-cluster-pg-ha
+        Kluster Awal: etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380,etcd4=http://etcd4:2380
+        ```
+
+        ### Langkah 3: Verifikasi
+
+        ```bash
+        curl http://etcd1:2379/health
+        curl -X POST http://etcd1:2379/v3/cluster/member/list
+        ```

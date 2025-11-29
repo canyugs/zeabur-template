@@ -1,0 +1,294 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: Patroni4 (for PostgreSQL HA)
+spec:
+  description: |
+    Add the 4th PostgreSQL node to expand your PostgreSQL HA cluster. Automatically joins as a replica.
+  icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+  coverImage: https://raw.githubusercontent.com/canyugs/zeabur-template/refs/heads/main/postgresql-ha/cover.png
+  tags:
+    - Database
+    - PostgreSQL
+    - High Availability
+    - Patroni
+  variables:
+    - key: POSTGRES_SUPERUSER_PASSWORD
+      type: PASSWORD
+      name: Superuser Password
+      description: Password for PostgreSQL superuser (must match existing cluster)
+    - key: POSTGRES_REPLICATION_PASSWORD
+      type: PASSWORD
+      name: Replication Password
+      description: Password for PostgreSQL replication user (must match existing cluster)
+    - key: POSTGRES_ADMIN_PASSWORD
+      type: PASSWORD
+      name: Admin Password
+      description: Password for PostgreSQL admin user (must match existing cluster)
+    - key: ETCD3_HOSTS
+      type: STRING
+      name: etcd Hosts
+      description: "etcd cluster endpoints (e.g., etcd1:2379,etcd2:2379,etcd3:2379)"
+  readme: |
+    # Patroni4 (4th Node for PostgreSQL HA)
+
+    ⚠️ **Use the same passwords as your existing cluster.**
+
+    ## Deploy & Verify
+
+    Deploy this template, then verify (run inside any patroni container):
+
+    ```bash
+    patronictl list pg-ha
+    ```
+
+  services:
+    - name: patroni4
+      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+      template: PREBUILT
+      spec:
+        source:
+          image: ghcr.io/zalando/spilo-15:3.2-p1
+          command:
+            - sh
+            - -c
+            - |
+              # Wrapper to fix ownership after basebackup
+              (
+                while sleep 10; do
+                  if [ -d /home/postgres/pgdata/pgroot ]; then
+                    chown -R postgres:postgres /home/postgres/pgdata/pgroot 2>/dev/null || true
+                  fi
+                done
+              ) &
+              exec /launch.sh init
+        ports:
+          - id: database
+            port: 5432
+            type: TCP
+          - id: api
+            port: 8008
+            type: HTTP
+        healthCheck:
+          type: HTTP
+          port: api
+          http:
+            path: /health
+        volumes:
+          - id: data
+            dir: /home/postgres/pgdata
+        env:
+          SCOPE:
+            default: pg-ha
+          PATRONI_NAME:
+            default: patroni4
+          PATRONI_RESTAPI_LISTEN:
+            default: 0.0.0.0:8008
+          PATRONI_RESTAPI_CONNECT_ADDRESS:
+            default: ${CONTAINER_HOSTNAME}:8008
+          PATRONI_POSTGRESQL_LISTEN:
+            default: 0.0.0.0:5432
+          PATRONI_POSTGRESQL_CONNECT_ADDRESS:
+            default: ${CONTAINER_HOSTNAME}:5432
+          PATRONI_SUPERUSER_USERNAME:
+            default: postgres
+          PATRONI_SUPERUSER_PASSWORD:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
+          PATRONI_REPLICATION_USERNAME:
+            default: replicator
+          PATRONI_REPLICATION_PASSWORD:
+            default: ${POSTGRES_REPLICATION_PASSWORD}
+          PATRONI_admin_USERNAME:
+            default: admin
+          PATRONI_admin_PASSWORD:
+            default: ${POSTGRES_ADMIN_PASSWORD}
+          PGPASSWORD_SUPERUSER:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
+          PGPASSWORD_STANDBY:
+            default: ${POSTGRES_REPLICATION_PASSWORD}
+          PGPASSWORD_ADMIN:
+            default: ${POSTGRES_ADMIN_PASSWORD}
+          ETCD3_HOSTS:
+            default: ${ETCD3_HOSTS}
+        instructions:
+          - title: Superuser Connection String
+            content: "postgresql://postgres:${POSTGRES_SUPERUSER_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/postgres"
+          - title: Admin Connection String
+            content: "postgresql://admin:${POSTGRES_ADMIN_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/postgres"
+          - title: Superuser Username
+            content: "postgres"
+          - title: Superuser Password
+            content: "${POSTGRES_SUPERUSER_PASSWORD}"
+          - title: Admin Username
+            content: "admin"
+          - title: Admin Password
+            content: "${POSTGRES_ADMIN_PASSWORD}"
+          - title: Cluster Status (run in container)
+            content: "patronictl list pg-ha"
+
+  localization:
+    zh-TW:
+      description: |
+        新增第 4 個 PostgreSQL 節點以擴展 PostgreSQL HA 叢集。自動作為副本加入。
+      variables:
+        - key: POSTGRES_SUPERUSER_PASSWORD
+          type: PASSWORD
+          name: 超級使用者密碼
+          description: PostgreSQL 超級使用者的密碼（必須與現有叢集相同）
+        - key: POSTGRES_REPLICATION_PASSWORD
+          type: PASSWORD
+          name: 複製密碼
+          description: PostgreSQL 複製使用者的密碼（必須與現有叢集相同）
+        - key: POSTGRES_ADMIN_PASSWORD
+          type: PASSWORD
+          name: 管理員密碼
+          description: PostgreSQL 管理員使用者的密碼（必須與現有叢集相同）
+        - key: ETCD3_HOSTS
+          type: STRING
+          name: etcd 主機
+          description: "etcd 叢集端點（例如：etcd1:2379,etcd2:2379,etcd3:2379）"
+      readme: |
+        # Patroni4（PostgreSQL HA 的第 4 個節點）
+
+        ⚠️ **請使用與現有叢集相同的密碼。**
+
+        ## 部署並驗證
+
+        部署此模板，然後驗證（在任意 patroni 容器中執行）：
+
+        ```bash
+        patronictl list pg-ha
+        ```
+
+    zh-CN:
+      description: |
+        添加第 4 个 PostgreSQL 节点以扩展 PostgreSQL HA 集群。自动作为副本加入。
+      variables:
+        - key: POSTGRES_SUPERUSER_PASSWORD
+          type: PASSWORD
+          name: 超级用户密码
+          description: PostgreSQL 超级用户的密码（必须与现有集群相同）
+        - key: POSTGRES_REPLICATION_PASSWORD
+          type: PASSWORD
+          name: 复制密码
+          description: PostgreSQL 复制用户的密码（必须与现有集群相同）
+        - key: POSTGRES_ADMIN_PASSWORD
+          type: PASSWORD
+          name: 管理员密码
+          description: PostgreSQL 管理员用户的密码（必须与现有集群相同）
+        - key: ETCD3_HOSTS
+          type: STRING
+          name: etcd 主机
+          description: "etcd 集群端点（例如：etcd1:2379,etcd2:2379,etcd3:2379）"
+      readme: |
+        # Patroni4（PostgreSQL HA 的第 4 个节点）
+
+        ⚠️ **请使用与现有集群相同的密码。**
+
+        ## 部署并验证
+
+        部署此模板，然后验证（在任意 patroni 容器中执行）：
+
+        ```bash
+        patronictl list pg-ha
+        ```
+
+    ja-JP:
+      description: |
+        4 番目の PostgreSQL ノードを追加して PostgreSQL HA クラスターを拡張します。自動的にレプリカとして参加します。
+      variables:
+        - key: POSTGRES_SUPERUSER_PASSWORD
+          type: PASSWORD
+          name: スーパーユーザーパスワード
+          description: PostgreSQL スーパーユーザーのパスワード（既存のクラスターと一致する必要があります）
+        - key: POSTGRES_REPLICATION_PASSWORD
+          type: PASSWORD
+          name: レプリケーションパスワード
+          description: PostgreSQL レプリケーションユーザーのパスワード（既存のクラスターと一致する必要があります）
+        - key: POSTGRES_ADMIN_PASSWORD
+          type: PASSWORD
+          name: 管理者パスワード
+          description: PostgreSQL 管理者ユーザーのパスワード（既存のクラスターと一致する必要があります）
+        - key: ETCD3_HOSTS
+          type: STRING
+          name: etcd ホスト
+          description: "etcd クラスターエンドポイント（例：etcd1:2379,etcd2:2379,etcd3:2379）"
+      readme: |
+        # Patroni4（PostgreSQL HA 用の 4 番目のノード）
+
+        ⚠️ **既存のクラスターと同じパスワードを使用してください。**
+
+        ## デプロイと確認
+
+        このテンプレートをデプロイし、確認（任意の patroni コンテナ内で実行）：
+
+        ```bash
+        patronictl list pg-ha
+        ```
+
+    es-ES:
+      description: |
+        Agregue el 4º nodo PostgreSQL para expandir su clúster PostgreSQL HA. Se une automáticamente como réplica.
+      variables:
+        - key: POSTGRES_SUPERUSER_PASSWORD
+          type: PASSWORD
+          name: Contraseña de superusuario
+          description: Contraseña para el superusuario de PostgreSQL (debe coincidir con el clúster existente)
+        - key: POSTGRES_REPLICATION_PASSWORD
+          type: PASSWORD
+          name: Contraseña de replicación
+          description: Contraseña para el usuario de replicación de PostgreSQL (debe coincidir con el clúster existente)
+        - key: POSTGRES_ADMIN_PASSWORD
+          type: PASSWORD
+          name: Contraseña de administrador
+          description: Contraseña para el usuario administrador de PostgreSQL (debe coincidir con el clúster existente)
+        - key: ETCD3_HOSTS
+          type: STRING
+          name: Hosts de etcd
+          description: "Endpoints del clúster etcd (ej: etcd1:2379,etcd2:2379,etcd3:2379)"
+      readme: |
+        # Patroni4 (4º Nodo para PostgreSQL HA)
+
+        ⚠️ **Use las mismas contraseñas que su clúster existente.**
+
+        ## Desplegar y Verificar
+
+        Despliegue esta plantilla, luego verifique (ejecutar dentro de cualquier contenedor patroni):
+
+        ```bash
+        patronictl list pg-ha
+        ```
+
+    id-ID:
+      description: |
+        Tambahkan node PostgreSQL ke-4 untuk memperluas kluster PostgreSQL HA. Secara otomatis bergabung sebagai replika.
+      variables:
+        - key: POSTGRES_SUPERUSER_PASSWORD
+          type: PASSWORD
+          name: Kata Sandi Superuser
+          description: Kata sandi untuk superuser PostgreSQL (harus sama dengan kluster yang ada)
+        - key: POSTGRES_REPLICATION_PASSWORD
+          type: PASSWORD
+          name: Kata Sandi Replikasi
+          description: Kata sandi untuk pengguna replikasi PostgreSQL (harus sama dengan kluster yang ada)
+        - key: POSTGRES_ADMIN_PASSWORD
+          type: PASSWORD
+          name: Kata Sandi Admin
+          description: Kata sandi untuk pengguna admin PostgreSQL (harus sama dengan kluster yang ada)
+        - key: ETCD3_HOSTS
+          type: STRING
+          name: Host etcd
+          description: "Endpoint kluster etcd (contoh: etcd1:2379,etcd2:2379,etcd3:2379)"
+      readme: |
+        # Patroni4 (Node ke-4 untuk PostgreSQL HA)
+
+        ⚠️ **Gunakan kata sandi yang sama dengan kluster yang ada.**
+
+        ## Deploy dan Verifikasi
+
+        Deploy template ini, lalu verifikasi (jalankan di dalam kontainer patroni mana pun):
+
+        ```bash
+        patronictl list pg-ha
+        ```

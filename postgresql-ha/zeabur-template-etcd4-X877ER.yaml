@@ -1,0 +1,237 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: etcd4 (for PostgreSQL HA)
+spec:
+  description: |
+    Add the 4th etcd node to expand your PostgreSQL HA cluster from 3 to 4 nodes.
+  icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
+  coverImage: https://raw.githubusercontent.com/canyugs/zeabur-template/refs/heads/main/postgresql-ha/etcd.webp
+  tags:
+    - Database
+    - etcd
+    - Distributed System
+    - High Availability
+  readme: |
+    # etcd4 (4th Node for PostgreSQL HA)
+
+    ## Step 1: Register Node
+
+    ```bash
+    curl -X POST http://etcd1:2379/v3/cluster/member/add -d '{"peerURLs":["http://etcd4:2380"]}'
+    ```
+
+    ## Step 2: Deploy & Verify
+
+    Deploy this template, then verify:
+
+    ```bash
+    curl -X POST http://etcd1:2379/v3/cluster/member/list
+    ```
+
+    ## Step 3: Update Patroni (Recommended)
+
+    Update `ETCD3_HOSTS` in all Patroni services to include the new node:
+
+    ```
+    etcd1:2379,etcd2:2379,etcd3:2379,etcd4:2379
+    ```
+
+  services:
+    - name: etcd4
+      icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
+      template: PREBUILT
+      spec:
+        source:
+          image: gcr.io/etcd-development/etcd:v3.6.6
+        ports:
+          - id: client
+            port: 2379
+            type: TCP
+          - id: peer
+            port: 2380
+            type: TCP
+          - id: metrics
+            port: 2381
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /etcd-data
+        env:
+          ETCD_NAME:
+            default: etcd4
+          ETCD_DATA_DIR:
+            default: /etcd-data
+          ETCD_INITIAL_ADVERTISE_PEER_URLS:
+            default: http://etcd4:2380
+          ETCD_LISTEN_PEER_URLS:
+            default: http://0.0.0.0:2380
+          ETCD_LISTEN_CLIENT_URLS:
+            default: http://0.0.0.0:2379
+          ETCD_ADVERTISE_CLIENT_URLS:
+            default: http://etcd4:2379
+          ETCD_LISTEN_METRICS_URLS:
+            default: http://0.0.0.0:2381
+          ETCD_INITIAL_CLUSTER:
+            default: etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380,etcd4=http://etcd4:2380
+          ETCD_INITIAL_CLUSTER_STATE:
+            default: existing
+          ETCD_INITIAL_CLUSTER_TOKEN:
+            default: etcd-cluster-pg-ha
+        instructions:
+          - title: Client Endpoint
+            content: "http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}"
+          - title: List Members
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/cluster/member/list"
+          - title: Add Member (replace service name)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/cluster/member/add -d '{\"peerURLs\":[\"http://etcd5:2380\"]}'"
+          - title: Delete Member (replace member-id)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/cluster/member/remove -d '{\"ID\":\"<member-id>\"}'"
+          - title: Cluster Health
+            content: "curl http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/health"
+          - title: Put Key (test=hello)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/kv/put -d '{\"key\":\"dGVzdA==\",\"value\":\"aGVsbG8=\"}'"
+          - title: Get Key (test)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/kv/range -d '{\"key\":\"dGVzdA==\"}'"
+
+  localization:
+    zh-TW:
+      description: |
+        新增第 4 個 etcd 節點，將 PostgreSQL HA 叢集從 3 個節點擴展至 4 個節點。
+      readme: |
+        # etcd4（PostgreSQL HA 的第 4 個節點）
+
+        ## 步驟 1：註冊節點
+
+        ```bash
+        curl -X POST http://etcd1:2379/v3/cluster/member/add -d '{"peerURLs":["http://etcd4:2380"]}'
+        ```
+
+        ## 步驟 2：部署並驗證
+
+        部署此模板，然後驗證：
+
+        ```bash
+        curl -X POST http://etcd1:2379/v3/cluster/member/list
+        ```
+
+        ## 步驟 3：更新 Patroni（建議）
+
+        更新所有 Patroni 服務中的 `ETCD3_HOSTS` 以包含新節點：
+
+        ```
+        etcd1:2379,etcd2:2379,etcd3:2379,etcd4:2379
+        ```
+
+    zh-CN:
+      description: |
+        添加第 4 个 etcd 节点，将 PostgreSQL HA 集群从 3 个节点扩展至 4 个节点。
+      readme: |
+        # etcd4（PostgreSQL HA 的第 4 个节点）
+
+        ## 步骤 1：注册节点
+
+        ```bash
+        curl -X POST http://etcd1:2379/v3/cluster/member/add -d '{"peerURLs":["http://etcd4:2380"]}'
+        ```
+
+        ## 步骤 2：部署并验证
+
+        部署此模板，然后验证：
+
+        ```bash
+        curl -X POST http://etcd1:2379/v3/cluster/member/list
+        ```
+
+        ## 步骤 3：更新 Patroni（建议）
+
+        更新所有 Patroni 服务中的 `ETCD3_HOSTS` 以包含新节点：
+
+        ```
+        etcd1:2379,etcd2:2379,etcd3:2379,etcd4:2379
+        ```
+
+    ja-JP:
+      description: |
+        4 番目の etcd ノードを追加して、PostgreSQL HA クラスターを 3 ノードから 4 ノードに拡張します。
+      readme: |
+        # etcd4（PostgreSQL HA 用の 4 番目のノード）
+
+        ## ステップ 1：ノードを登録
+
+        ```bash
+        curl -X POST http://etcd1:2379/v3/cluster/member/add -d '{"peerURLs":["http://etcd4:2380"]}'
+        ```
+
+        ## ステップ 2：デプロイと確認
+
+        このテンプレートをデプロイし、確認：
+
+        ```bash
+        curl -X POST http://etcd1:2379/v3/cluster/member/list
+        ```
+
+        ## ステップ 3：Patroni を更新（推奨）
+
+        すべての Patroni サービスの `ETCD3_HOSTS` を新しいノードを含むように更新：
+
+        ```
+        etcd1:2379,etcd2:2379,etcd3:2379,etcd4:2379
+        ```
+
+    es-ES:
+      description: |
+        Agregue el 4º nodo etcd para expandir su clúster PostgreSQL HA de 3 a 4 nodos.
+      readme: |
+        # etcd4 (4º Nodo para PostgreSQL HA)
+
+        ## Paso 1: Registrar Nodo
+
+        ```bash
+        curl -X POST http://etcd1:2379/v3/cluster/member/add -d '{"peerURLs":["http://etcd4:2380"]}'
+        ```
+
+        ## Paso 2: Desplegar y Verificar
+
+        Despliegue esta plantilla, luego verifique:
+
+        ```bash
+        curl -X POST http://etcd1:2379/v3/cluster/member/list
+        ```
+
+        ## Paso 3: Actualizar Patroni (Recomendado)
+
+        Actualice `ETCD3_HOSTS` en todos los servicios Patroni para incluir el nuevo nodo:
+
+        ```
+        etcd1:2379,etcd2:2379,etcd3:2379,etcd4:2379
+        ```
+
+    id-ID:
+      description: |
+        Tambahkan node etcd ke-4 untuk memperluas kluster PostgreSQL HA dari 3 ke 4 node.
+      readme: |
+        # etcd4 (Node ke-4 untuk PostgreSQL HA)
+
+        ## Langkah 1: Daftarkan Node
+
+        ```bash
+        curl -X POST http://etcd1:2379/v3/cluster/member/add -d '{"peerURLs":["http://etcd4:2380"]}'
+        ```
+
+        ## Langkah 2: Deploy dan Verifikasi
+
+        Deploy template ini, lalu verifikasi:
+
+        ```bash
+        curl -X POST http://etcd1:2379/v3/cluster/member/list
+        ```
+
+        ## Langkah 3: Perbarui Patroni (Disarankan)
+
+        Perbarui `ETCD3_HOSTS` di semua layanan Patroni untuk menyertakan node baru:
+
+        ```
+        etcd1:2379,etcd2:2379,etcd3:2379,etcd4:2379
+        ```

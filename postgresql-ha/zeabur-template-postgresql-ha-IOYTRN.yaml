@@ -1,0 +1,1113 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: PostgreSQL HA
+spec:
+  description: |
+    High Availability PostgreSQL cluster with Patroni and etcd. Provides automatic failover and replication for production-grade database deployments.
+  icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+  coverImage: https://raw.githubusercontent.com/canyugs/zeabur-template/refs/heads/main/postgresql-ha/cover.png
+  tags:
+    - Database
+    - PostgreSQL
+    - High Availability
+    - Patroni
+  variables:
+    - key: POSTGRES_SUPERUSER_PASSWORD
+      type: PASSWORD
+      name: Superuser Password
+      description: Password for PostgreSQL superuser (postgres user)
+    - key: POSTGRES_REPLICATION_PASSWORD
+      type: PASSWORD
+      name: Replication Password
+      description: Password for PostgreSQL replication user
+    - key: POSTGRES_ADMIN_PASSWORD
+      type: PASSWORD
+      name: Admin Password
+      description: Password for PostgreSQL admin user
+  readme: |
+    # PostgreSQL High Availability Cluster
+
+    This template deploys a highly available PostgreSQL cluster using:
+    - **Patroni**: PostgreSQL HA solution with automatic failover
+    - **Spilo**: Docker image combining PostgreSQL and Patroni
+    - **etcd**: Distributed configuration and service discovery
+
+    ## Architecture
+
+    - 3x etcd cluster nodes for distributed consensus
+    - 3x PostgreSQL nodes with Patroni for automatic failover
+    - Built-in replication and health monitoring
+
+    ## Connection Information
+
+    Use any of the Patroni nodes to connect to the cluster:
+    - **Host**: Use the hostname of patroni1, patroni2, or patroni3
+    - **Port**: 5432
+    - **Username**: postgres (superuser) or admin
+    - **Password**: Check the environment variables in Zeabur dashboard
+
+    Patroni will automatically route connections to the master node.
+
+    ### User Accounts
+
+    | Account | Username | Privileges | Use Case |
+    |---------|----------|------------|----------|
+    | **Superuser** | `postgres` | Full system privileges | System administration, backup/restore |
+    | **Admin** | `admin` | `CREATEDB`, `CREATEROLE` | Application connections, daily development |
+
+    > **Security**: Use `admin` or create dedicated users for applications. Avoid using `superuser` directly.
+
+    ## Features
+
+    - **Automatic Failover**: If the master fails, Patroni automatically promotes a replica
+    - **Synchronous Replication**: Data consistency across nodes
+    - **Health Monitoring**: REST API on port 8008 for each node
+    - **Rolling Updates**: Update nodes without downtime
+    - **Horizontal Scaling**: Easily add or remove nodes
+
+    ## Cluster Sizing
+
+    This 3-node configuration provides standard production HA (tolerates 1 node failure).
+
+    | Nodes | Fault Tolerance | Use Case |
+    |-------|----------------|----------|
+    | 3     | 1 failure      | ✅ Production (standard) |
+    | 5     | 2 failures     | ✅ Production (high availability) |
+
+    ## Scaling the Cluster
+
+    ### Adding Nodes (Scale to 5 Nodes)
+
+    To scale from 3 to 5 nodes for higher availability:
+
+    1. **Add etcd nodes**:
+       - Deploy [**etcd4**](https://zeabur.com/templates/X877ER)
+       - Deploy [**etcd5**](https://zeabur.com/templates/DYGT7Y)
+
+    2. **Add Patroni nodes**:
+       - Deploy [**Patroni4**](https://zeabur.com/templates/3ZC549)
+       - Deploy [**Patroni5**](https://zeabur.com/templates/LNFEJI)
+
+    3. **Update existing Patroni** `ETCD3_HOSTS` to include new etcd nodes:
+       ```
+       etcd1:2379,etcd2:2379,etcd3:2379,etcd4:2379,etcd5:2379
+       ```
+
+    ### Removing Nodes
+
+    To scale down the cluster:
+
+    1. Remove Patroni replica nodes (never remove the master)
+    2. Remove etcd nodes after updating cluster configuration
+    3. Always maintain odd number of nodes (3, 5, etc.)
+
+    ⚠️ **Important**: Never reduce below 3 nodes in production to maintain HA.
+
+    📖 **Full Guide**: See the [complete README](https://github.com/canyugs/zeabur-template/blob/main/postgresql-ha/README.md) for step-by-step removal instructions.
+
+    ## Management
+
+    Run inside any Patroni container:
+    ```bash
+    # Cluster status
+    patronictl list pg-ha
+
+    # Show cluster configuration
+    patronictl show-config pg-ha
+    ```
+
+    ## Troubleshooting
+
+    Common operations:
+
+    ```bash
+    # Check etcd cluster health
+    curl http://etcd1:2379/health
+
+    # List etcd members
+    curl -X POST http://etcd1:2379/v3/cluster/member/list
+
+    # Check Patroni cluster status (run inside patroni container)
+    patronictl list pg-ha
+
+    # Check PostgreSQL replication
+    psql -U postgres -c "SELECT * FROM pg_stat_replication;"
+    ```
+
+    📖 **Full Troubleshooting Guide**: See the [complete README](https://github.com/canyugs/zeabur-template/blob/main/postgresql-ha/README.md#troubleshooting).
+
+    ## Related Templates
+
+    **etcd Expansion:**
+    - [**etcd4**](https://zeabur.com/templates/X877ER): Add 4th etcd node
+    - [**etcd5**](https://zeabur.com/templates/DYGT7Y): Add 5th etcd node
+
+    **Patroni Expansion:**
+    - [**Patroni4**](https://zeabur.com/templates/3ZC549): Add 4th PostgreSQL node
+    - [**Patroni5**](https://zeabur.com/templates/LNFEJI): Add 5th PostgreSQL node
+
+    ## Documentation
+
+    - [Complete Setup and Scaling Guide](https://github.com/canyugs/zeabur-template/blob/main/postgresql-ha/README.md)
+    - [Patroni Documentation](https://patroni.readthedocs.io/)
+    - [Spilo GitHub](https://github.com/zalando/spilo)
+    - [etcd Documentation](https://etcd.io/docs/)
+
+  services:
+    - name: etcd1
+      icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
+      template: PREBUILT
+      spec:
+        source:
+          image: gcr.io/etcd-development/etcd:v3.6.6
+        ports:
+          - id: client
+            port: 2379
+            type: TCP
+          - id: peer
+            port: 2380
+            type: TCP
+          - id: metrics
+            port: 2381
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /etcd-data
+        env:
+          ETCD_NAME:
+            default: etcd1
+          ETCD_DATA_DIR:
+            default: /etcd-data
+          ETCD_INITIAL_ADVERTISE_PEER_URLS:
+            default: http://etcd1:2380
+          ETCD_LISTEN_PEER_URLS:
+            default: http://0.0.0.0:2380
+          ETCD_LISTEN_CLIENT_URLS:
+            default: http://0.0.0.0:2379
+          ETCD_ADVERTISE_CLIENT_URLS:
+            default: http://etcd1:2379
+          ETCD_LISTEN_METRICS_URLS:
+            default: http://0.0.0.0:2381
+          ETCD_INITIAL_CLUSTER:
+            default: etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+          ETCD_INITIAL_CLUSTER_STATE:
+            default: new
+          ETCD_INITIAL_CLUSTER_TOKEN:
+            default: etcd-cluster-pg-ha
+        instructions:
+          - title: Client Endpoint
+            content: "http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}"
+          - title: List Members
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/cluster/member/list"
+          - title: Add Member (replace service name)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/cluster/member/add -d '{\"peerURLs\":[\"http://etcd4:2380\"]}'"
+          - title: Delete Member (replace member-id)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/cluster/member/remove -d '{\"ID\":\"<member-id>\"}'"
+          - title: Cluster Health
+            content: "curl http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/health"
+          - title: Put Key (test=hello)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/kv/put -d '{\"key\":\"dGVzdA==\",\"value\":\"aGVsbG8=\"}'"
+          - title: Get Key (test)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/kv/range -d '{\"key\":\"dGVzdA==\"}'"
+
+    - name: etcd2
+      icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
+      template: PREBUILT
+      spec:
+        source:
+          image: gcr.io/etcd-development/etcd:v3.6.6
+        ports:
+          - id: client
+            port: 2379
+            type: TCP
+          - id: peer
+            port: 2380
+            type: TCP
+          - id: metrics
+            port: 2381
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /etcd-data
+        env:
+          ETCD_NAME:
+            default: etcd2
+          ETCD_DATA_DIR:
+            default: /etcd-data
+          ETCD_INITIAL_ADVERTISE_PEER_URLS:
+            default: http://etcd2:2380
+          ETCD_LISTEN_PEER_URLS:
+            default: http://0.0.0.0:2380
+          ETCD_LISTEN_CLIENT_URLS:
+            default: http://0.0.0.0:2379
+          ETCD_ADVERTISE_CLIENT_URLS:
+            default: http://etcd2:2379
+          ETCD_LISTEN_METRICS_URLS:
+            default: http://0.0.0.0:2381
+          ETCD_INITIAL_CLUSTER:
+            default: etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+          ETCD_INITIAL_CLUSTER_STATE:
+            default: new
+          ETCD_INITIAL_CLUSTER_TOKEN:
+            default: etcd-cluster-pg-ha
+        instructions:
+          - title: Client Endpoint
+            content: "http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}"
+          - title: List Members
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/cluster/member/list"
+          - title: Add Member (replace service name)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/cluster/member/add -d '{\"peerURLs\":[\"http://etcd4:2380\"]}'"
+          - title: Delete Member (replace member-id)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/cluster/member/remove -d '{\"ID\":\"<member-id>\"}'"
+          - title: Cluster Health
+            content: "curl http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/health"
+          - title: Put Key (test=hello)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/kv/put -d '{\"key\":\"dGVzdA==\",\"value\":\"aGVsbG8=\"}'"
+          - title: Get Key (test)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/kv/range -d '{\"key\":\"dGVzdA==\"}'"
+
+    - name: etcd3
+      icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
+      template: PREBUILT
+      spec:
+        source:
+          image: gcr.io/etcd-development/etcd:v3.6.6
+        ports:
+          - id: client
+            port: 2379
+            type: TCP
+          - id: peer
+            port: 2380
+            type: TCP
+          - id: metrics
+            port: 2381
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /etcd-data
+        env:
+          ETCD_NAME:
+            default: etcd3
+          ETCD_DATA_DIR:
+            default: /etcd-data
+          ETCD_INITIAL_ADVERTISE_PEER_URLS:
+            default: http://etcd3:2380
+          ETCD_LISTEN_PEER_URLS:
+            default: http://0.0.0.0:2380
+          ETCD_LISTEN_CLIENT_URLS:
+            default: http://0.0.0.0:2379
+          ETCD_ADVERTISE_CLIENT_URLS:
+            default: http://etcd3:2379
+          ETCD_LISTEN_METRICS_URLS:
+            default: http://0.0.0.0:2381
+          ETCD_INITIAL_CLUSTER:
+            default: etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+          ETCD_INITIAL_CLUSTER_STATE:
+            default: new
+          ETCD_INITIAL_CLUSTER_TOKEN:
+            default: etcd-cluster-pg-ha
+        instructions:
+          - title: Client Endpoint
+            content: "http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}"
+          - title: List Members
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/cluster/member/list"
+          - title: Add Member (replace service name)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/cluster/member/add -d '{\"peerURLs\":[\"http://etcd4:2380\"]}'"
+          - title: Delete Member (replace member-id)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/cluster/member/remove -d '{\"ID\":\"<member-id>\"}'"
+          - title: Cluster Health
+            content: "curl http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/health"
+          - title: Put Key (test=hello)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/kv/put -d '{\"key\":\"dGVzdA==\",\"value\":\"aGVsbG8=\"}'"
+          - title: Get Key (test)
+            content: "curl -X POST http://${PORT_FORWARDED_HOSTNAME}:${CLIENT_PORT_FORWARDED_PORT}/v3/kv/range -d '{\"key\":\"dGVzdA==\"}'"
+
+    - name: patroni1
+      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+      template: PREBUILT
+      dependencies:
+        - etcd1
+        - etcd2
+        - etcd3
+      spec:
+        source:
+          image: ghcr.io/zalando/spilo-15:3.2-p1
+          command:
+            - sh
+            - -c
+            - |
+              # Wrapper to fix ownership after basebackup
+              (
+                while sleep 10; do
+                  if [ -d /home/postgres/pgdata/pgroot ]; then
+                    chown -R postgres:postgres /home/postgres/pgdata/pgroot 2>/dev/null || true
+                  fi
+                done
+              ) &
+              exec /launch.sh init
+        ports:
+          - id: database
+            port: 5432
+            type: TCP
+          - id: api
+            port: 8008
+            type: HTTP
+        healthCheck:
+          type: HTTP
+          port: api
+          http:
+            path: /health
+        volumes:
+          - id: data
+            dir: /home/postgres/pgdata
+        env:
+          SCOPE:
+            default: pg-ha
+          PATRONI_NAME:
+            default: patroni1
+          PATRONI_RESTAPI_LISTEN:
+            default: 0.0.0.0:8008
+          PATRONI_RESTAPI_CONNECT_ADDRESS:
+            default: ${CONTAINER_HOSTNAME}:8008
+          PATRONI_POSTGRESQL_LISTEN:
+            default: 0.0.0.0:5432
+          PATRONI_POSTGRESQL_CONNECT_ADDRESS:
+            default: ${CONTAINER_HOSTNAME}:5432
+          PATRONI_SUPERUSER_USERNAME:
+            default: postgres
+          PATRONI_SUPERUSER_PASSWORD:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
+          PATRONI_REPLICATION_USERNAME:
+            default: replicator
+          PATRONI_REPLICATION_PASSWORD:
+            default: ${POSTGRES_REPLICATION_PASSWORD}
+          PATRONI_admin_USERNAME:
+            default: admin
+          PATRONI_admin_PASSWORD:
+            default: ${POSTGRES_ADMIN_PASSWORD}
+          PGPASSWORD_SUPERUSER:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
+          PGPASSWORD_STANDBY:
+            default: ${POSTGRES_REPLICATION_PASSWORD}
+          PGPASSWORD_ADMIN:
+            default: ${POSTGRES_ADMIN_PASSWORD}
+          ETCD3_HOSTS:
+            default: etcd1:2379,etcd2:2379,etcd3:2379
+        instructions:
+          - title: Superuser Connection String
+            content: "postgresql://postgres:${POSTGRES_SUPERUSER_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/postgres"
+          - title: Admin Connection String
+            content: "postgresql://admin:${POSTGRES_ADMIN_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/postgres"
+          - title: Superuser Username
+            content: "postgres"
+          - title: Superuser Password
+            content: "${POSTGRES_SUPERUSER_PASSWORD}"
+          - title: Admin Username
+            content: "admin"
+          - title: Admin Password
+            content: "${POSTGRES_ADMIN_PASSWORD}"
+          - title: Cluster Status (run in container)
+            content: "patronictl list pg-ha"
+
+    - name: patroni2
+      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+      template: PREBUILT
+      dependencies:
+        - etcd1
+        - etcd2
+        - etcd3
+      spec:
+        source:
+          image: ghcr.io/zalando/spilo-15:3.2-p1
+          command:
+            - sh
+            - -c
+            - |
+              # Wrapper to fix ownership after basebackup
+              (
+                while sleep 10; do
+                  if [ -d /home/postgres/pgdata/pgroot ]; then
+                    chown -R postgres:postgres /home/postgres/pgdata/pgroot 2>/dev/null || true
+                  fi
+                done
+              ) &
+              exec /launch.sh init
+        ports:
+          - id: database
+            port: 5432
+            type: TCP
+          - id: api
+            port: 8008
+            type: HTTP
+        healthCheck:
+          type: HTTP
+          port: api
+          http:
+            path: /health
+        volumes:
+          - id: data
+            dir: /home/postgres/pgdata
+        env:
+          SCOPE:
+            default: pg-ha
+          PATRONI_NAME:
+            default: patroni2
+          PATRONI_RESTAPI_LISTEN:
+            default: 0.0.0.0:8008
+          PATRONI_RESTAPI_CONNECT_ADDRESS:
+            default: ${CONTAINER_HOSTNAME}:8008
+          PATRONI_POSTGRESQL_LISTEN:
+            default: 0.0.0.0:5432
+          PATRONI_POSTGRESQL_CONNECT_ADDRESS:
+            default: ${CONTAINER_HOSTNAME}:5432
+          PATRONI_SUPERUSER_USERNAME:
+            default: postgres
+          PATRONI_SUPERUSER_PASSWORD:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
+          PATRONI_REPLICATION_USERNAME:
+            default: replicator
+          PATRONI_REPLICATION_PASSWORD:
+            default: ${POSTGRES_REPLICATION_PASSWORD}
+          PATRONI_admin_USERNAME:
+            default: admin
+          PATRONI_admin_PASSWORD:
+            default: ${POSTGRES_ADMIN_PASSWORD}
+          PGPASSWORD_SUPERUSER:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
+          PGPASSWORD_STANDBY:
+            default: ${POSTGRES_REPLICATION_PASSWORD}
+          PGPASSWORD_ADMIN:
+            default: ${POSTGRES_ADMIN_PASSWORD}
+          ETCD3_HOSTS:
+            default: etcd1:2379,etcd2:2379,etcd3:2379
+        instructions:
+          - title: Superuser Connection String
+            content: "postgresql://postgres:${POSTGRES_SUPERUSER_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/postgres"
+          - title: Admin Connection String
+            content: "postgresql://admin:${POSTGRES_ADMIN_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/postgres"
+          - title: Superuser Username
+            content: "postgres"
+          - title: Superuser Password
+            content: "${POSTGRES_SUPERUSER_PASSWORD}"
+          - title: Admin Username
+            content: "admin"
+          - title: Admin Password
+            content: "${POSTGRES_ADMIN_PASSWORD}"
+          - title: Cluster Status (run in container)
+            content: "patronictl list pg-ha"
+
+    - name: patroni3
+      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+      template: PREBUILT
+      dependencies:
+        - etcd1
+        - etcd2
+        - etcd3
+      spec:
+        source:
+          image: ghcr.io/zalando/spilo-15:3.2-p1
+          command:
+            - sh
+            - -c
+            - |
+              # Wrapper to fix ownership after basebackup
+              (
+                while sleep 10; do
+                  if [ -d /home/postgres/pgdata/pgroot ]; then
+                    chown -R postgres:postgres /home/postgres/pgdata/pgroot 2>/dev/null || true
+                  fi
+                done
+              ) &
+              exec /launch.sh init
+        ports:
+          - id: database
+            port: 5432
+            type: TCP
+          - id: api
+            port: 8008
+            type: HTTP
+        healthCheck:
+          type: HTTP
+          port: api
+          http:
+            path: /health
+        volumes:
+          - id: data
+            dir: /home/postgres/pgdata
+        env:
+          SCOPE:
+            default: pg-ha
+          PATRONI_NAME:
+            default: patroni3
+          PATRONI_RESTAPI_LISTEN:
+            default: 0.0.0.0:8008
+          PATRONI_RESTAPI_CONNECT_ADDRESS:
+            default: ${CONTAINER_HOSTNAME}:8008
+          PATRONI_POSTGRESQL_LISTEN:
+            default: 0.0.0.0:5432
+          PATRONI_POSTGRESQL_CONNECT_ADDRESS:
+            default: ${CONTAINER_HOSTNAME}:5432
+          PATRONI_SUPERUSER_USERNAME:
+            default: postgres
+          PATRONI_SUPERUSER_PASSWORD:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
+          PATRONI_REPLICATION_USERNAME:
+            default: replicator
+          PATRONI_REPLICATION_PASSWORD:
+            default: ${POSTGRES_REPLICATION_PASSWORD}
+          PATRONI_admin_USERNAME:
+            default: admin
+          PATRONI_admin_PASSWORD:
+            default: ${POSTGRES_ADMIN_PASSWORD}
+          PGPASSWORD_SUPERUSER:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
+          PGPASSWORD_STANDBY:
+            default: ${POSTGRES_REPLICATION_PASSWORD}
+          PGPASSWORD_ADMIN:
+            default: ${POSTGRES_ADMIN_PASSWORD}
+          ETCD3_HOSTS:
+            default: etcd1:2379,etcd2:2379,etcd3:2379
+        instructions:
+          - title: Superuser Connection String
+            content: "postgresql://postgres:${POSTGRES_SUPERUSER_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/postgres"
+          - title: Admin Connection String
+            content: "postgresql://admin:${POSTGRES_ADMIN_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/postgres"
+          - title: Superuser Username
+            content: "postgres"
+          - title: Superuser Password
+            content: "${POSTGRES_SUPERUSER_PASSWORD}"
+          - title: Admin Username
+            content: "admin"
+          - title: Admin Password
+            content: "${POSTGRES_ADMIN_PASSWORD}"
+          - title: Cluster Status (run in container)
+            content: "patronictl list pg-ha"
+
+  localization:
+    zh-TW:
+      description: |
+        使用 Patroni 和 etcd 的高可用 PostgreSQL 叢集。提供自動故障轉移和複製功能，適用於生產級資料庫部署。
+      variables:
+        - key: POSTGRES_SUPERUSER_PASSWORD
+          type: PASSWORD
+          name: 超級使用者密碼
+          description: PostgreSQL 超級使用者（postgres 使用者）的密碼
+        - key: POSTGRES_REPLICATION_PASSWORD
+          type: PASSWORD
+          name: 複製密碼
+          description: PostgreSQL 複製使用者的密碼
+        - key: POSTGRES_ADMIN_PASSWORD
+          type: PASSWORD
+          name: 管理員密碼
+          description: PostgreSQL 管理員使用者的密碼
+      readme: |
+        # PostgreSQL 高可用叢集
+
+        此模板部署高可用 PostgreSQL 叢集，使用：
+        - **Patroni**：具有自動故障轉移的 PostgreSQL HA 解決方案
+        - **Spilo**：結合 PostgreSQL 和 Patroni 的 Docker 映像
+        - **etcd**：分散式配置和服務發現
+
+        ## 架構
+
+        - 3 個 etcd 叢集節點用於分散式共識
+        - 3 個 PostgreSQL 節點搭配 Patroni 實現自動故障轉移
+        - 內建複製和健康監控
+
+        ## 連線資訊
+
+        使用任意 Patroni 節點連接叢集：
+        - **主機**：使用 patroni1、patroni2 或 patroni3 的主機名稱
+        - **連接埠**：5432
+        - **使用者名稱**：postgres（超級使用者）或 admin
+        - **密碼**：請在 Zeabur 儀表板查看環境變數
+
+        Patroni 會自動將連線路由到主節點。
+
+        ### 使用者帳號
+
+        | 帳號 | 使用者名稱 | 權限 | 使用情境 |
+        |------|----------|------|---------|
+        | **超級使用者** | `postgres` | 完整系統權限 | 系統管理、備份/還原 |
+        | **管理員** | `admin` | `CREATEDB`、`CREATEROLE` | 應用程式連線、日常開發 |
+
+        > **安全性**：請使用 `admin` 或建立專用使用者供應用程式使用。避免直接使用 `superuser`。
+
+        ## 功能特色
+
+        - **自動故障轉移**：主節點故障時，Patroni 自動提升副本
+        - **同步複製**：節點間資料一致性
+        - **健康監控**：每個節點在 8008 連接埠提供 REST API
+        - **滾動更新**：無停機時間更新節點
+        - **水平擴展**：輕鬆新增或移除節點
+
+        ## 叢集規模
+
+        此 3 節點配置提供標準生產環境 HA（可容忍 1 個節點故障）。
+
+        | 節點數 | 容錯能力 | 使用情境 |
+        |-------|---------|---------|
+        | 3     | 1 個故障 | ✅ 生產環境（標準） |
+        | 5     | 2 個故障 | ✅ 生產環境（高可用） |
+
+        ## 擴展叢集
+
+        ### 新增節點（擴展至 5 節點）
+
+        要從 3 節點擴展至 5 節點以獲得更高可用性：
+
+        1. **新增 etcd 節點**：
+           - 部署 [**etcd4**](https://zeabur.com/templates/X877ER)
+           - 部署 [**etcd5**](https://zeabur.com/templates/DYGT7Y)
+
+        2. **新增 Patroni 節點**：
+           - 部署 [**Patroni4**](https://zeabur.com/templates/3ZC549)
+           - 部署 [**Patroni5**](https://zeabur.com/templates/LNFEJI)
+
+        3. **更新現有 Patroni** 的 `ETCD3_HOSTS` 以包含新的 etcd 節點：
+           ```
+           etcd1:2379,etcd2:2379,etcd3:2379,etcd4:2379,etcd5:2379
+           ```
+
+        ## 管理
+
+        在任意 Patroni 容器中執行：
+        ```bash
+        patronictl list pg-ha
+        patronictl show-config pg-ha
+        ```
+
+        ## 相關模板
+
+        - [**etcd4**](https://zeabur.com/templates/X877ER)：新增第 4 個 etcd 節點
+        - [**etcd5**](https://zeabur.com/templates/DYGT7Y)：新增第 5 個 etcd 節點
+        - [**Patroni4**](https://zeabur.com/templates/3ZC549)：新增第 4 個 PostgreSQL 節點
+        - [**Patroni5**](https://zeabur.com/templates/LNFEJI)：新增第 5 個 PostgreSQL 節點
+
+        ## 文件
+
+        - [完整設定與擴展指南](https://github.com/canyugs/zeabur-template/blob/main/postgresql-ha/README.md)
+        - [Patroni 文件](https://patroni.readthedocs.io/)
+        - [etcd 文件](https://etcd.io/docs/)
+
+    zh-CN:
+      description: |
+        使用 Patroni 和 etcd 的高可用 PostgreSQL 集群。提供自动故障转移和复制功能，适用于生产级数据库部署。
+      variables:
+        - key: POSTGRES_SUPERUSER_PASSWORD
+          type: PASSWORD
+          name: 超级用户密码
+          description: PostgreSQL 超级用户（postgres 用户）的密码
+        - key: POSTGRES_REPLICATION_PASSWORD
+          type: PASSWORD
+          name: 复制密码
+          description: PostgreSQL 复制用户的密码
+        - key: POSTGRES_ADMIN_PASSWORD
+          type: PASSWORD
+          name: 管理员密码
+          description: PostgreSQL 管理员用户的密码
+      readme: |
+        # PostgreSQL 高可用集群
+
+        此模板部署高可用 PostgreSQL 集群，使用：
+        - **Patroni**：具有自动故障转移的 PostgreSQL HA 解决方案
+        - **Spilo**：结合 PostgreSQL 和 Patroni 的 Docker 镜像
+        - **etcd**：分布式配置和服务发现
+
+        ## 架构
+
+        - 3 个 etcd 集群节点用于分布式共识
+        - 3 个 PostgreSQL 节点搭配 Patroni 实现自动故障转移
+        - 内置复制和健康监控
+
+        ## 连接信息
+
+        使用任意 Patroni 节点连接集群：
+        - **主机**：使用 patroni1、patroni2 或 patroni3 的主机名
+        - **端口**：5432
+        - **用户名**：postgres（超级用户）或 admin
+        - **密码**：请在 Zeabur 仪表板查看环境变量
+
+        Patroni 会自动将连接路由到主节点。
+
+        ### 用户账号
+
+        | 账号 | 用户名 | 权限 | 使用场景 |
+        |------|-------|------|---------|
+        | **超级用户** | `postgres` | 完整系统权限 | 系统管理、备份/恢复 |
+        | **管理员** | `admin` | `CREATEDB`、`CREATEROLE` | 应用程序连接、日常开发 |
+
+        > **安全性**：请使用 `admin` 或创建专用用户供应用程序使用。避免直接使用 `superuser`。
+
+        ## 功能特性
+
+        - **自动故障转移**：主节点故障时，Patroni 自动提升副本
+        - **同步复制**：节点间数据一致性
+        - **健康监控**：每个节点在 8008 端口提供 REST API
+        - **滚动更新**：无停机时间更新节点
+        - **水平扩展**：轻松添加或移除节点
+
+        ## 集群规模
+
+        此 3 节点配置提供标准生产环境 HA（可容忍 1 个节点故障）。
+
+        | 节点数 | 容错能力 | 使用场景 |
+        |-------|---------|---------|
+        | 3     | 1 个故障 | ✅ 生产环境（标准） |
+        | 5     | 2 个故障 | ✅ 生产环境（高可用） |
+
+        ## 扩展集群
+
+        ### 添加节点（扩展至 5 节点）
+
+        要从 3 节点扩展至 5 节点以获得更高可用性：
+
+        1. **添加 etcd 节点**：
+           - 部署 [**etcd4**](https://zeabur.com/templates/X877ER)
+           - 部署 [**etcd5**](https://zeabur.com/templates/DYGT7Y)
+
+        2. **添加 Patroni 节点**：
+           - 部署 [**Patroni4**](https://zeabur.com/templates/3ZC549)
+           - 部署 [**Patroni5**](https://zeabur.com/templates/LNFEJI)
+
+        3. **更新现有 Patroni** 的 `ETCD3_HOSTS` 以包含新的 etcd 节点：
+           ```
+           etcd1:2379,etcd2:2379,etcd3:2379,etcd4:2379,etcd5:2379
+           ```
+
+        ## 管理
+
+        在任意 Patroni 容器中执行：
+        ```bash
+        patronictl list pg-ha
+        patronictl show-config pg-ha
+        ```
+
+        ## 相关模板
+
+        - [**etcd4**](https://zeabur.com/templates/X877ER)：添加第 4 个 etcd 节点
+        - [**etcd5**](https://zeabur.com/templates/DYGT7Y)：添加第 5 个 etcd 节点
+        - [**Patroni4**](https://zeabur.com/templates/3ZC549)：添加第 4 个 PostgreSQL 节点
+        - [**Patroni5**](https://zeabur.com/templates/LNFEJI)：添加第 5 个 PostgreSQL 节点
+
+        ## 文档
+
+        - [完整设置与扩展指南](https://github.com/canyugs/zeabur-template/blob/main/postgresql-ha/README.md)
+        - [Patroni 文档](https://patroni.readthedocs.io/)
+        - [etcd 文档](https://etcd.io/docs/)
+
+    ja-JP:
+      description: |
+        Patroni と etcd を使用した高可用性 PostgreSQL クラスター。本番グレードのデータベースデプロイメント向けに自動フェイルオーバーとレプリケーションを提供します。
+      variables:
+        - key: POSTGRES_SUPERUSER_PASSWORD
+          type: PASSWORD
+          name: スーパーユーザーパスワード
+          description: PostgreSQL スーパーユーザー（postgres ユーザー）のパスワード
+        - key: POSTGRES_REPLICATION_PASSWORD
+          type: PASSWORD
+          name: レプリケーションパスワード
+          description: PostgreSQL レプリケーションユーザーのパスワード
+        - key: POSTGRES_ADMIN_PASSWORD
+          type: PASSWORD
+          name: 管理者パスワード
+          description: PostgreSQL 管理者ユーザーのパスワード
+      readme: |
+        # PostgreSQL 高可用性クラスター
+
+        このテンプレートは以下を使用して高可用性 PostgreSQL クラスターをデプロイします：
+        - **Patroni**：自動フェイルオーバー機能を持つ PostgreSQL HA ソリューション
+        - **Spilo**：PostgreSQL と Patroni を組み合わせた Docker イメージ
+        - **etcd**：分散設定とサービスディスカバリ
+
+        ## アーキテクチャ
+
+        - 分散コンセンサス用の 3 つの etcd クラスターノード
+        - 自動フェイルオーバー用の Patroni を備えた 3 つの PostgreSQL ノード
+        - 組み込みのレプリケーションとヘルスモニタリング
+
+        ## 接続情報
+
+        任意の Patroni ノードを使用してクラスターに接続：
+        - **ホスト**：patroni1、patroni2、または patroni3 のホスト名を使用
+        - **ポート**：5432
+        - **ユーザー名**：postgres（スーパーユーザー）または admin
+        - **パスワード**：Zeabur ダッシュボードの環境変数を確認
+
+        Patroni は自動的に接続をマスターノードにルーティングします。
+
+        ### ユーザーアカウント
+
+        | アカウント | ユーザー名 | 権限 | 使用ケース |
+        |----------|----------|------|----------|
+        | **スーパーユーザー** | `postgres` | 完全なシステム権限 | システム管理、バックアップ/リストア |
+        | **管理者** | `admin` | `CREATEDB`、`CREATEROLE` | アプリケーション接続、日常開発 |
+
+        > **セキュリティ**：アプリケーションには `admin` または専用ユーザーを使用してください。
+
+        ## 機能
+
+        - **自動フェイルオーバー**：マスター障害時に Patroni が自動的にレプリカを昇格
+        - **同期レプリケーション**：ノード間のデータ整合性
+        - **ヘルスモニタリング**：各ノードのポート 8008 で REST API を提供
+        - **ローリングアップデート**：ダウンタイムなしでノードを更新
+        - **水平スケーリング**：ノードの追加・削除が容易
+
+        ## クラスターサイズ
+
+        この 3 ノード構成は標準的な本番環境 HA を提供します（1 ノード障害を許容）。
+
+        | ノード数 | 障害耐性 | 使用ケース |
+        |---------|---------|----------|
+        | 3       | 1 障害   | ✅ 本番環境（標準） |
+        | 5       | 2 障害   | ✅ 本番環境（高可用性） |
+
+        ## クラスターのスケーリング
+
+        ### ノードの追加（5 ノードへの拡張）
+
+        より高い可用性のために 3 ノードから 5 ノードにスケールするには：
+
+        1. **etcd ノードを追加**：
+           - [**etcd4**](https://zeabur.com/templates/X877ER) をデプロイ
+           - [**etcd5**](https://zeabur.com/templates/DYGT7Y) をデプロイ
+
+        2. **Patroni ノードを追加**：
+           - [**Patroni4**](https://zeabur.com/templates/3ZC549) をデプロイ
+           - [**Patroni5**](https://zeabur.com/templates/LNFEJI) をデプロイ
+
+        3. **既存の Patroni** の `ETCD3_HOSTS` を更新：
+           ```
+           etcd1:2379,etcd2:2379,etcd3:2379,etcd4:2379,etcd5:2379
+           ```
+
+        ## 管理
+
+        任意の Patroni コンテナ内で実行：
+        ```bash
+        patronictl list pg-ha
+        patronictl show-config pg-ha
+        ```
+
+        ## 関連テンプレート
+
+        - [**etcd4**](https://zeabur.com/templates/X877ER)：4 番目の etcd ノードを追加
+        - [**etcd5**](https://zeabur.com/templates/DYGT7Y)：5 番目の etcd ノードを追加
+        - [**Patroni4**](https://zeabur.com/templates/3ZC549)：4 番目の PostgreSQL ノードを追加
+        - [**Patroni5**](https://zeabur.com/templates/LNFEJI)：5 番目の PostgreSQL ノードを追加
+
+        ## ドキュメント
+
+        - [完全なセットアップとスケーリングガイド](https://github.com/canyugs/zeabur-template/blob/main/postgresql-ha/README.md)
+        - [Patroni ドキュメント](https://patroni.readthedocs.io/)
+        - [etcd ドキュメント](https://etcd.io/docs/)
+
+    es-ES:
+      description: |
+        Clúster PostgreSQL de alta disponibilidad con Patroni y etcd. Proporciona conmutación por error automática y replicación para implementaciones de bases de datos de nivel de producción.
+      variables:
+        - key: POSTGRES_SUPERUSER_PASSWORD
+          type: PASSWORD
+          name: Contraseña de superusuario
+          description: Contraseña para el superusuario de PostgreSQL (usuario postgres)
+        - key: POSTGRES_REPLICATION_PASSWORD
+          type: PASSWORD
+          name: Contraseña de replicación
+          description: Contraseña para el usuario de replicación de PostgreSQL
+        - key: POSTGRES_ADMIN_PASSWORD
+          type: PASSWORD
+          name: Contraseña de administrador
+          description: Contraseña para el usuario administrador de PostgreSQL
+      readme: |
+        # Clúster PostgreSQL de Alta Disponibilidad
+
+        Esta plantilla despliega un clúster PostgreSQL de alta disponibilidad usando:
+        - **Patroni**: Solución PostgreSQL HA con conmutación por error automática
+        - **Spilo**: Imagen Docker que combina PostgreSQL y Patroni
+        - **etcd**: Configuración distribuida y descubrimiento de servicios
+
+        ## Arquitectura
+
+        - 3 nodos de clúster etcd para consenso distribuido
+        - 3 nodos PostgreSQL con Patroni para conmutación por error automática
+        - Replicación y monitoreo de salud integrados
+
+        ## Información de Conexión
+
+        Use cualquier nodo Patroni para conectarse al clúster:
+        - **Host**: Use el nombre de host de patroni1, patroni2 o patroni3
+        - **Puerto**: 5432
+        - **Usuario**: postgres (superusuario) o admin
+        - **Contraseña**: Verifique las variables de entorno en el panel de Zeabur
+
+        Patroni enrutará automáticamente las conexiones al nodo maestro.
+
+        ### Cuentas de Usuario
+
+        | Cuenta | Usuario | Privilegios | Caso de Uso |
+        |--------|---------|-------------|-------------|
+        | **Superusuario** | `postgres` | Privilegios completos | Administración del sistema |
+        | **Administrador** | `admin` | `CREATEDB`, `CREATEROLE` | Conexiones de aplicaciones |
+
+        > **Seguridad**: Use `admin` o cree usuarios dedicados para aplicaciones.
+
+        ## Características
+
+        - **Conmutación por error automática**: Si el maestro falla, Patroni promueve una réplica
+        - **Replicación síncrona**: Consistencia de datos entre nodos
+        - **Monitoreo de salud**: API REST en el puerto 8008 para cada nodo
+        - **Actualizaciones continuas**: Actualice nodos sin tiempo de inactividad
+        - **Escalado horizontal**: Agregue o elimine nodos fácilmente
+
+        ## Tamaño del Clúster
+
+        Esta configuración de 3 nodos proporciona HA estándar de producción.
+
+        | Nodos | Tolerancia a fallos | Caso de Uso |
+        |-------|-------------------|-------------|
+        | 3     | 1 fallo           | ✅ Producción (estándar) |
+        | 5     | 2 fallos          | ✅ Producción (alta disponibilidad) |
+
+        ## Escalado del Clúster
+
+        ### Agregar Nodos (Escalar a 5 Nodos)
+
+        1. **Agregar nodos etcd**:
+           - Despliegue [**etcd4**](https://zeabur.com/templates/X877ER)
+           - Despliegue [**etcd5**](https://zeabur.com/templates/DYGT7Y)
+
+        2. **Agregar nodos Patroni**:
+           - Despliegue [**Patroni4**](https://zeabur.com/templates/3ZC549)
+           - Despliegue [**Patroni5**](https://zeabur.com/templates/LNFEJI)
+
+        3. **Actualice** `ETCD3_HOSTS` **de Patroni existente**:
+           ```
+           etcd1:2379,etcd2:2379,etcd3:2379,etcd4:2379,etcd5:2379
+           ```
+
+        ## Administración
+
+        Ejecute dentro de cualquier contenedor Patroni:
+        ```bash
+        patronictl list pg-ha
+        patronictl show-config pg-ha
+        ```
+
+        ## Plantillas Relacionadas
+
+        - [**etcd4**](https://zeabur.com/templates/X877ER): Agregar 4º nodo etcd
+        - [**etcd5**](https://zeabur.com/templates/DYGT7Y): Agregar 5º nodo etcd
+        - [**Patroni4**](https://zeabur.com/templates/3ZC549): Agregar 4º nodo PostgreSQL
+        - [**Patroni5**](https://zeabur.com/templates/LNFEJI): Agregar 5º nodo PostgreSQL
+
+        ## Documentación
+
+        - [Guía completa](https://github.com/canyugs/zeabur-template/blob/main/postgresql-ha/README.md)
+        - [Documentación de Patroni](https://patroni.readthedocs.io/)
+        - [Documentación de etcd](https://etcd.io/docs/)
+
+    id-ID:
+      description: |
+        Kluster PostgreSQL dengan ketersediaan tinggi menggunakan Patroni dan etcd. Menyediakan failover otomatis dan replikasi untuk deployment database tingkat produksi.
+      variables:
+        - key: POSTGRES_SUPERUSER_PASSWORD
+          type: PASSWORD
+          name: Kata Sandi Superuser
+          description: Kata sandi untuk superuser PostgreSQL (pengguna postgres)
+        - key: POSTGRES_REPLICATION_PASSWORD
+          type: PASSWORD
+          name: Kata Sandi Replikasi
+          description: Kata sandi untuk pengguna replikasi PostgreSQL
+        - key: POSTGRES_ADMIN_PASSWORD
+          type: PASSWORD
+          name: Kata Sandi Admin
+          description: Kata sandi untuk pengguna admin PostgreSQL
+      readme: |
+        # Kluster PostgreSQL Ketersediaan Tinggi
+
+        Template ini mendeploy kluster PostgreSQL dengan ketersediaan tinggi menggunakan:
+        - **Patroni**: Solusi PostgreSQL HA dengan failover otomatis
+        - **Spilo**: Image Docker yang menggabungkan PostgreSQL dan Patroni
+        - **etcd**: Konfigurasi terdistribusi dan penemuan layanan
+
+        ## Arsitektur
+
+        - 3 node kluster etcd untuk konsensus terdistribusi
+        - 3 node PostgreSQL dengan Patroni untuk failover otomatis
+        - Replikasi dan pemantauan kesehatan bawaan
+
+        ## Informasi Koneksi
+
+        Gunakan salah satu node Patroni untuk terhubung ke kluster:
+        - **Host**: Gunakan hostname dari patroni1, patroni2, atau patroni3
+        - **Port**: 5432
+        - **Username**: postgres (superuser) atau admin
+        - **Password**: Periksa variabel lingkungan di dashboard Zeabur
+
+        Patroni akan secara otomatis merutekan koneksi ke node master.
+
+        ### Akun Pengguna
+
+        | Akun | Username | Hak Akses | Kasus Penggunaan |
+        |------|----------|-----------|------------------|
+        | **Superuser** | `postgres` | Hak akses sistem penuh | Administrasi sistem |
+        | **Admin** | `admin` | `CREATEDB`, `CREATEROLE` | Koneksi aplikasi |
+
+        > **Keamanan**: Gunakan `admin` atau buat pengguna khusus untuk aplikasi.
+
+        ## Fitur
+
+        - **Failover Otomatis**: Jika master gagal, Patroni mempromosikan replika
+        - **Replikasi Sinkron**: Konsistensi data antar node
+        - **Pemantauan Kesehatan**: REST API di port 8008 untuk setiap node
+        - **Pembaruan Bergulir**: Perbarui node tanpa downtime
+        - **Penskalaan Horizontal**: Tambah atau hapus node dengan mudah
+
+        ## Ukuran Kluster
+
+        Konfigurasi 3 node ini menyediakan HA standar produksi.
+
+        | Node | Toleransi Kegagalan | Kasus Penggunaan |
+        |------|---------------------|------------------|
+        | 3    | 1 kegagalan         | ✅ Produksi (standar) |
+        | 5    | 2 kegagalan         | ✅ Produksi (ketersediaan tinggi) |
+
+        ## Penskalaan Kluster
+
+        ### Menambah Node (Skala ke 5 Node)
+
+        1. **Tambah node etcd**:
+           - Deploy [**etcd4**](https://zeabur.com/templates/X877ER)
+           - Deploy [**etcd5**](https://zeabur.com/templates/DYGT7Y)
+
+        2. **Tambah node Patroni**:
+           - Deploy [**Patroni4**](https://zeabur.com/templates/3ZC549)
+           - Deploy [**Patroni5**](https://zeabur.com/templates/LNFEJI)
+
+        3. **Perbarui** `ETCD3_HOSTS` **Patroni yang ada**:
+           ```
+           etcd1:2379,etcd2:2379,etcd3:2379,etcd4:2379,etcd5:2379
+           ```
+
+        ## Manajemen
+
+        Jalankan di dalam kontainer Patroni mana pun:
+        ```bash
+        patronictl list pg-ha
+        patronictl show-config pg-ha
+        ```
+
+        ## Template Terkait
+
+        - [**etcd4**](https://zeabur.com/templates/X877ER): Tambah node etcd ke-4
+        - [**etcd5**](https://zeabur.com/templates/DYGT7Y): Tambah node etcd ke-5
+        - [**Patroni4**](https://zeabur.com/templates/3ZC549): Tambah node PostgreSQL ke-4
+        - [**Patroni5**](https://zeabur.com/templates/LNFEJI): Tambah node PostgreSQL ke-5
+
+        ## Dokumentasi
+
+        - [Panduan Lengkap](https://github.com/canyugs/zeabur-template/blob/main/postgresql-ha/README.md)
+        - [Dokumentasi Patroni](https://patroni.readthedocs.io/)
+        - [Dokumentasi etcd](https://etcd.io/docs/)

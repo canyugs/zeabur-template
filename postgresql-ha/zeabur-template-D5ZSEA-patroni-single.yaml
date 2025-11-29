@@ -1,0 +1,565 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: Patroni PostgreSQL (Single node for postgresql-ha)
+spec:
+  description: |
+    Add additional Patroni nodes to an existing PostgreSQL HA cluster. Use this to scale your cluster horizontally or replace failed nodes.
+  icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+  coverImage: https://kinsta.com/wp-content/uploads/2022/03/what-is-postgresql.png
+  tags:
+    - Database
+    - PostgreSQL 
+    - Patroni
+    - High Availability
+  variables:
+    - key: PATRONI_SCOPE
+      type: STRING
+      name: Cluster Scope
+      description: Patroni cluster name (must match existing cluster if joining)
+    - key: PATRONI_NODE_NAME
+      type: STRING
+      name: Node Name
+      description: Unique name for this Patroni node (e.g., patroni4, patroni5)
+    - key: ETCD_HOST
+      type: STRING
+      name: etcd Host
+      description: etcd server hostname or IP address (without port)
+    - key: ETCD_PORT
+      type: STRING
+      name: etcd Port
+      description: etcd client port (default 2379)
+    - key: POSTGRES_SUPERUSER_PASSWORD
+      type: PASSWORD
+      name: Superuser Password
+      description: Password for PostgreSQL superuser (postgres user)
+    - key: POSTGRES_REPLICATION_PASSWORD
+      type: PASSWORD
+      name: Replication Password
+      description: Password for PostgreSQL replication user
+    - key: POSTGRES_ADMIN_PASSWORD
+      type: PASSWORD
+      name: Admin Password
+      description: Password for PostgreSQL admin user
+  readme: |
+    # Patroni PostgreSQL Node (Cluster Expansion)
+
+    This template allows you to add additional Patroni nodes to an existing PostgreSQL HA cluster. Use this to scale your cluster horizontally or replace failed nodes.
+
+    ## 🎯 Designed For
+
+    This template is specifically designed to expand the **[PostgreSQL HA](https://zeabur.com/zh-TW/templates/IOYTRN)** template cluster.
+
+    If you haven't deployed the base cluster yet, please deploy the [PostgreSQL HA template](https://zeabur.com/zh-TW/templates/IOYTRN) first.
+
+    ## Use Cases
+
+    1. **Expand existing HA cluster**: Add more replicas for higher availability or read scaling
+    2. **Replace failed node**: Deploy a new node to replace a failed cluster member
+    3. **Standalone deployment**: Create an independent single-node PostgreSQL instance
+
+    ## Prerequisites
+
+    - **Existing etcd service**: You must have an etcd instance running and accessible
+    - **Cluster information**: If joining an existing cluster, you need to know:
+      - Cluster scope name (e.g., `pg-ha`)
+      - Existing node names (to avoid conflicts)
+      - Cluster passwords (must match existing cluster)
+
+    ## Configuration Variables
+
+    ### Cluster Identity
+
+    - **Cluster Scope**: The Patroni cluster name
+      - **Join existing cluster**: Use the same scope as existing nodes (e.g., `pg-ha`)
+      - **New standalone**: Use a unique scope name (e.g., `my-postgres`)
+
+    - **Node Name**: Unique identifier for this Patroni node
+      - **Must be unique** within the same cluster scope
+      - Examples: `patroni4`, `patroni5`, `replica-1`, etc.
+      - **Avoid conflicts**: Check existing node names before deploying
+
+    ### etcd Connection
+
+    - **etcd Host**: Hostname or IP of your etcd service (without port)
+    - **etcd Port**: etcd client port (default: `2379`)
+
+    ### Authentication
+
+    - **Passwords must match existing cluster** if joining
+    - Three password types:
+      - **Superuser**: Full PostgreSQL admin access
+      - **Replication**: Used for data replication between nodes
+      - **Admin**: Application-level admin user
+
+    ## Example: Adding to Existing HA Cluster
+
+    If you deployed the [PostgreSQL HA template](https://zeabur.com/zh-TW/templates/IOYTRN):
+
+    ```
+    Cluster Scope: pg-ha              # Match existing cluster
+    Node Name: patroni4               # New unique name
+    etcd Host: etcd1:2379,etcd2:2379,etcd3:2379   # Your existing etcd services
+    etcd Port: 2379
+    [Use same passwords as existing cluster]
+    ```
+
+    ## Example: Standalone Deployment
+
+    For an independent PostgreSQL instance:
+
+    ```
+    Cluster Scope: my-app-db          # New cluster name
+    Node Name: patroni                # Any unique name
+    etcd Host: my-etcd                # Your etcd service
+    etcd Port: 2379
+    [Set your own passwords]
+    ```
+
+    ## How It Works
+
+    1. Node connects to etcd and registers with the cluster scope
+    2. If joining existing cluster:
+       - Discovers master node via etcd
+       - Performs basebackup to replicate data
+       - Starts following master as replica
+    3. If creating new cluster:
+       - Initializes as master
+       - Waits for other nodes to join
+
+    ## Connection Information
+
+    After deployment, use the connection details from the Instructions tab:
+
+    - **Database Port**: 5432
+    - **Management API**: Port 8008 (for health checks)
+    - **Users**: postgres (superuser), admin, replicator
+
+    ## Management API
+
+    Check node status via REST API:
+    - Health: `http://<node-hostname>:8008/health`
+    - Role: `http://<node-hostname>:8008/master` or `/replica`
+    - Config: `http://<node-hostname>:8008/config`
+
+    ## Important Notes
+
+    ⚠️ **Unique Node Names**: Each node in the same scope must have a different name
+
+    ⚠️ **Password Consistency**: When joining an existing cluster, passwords must match exactly
+
+    ⚠️ **Network Access**: Ensure the new node can reach etcd and existing cluster nodes
+
+    ## Documentation
+
+    - [Patroni Documentation](https://patroni.readthedocs.io/)
+    - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+
+  services:
+    - name: patroni
+      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+      template: PREBUILT
+      spec:
+        instructions:
+          - title: Database Host
+            content: "${CONTAINER_HOSTNAME}"
+          - title: Database Port
+            content: "5432"
+          - title: Superuser Username
+            content: "postgres"
+          - title: Superuser Password
+            content: "${POSTGRES_SUPERUSER_PASSWORD}"
+          - title: Admin Username
+            content: "admin"
+          - title: Admin Password
+            content: "${POSTGRES_ADMIN_PASSWORD}"
+          - title: Superuser Connection String
+            content: "postgresql://postgres:${POSTGRES_SUPERUSER_PASSWORD}@${CONTAINER_HOSTNAME}:5432/postgres"
+          - title: Admin Connection String
+            content: "postgresql://admin:${POSTGRES_ADMIN_PASSWORD}@${CONTAINER_HOSTNAME}:5432/postgres"
+          - title: Health Check API
+            content: "http://${CONTAINER_HOSTNAME}:8008/health"
+        source:
+          image: ghcr.io/zalando/spilo-15:3.2-p1
+          command:
+            - sh
+            - -c
+            - |
+              # Wrapper to fix ownership after basebackup
+              (
+                while sleep 10; do
+                  if [ -d /home/postgres/pgdata/pgroot ]; then
+                    chown -R postgres:postgres /home/postgres/pgdata/pgroot 2>/dev/null || true
+                  fi
+                done
+              ) &
+              exec /launch.sh init
+        ports:
+          - id: database
+            port: 5432
+            type: TCP
+          - id: api
+            port: 8008
+            type: HTTP
+        healthCheck:
+          type: HTTP
+          port: api
+          http:
+            path: /health
+        volumes:
+          - id: data
+            dir: /home/postgres/pgdata
+        env:
+          SCOPE:
+            default: ${PATRONI_SCOPE}
+          PATRONI_NAME:
+            default: ${PATRONI_NODE_NAME}
+          PATRONI_RESTAPI_LISTEN:
+            default: 0.0.0.0:8008
+          PATRONI_RESTAPI_CONNECT_ADDRESS:
+            default: ${CONTAINER_HOSTNAME}:8008
+          PATRONI_POSTGRESQL_LISTEN:
+            default: 0.0.0.0:5432
+          PATRONI_POSTGRESQL_CONNECT_ADDRESS:
+            default: ${CONTAINER_HOSTNAME}:5432
+          PATRONI_SUPERUSER_USERNAME:
+            default: postgres
+          PATRONI_SUPERUSER_PASSWORD:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
+          PATRONI_REPLICATION_USERNAME:
+            default: replicator
+          PATRONI_REPLICATION_PASSWORD:
+            default: ${POSTGRES_REPLICATION_PASSWORD}
+          PATRONI_admin_USERNAME:
+            default: admin
+          PATRONI_admin_PASSWORD:
+            default: ${POSTGRES_ADMIN_PASSWORD}
+          PGPASSWORD_SUPERUSER:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
+          PGPASSWORD_STANDBY:
+            default: ${POSTGRES_REPLICATION_PASSWORD}
+          PGPASSWORD_ADMIN:
+            default: ${POSTGRES_ADMIN_PASSWORD}
+          DCS_TYPE:
+            default: etcd
+          PATRONI_ETCD_HOSTS:
+            default: ${ETCD_HOST}:${ETCD_PORT}
+          ETCD_HOSTS:
+            default: ${ETCD_HOST}:${ETCD_PORT}
+
+  localization:
+    zh-TW:
+      description: |
+        將額外的 Patroni 節點新增到現有的 PostgreSQL HA 叢集。使用此模板來水平擴展叢集或替換故障節點。
+      variables:
+        - key: PATRONI_SCOPE
+          type: STRING
+          name: 叢集範圍
+          description: Patroni 叢集名稱（加入現有叢集時必須相符）
+        - key: PATRONI_NODE_NAME
+          type: STRING
+          name: 節點名稱
+          description: 此 Patroni 節點的唯一名稱（例如 patroni4、patroni5）
+        - key: ETCD_HOST
+          type: STRING
+          name: etcd 主機
+          description: etcd 伺服器主機名稱或 IP 位址（不含連接埠）
+        - key: ETCD_PORT
+          type: STRING
+          name: etcd 連接埠
+          description: etcd 客戶端連接埠（預設 2379）
+        - key: POSTGRES_SUPERUSER_PASSWORD
+          type: PASSWORD
+          name: 超級使用者密碼
+          description: PostgreSQL 超級使用者（postgres 使用者）的密碼
+        - key: POSTGRES_REPLICATION_PASSWORD
+          type: PASSWORD
+          name: 複製密碼
+          description: PostgreSQL 複製使用者的密碼
+        - key: POSTGRES_ADMIN_PASSWORD
+          type: PASSWORD
+          name: 管理員密碼
+          description: PostgreSQL 管理員使用者的密碼
+      readme: |
+        # Patroni PostgreSQL 節點（叢集擴展）
+
+        此模板允許您將額外的 Patroni 節點新增到現有的 PostgreSQL HA 叢集。
+
+        ## 使用場景
+
+        1. **擴展現有 HA 叢集**：新增更多副本以獲得更高可用性或讀取擴展
+        2. **替換故障節點**：部署新節點以替換故障的叢集成員
+
+        ## 先決條件
+
+        - **現有的 etcd 服務**：您必須有一個正在執行且可存取的 etcd 實例
+        - **叢集資訊**：如果加入現有叢集，您需要知道叢集範圍名稱和密碼
+
+        ## 範例：新增到現有 HA 叢集
+
+        ```
+        叢集範圍：pg-ha
+        節點名稱：patroni4
+        etcd 主機：etcd1:2379,etcd2:2379,etcd3:2379
+        etcd 連接埠：2379
+        [使用與現有叢集相同的密碼]
+        ```
+
+        ## 重要注意事項
+
+        ⚠️ **唯一節點名稱**：同一範圍內的每個節點必須有不同的名稱
+
+        ⚠️ **密碼一致性**：加入現有叢集時，密碼必須完全相符
+
+    zh-CN:
+      description: |
+        将额外的 Patroni 节点添加到现有的 PostgreSQL HA 集群。使用此模板来水平扩展集群或替换故障节点。
+      variables:
+        - key: PATRONI_SCOPE
+          type: STRING
+          name: 集群范围
+          description: Patroni 集群名称（加入现有集群时必须匹配）
+        - key: PATRONI_NODE_NAME
+          type: STRING
+          name: 节点名称
+          description: 此 Patroni 节点的唯一名称（例如 patroni4、patroni5）
+        - key: ETCD_HOST
+          type: STRING
+          name: etcd 主机
+          description: etcd 服务器主机名或 IP 地址（不含端口）
+        - key: ETCD_PORT
+          type: STRING
+          name: etcd 端口
+          description: etcd 客户端端口（默认 2379）
+        - key: POSTGRES_SUPERUSER_PASSWORD
+          type: PASSWORD
+          name: 超级用户密码
+          description: PostgreSQL 超级用户（postgres 用户）的密码
+        - key: POSTGRES_REPLICATION_PASSWORD
+          type: PASSWORD
+          name: 复制密码
+          description: PostgreSQL 复制用户的密码
+        - key: POSTGRES_ADMIN_PASSWORD
+          type: PASSWORD
+          name: 管理员密码
+          description: PostgreSQL 管理员用户的密码
+      readme: |
+        # Patroni PostgreSQL 节点（集群扩展）
+
+        此模板允许您将额外的 Patroni 节点添加到现有的 PostgreSQL HA 集群。
+
+        ## 使用场景
+
+        1. **扩展现有 HA 集群**：添加更多副本以获得更高可用性或读取扩展
+        2. **替换故障节点**：部署新节点以替换故障的集群成员
+
+        ## 先决条件
+
+        - **现有的 etcd 服务**：您必须有一个正在运行且可访问的 etcd 实例
+        - **集群信息**：如果加入现有集群，您需要知道集群范围名称和密码
+
+        ## 示例：添加到现有 HA 集群
+
+        ```
+        集群范围：pg-ha
+        节点名称：patroni4
+        etcd 主机：etcd1:2379,etcd2:2379,etcd3:2379
+        etcd 端口：2379
+        [使用与现有集群相同的密码]
+        ```
+
+        ## 重要注意事项
+
+        ⚠️ **唯一节点名称**：同一范围内的每个节点必须有不同的名称
+
+        ⚠️ **密码一致性**：加入现有集群时，密码必须完全匹配
+
+    ja-JP:
+      description: |
+        既存の PostgreSQL HA クラスターに追加の Patroni ノードを追加します。このテンプレートを使用して、クラスターを水平方向にスケールしたり、障害ノードを置き換えたりできます。
+      variables:
+        - key: PATRONI_SCOPE
+          type: STRING
+          name: クラスタースコープ
+          description: Patroni クラスター名（既存のクラスターに参加する場合は一致する必要があります）
+        - key: PATRONI_NODE_NAME
+          type: STRING
+          name: ノード名
+          description: この Patroni ノードの一意の名前（例：patroni4、patroni5）
+        - key: ETCD_HOST
+          type: STRING
+          name: etcd ホスト
+          description: etcd サーバーのホスト名または IP アドレス（ポートなし）
+        - key: ETCD_PORT
+          type: STRING
+          name: etcd ポート
+          description: etcd クライアントポート（デフォルト 2379）
+        - key: POSTGRES_SUPERUSER_PASSWORD
+          type: PASSWORD
+          name: スーパーユーザーパスワード
+          description: PostgreSQL スーパーユーザー（postgres ユーザー）のパスワード
+        - key: POSTGRES_REPLICATION_PASSWORD
+          type: PASSWORD
+          name: レプリケーションパスワード
+          description: PostgreSQL レプリケーションユーザーのパスワード
+        - key: POSTGRES_ADMIN_PASSWORD
+          type: PASSWORD
+          name: 管理者パスワード
+          description: PostgreSQL 管理者ユーザーのパスワード
+      readme: |
+        # Patroni PostgreSQL ノード（クラスター拡張）
+
+        このテンプレートを使用して、既存の PostgreSQL HA クラスターに追加の Patroni ノードを追加できます。
+
+        ## 使用ケース
+
+        1. **既存 HA クラスターの拡張**：より高い可用性やリードスケーリングのためにレプリカを追加
+        2. **障害ノードの置き換え**：障害のあるクラスターメンバーを置き換えるための新しいノードをデプロイ
+
+        ## 前提条件
+
+        - **既存の etcd サービス**：実行中でアクセス可能な etcd インスタンスが必要
+        - **クラスター情報**：既存のクラスターに参加する場合、クラスタースコープ名とパスワードが必要
+
+        ## 例：既存 HA クラスターへの追加
+
+        ```
+        クラスタースコープ：pg-ha
+        ノード名：patroni4
+        etcd ホスト：etcd1:2379,etcd2:2379,etcd3:2379
+        etcd ポート：2379
+        [既存のクラスターと同じパスワードを使用]
+        ```
+
+        ## 重要事項
+
+        ⚠️ **一意のノード名**：同じスコープ内の各ノードは異なる名前を持つ必要があります
+
+        ⚠️ **パスワードの一貫性**：既存のクラスターに参加する場合、パスワードは完全に一致する必要があります
+
+    es-ES:
+      description: |
+        Agregue nodos Patroni adicionales a un clúster PostgreSQL HA existente. Use esto para escalar su clúster horizontalmente o reemplazar nodos fallidos.
+      variables:
+        - key: PATRONI_SCOPE
+          type: STRING
+          name: Alcance del clúster
+          description: Nombre del clúster Patroni (debe coincidir con el clúster existente si se une)
+        - key: PATRONI_NODE_NAME
+          type: STRING
+          name: Nombre del nodo
+          description: Nombre único para este nodo Patroni (ej. patroni4, patroni5)
+        - key: ETCD_HOST
+          type: STRING
+          name: Host de etcd
+          description: Nombre de host o dirección IP del servidor etcd (sin puerto)
+        - key: ETCD_PORT
+          type: STRING
+          name: Puerto de etcd
+          description: Puerto del cliente etcd (predeterminado 2379)
+        - key: POSTGRES_SUPERUSER_PASSWORD
+          type: PASSWORD
+          name: Contraseña de superusuario
+          description: Contraseña para el superusuario de PostgreSQL (usuario postgres)
+        - key: POSTGRES_REPLICATION_PASSWORD
+          type: PASSWORD
+          name: Contraseña de replicación
+          description: Contraseña para el usuario de replicación de PostgreSQL
+        - key: POSTGRES_ADMIN_PASSWORD
+          type: PASSWORD
+          name: Contraseña de administrador
+          description: Contraseña para el usuario administrador de PostgreSQL
+      readme: |
+        # Nodo Patroni PostgreSQL (Expansión de clúster)
+
+        Esta plantilla le permite agregar nodos Patroni adicionales a un clúster PostgreSQL HA existente.
+
+        ## Casos de uso
+
+        1. **Expandir clúster HA existente**: Agregar más réplicas para mayor disponibilidad o escalado de lectura
+        2. **Reemplazar nodo fallido**: Desplegar un nuevo nodo para reemplazar un miembro fallido
+
+        ## Requisitos previos
+
+        - **Servicio etcd existente**: Debe tener una instancia etcd ejecutándose y accesible
+        - **Información del clúster**: Si se une a un clúster existente, necesita el nombre del alcance y las contraseñas
+
+        ## Ejemplo: Agregar a clúster HA existente
+
+        ```
+        Alcance del clúster: pg-ha
+        Nombre del nodo: patroni4
+        Host de etcd: etcd1:2379,etcd2:2379,etcd3:2379
+        Puerto de etcd: 2379
+        [Usar las mismas contraseñas que el clúster existente]
+        ```
+
+        ## Notas importantes
+
+        ⚠️ **Nombres de nodo únicos**: Cada nodo en el mismo alcance debe tener un nombre diferente
+
+        ⚠️ **Consistencia de contraseñas**: Las contraseñas deben coincidir exactamente al unirse a un clúster existente
+
+    id-ID:
+      description: |
+        Tambahkan node Patroni tambahan ke kluster PostgreSQL HA yang ada. Gunakan ini untuk memperluas kluster Anda secara horizontal atau mengganti node yang gagal.
+      variables:
+        - key: PATRONI_SCOPE
+          type: STRING
+          name: Lingkup Kluster
+          description: Nama kluster Patroni (harus cocok dengan kluster yang ada jika bergabung)
+        - key: PATRONI_NODE_NAME
+          type: STRING
+          name: Nama Node
+          description: Nama unik untuk node Patroni ini (contoh patroni4, patroni5)
+        - key: ETCD_HOST
+          type: STRING
+          name: Host etcd
+          description: Hostname atau alamat IP server etcd (tanpa port)
+        - key: ETCD_PORT
+          type: STRING
+          name: Port etcd
+          description: Port klien etcd (default 2379)
+        - key: POSTGRES_SUPERUSER_PASSWORD
+          type: PASSWORD
+          name: Kata Sandi Superuser
+          description: Kata sandi untuk superuser PostgreSQL (pengguna postgres)
+        - key: POSTGRES_REPLICATION_PASSWORD
+          type: PASSWORD
+          name: Kata Sandi Replikasi
+          description: Kata sandi untuk pengguna replikasi PostgreSQL
+        - key: POSTGRES_ADMIN_PASSWORD
+          type: PASSWORD
+          name: Kata Sandi Admin
+          description: Kata sandi untuk pengguna admin PostgreSQL
+      readme: |
+        # Node Patroni PostgreSQL (Ekspansi Kluster)
+
+        Template ini memungkinkan Anda menambahkan node Patroni tambahan ke kluster PostgreSQL HA yang ada.
+
+        ## Kasus Penggunaan
+
+        1. **Perluas kluster HA yang ada**: Tambah lebih banyak replika untuk ketersediaan lebih tinggi atau penskalaan baca
+        2. **Ganti node yang gagal**: Deploy node baru untuk mengganti anggota kluster yang gagal
+
+        ## Prasyarat
+
+        - **Layanan etcd yang ada**: Anda harus memiliki instans etcd yang berjalan dan dapat diakses
+        - **Informasi kluster**: Jika bergabung dengan kluster yang ada, Anda perlu nama lingkup dan kata sandi
+
+        ## Contoh: Menambah ke kluster HA yang ada
+
+        ```
+        Lingkup Kluster: pg-ha
+        Nama Node: patroni4
+        Host etcd: etcd1:2379,etcd2:2379,etcd3:2379
+        Port etcd: 2379
+        [Gunakan kata sandi yang sama dengan kluster yang ada]
+        ```
+
+        ## Catatan Penting
+
+        ⚠️ **Nama node unik**: Setiap node dalam lingkup yang sama harus memiliki nama berbeda
+
+        ⚠️ **Konsistensi kata sandi**: Kata sandi harus sama persis saat bergabung dengan kluster yang ada
