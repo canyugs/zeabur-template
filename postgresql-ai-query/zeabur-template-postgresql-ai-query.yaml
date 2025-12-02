@@ -2,7 +2,7 @@
 apiVersion: zeabur.com/v1
 kind: Template
 metadata:
-    name: postgresql-ai-query (dev version)
+    name: PostgreSQL with AI Query (dev version)
 spec:
     description: PostgreSQL with pg_ai_query extension for natural language SQL generation powered by OpenAI and Anthropic AI models
     coverImage: https://raw.githubusercontent.com/canyugs/zeabur-template/refs/heads/main/postgresql-ai-query/postgresql-ai-query.webp
@@ -33,7 +33,7 @@ spec:
 
         ### 1. Configure AI Provider
 
-        After deployment, set at least one API key:
+        Edit the config file `~/.pg_ai.config` to set at least one API key:
         - **OpenAI**: Get your key from https://platform.openai.com/api-keys
         - **Anthropic**: Get your key from https://console.anthropic.com/settings/keys
 
@@ -71,18 +71,9 @@ spec:
         SELECT generate_query('users who have placed orders but never left a review');
         ```
 
-        ## Configuration
-
-        The extension is pre-configured with sensible defaults:
-        - Row limit enforcement (1000 rows max)
-        - Query explanations enabled
-        - Performance warnings enabled
-        - 30-second timeout for AI requests
-
-        You can customize these settings by updating the configuration after deployment.
-
         ## Documentation
 
+        - Configuration Guide: https://benodiwal.github.io/pg_ai_query/configuration.html
         - Official Docs: https://benodiwal.github.io/pg_ai_query/
         - GitHub: https://github.com/benodiwal/pg_ai_query
 
@@ -121,24 +112,8 @@ spec:
                 POSTGRES_CONNECTION_STRING:
                     default: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DB}
                     expose: true
-
-                # AI Provider Configuration
-                OPENAI_API_KEY:
-                    default: ""
-                    expose: true
-                ANTHROPIC_API_KEY:
-                    default: ""
-                    expose: true
-
-                # AI Model Configuration
-                AI_DEFAULT_MODEL:
-                    default: gpt-4o
-                    expose: true
-                ANTHROPIC_DEFAULT_MODEL:
-                    default: claude-3-5-sonnet-20241022
-                    expose: true
             configs:
-                - path: /var/lib/postgresql/config/pg_ai.config
+                - path: /var/lib/postgresql/.pg_ai.config
                   template: |
                     [general]
                     log_level = "INFO"
@@ -158,12 +133,11 @@ spec:
 
                     [openai]
                     api_key = "${OPENAI_API_KEY}"
-                    default_model = "${AI_DEFAULT_MODEL}"
+                    default_model = "gpt-4o"
 
                     [anthropic]
                     api_key = "${ANTHROPIC_API_KEY}"
-                    default_model = "${ANTHROPIC_DEFAULT_MODEL}"
-                  permission: 0644
+                    default_model = "claude-3-5-sonnet-20241022"
                   envsubst: true
             instructions:
                 - title: Connection String
@@ -203,7 +177,7 @@ localization:
 
             ## 📖 快速開始
 
-            1. **設定 API 金鑰**: 配置 OPENAI_API_KEY 或 ANTHROPIC_API_KEY
+            1. **設定 API 金鑰**: 編輯設定檔 `~/.pg_ai.config` 設定 API 金鑰
             2. **連線**: 使用提供的連線字串
             3. **查詢**: `SELECT generate_query('你的自然語言查詢');`
 
@@ -223,8 +197,9 @@ localization:
 
             非常適合資料分析師、開發者,以及任何想用自然語言查詢資料庫的人!
 
-            → 文件: https://benodiwal.github.io/pg_ai_query/
-            → 原始碼: https://github.com/benodiwal/pg_ai_query
+            - 設定指南: https://benodiwal.github.io/pg_ai_query/configuration.html
+            - 文件: https://benodiwal.github.io/pg_ai_query/
+            - 原始碼: https://github.com/benodiwal/pg_ai_query
     zh-CN:
         description: 内置 pg_ai_query 扩展的 PostgreSQL 数据库,支持使用自然语言生成 SQL 查询,由 OpenAI 和 Anthropic AI 模型驱动
         readme: |
@@ -242,7 +217,7 @@ localization:
 
             ## 📖 快速开始
 
-            1. **设置 API 密钥**: 配置 OPENAI_API_KEY 或 ANTHROPIC_API_KEY
+            1. **设置 API 密钥**: 编辑配置文件 `~/.pg_ai.config` 设置 API 密钥
             2. **连接**: 使用提供的连接字符串
             3. **查询**: `SELECT generate_query('你的自然语言查询');`
 
@@ -262,8 +237,9 @@ localization:
 
             非常适合数据分析师、开发者,以及任何想用自然语言查询数据库的人!
 
-            → 文档: https://benodiwal.github.io/pg_ai_query/
-            → 源码: https://github.com/benodiwal/pg_ai_query
+            - 配置指南: https://benodiwal.github.io/pg_ai_query/configuration.html
+            - 文档: https://benodiwal.github.io/pg_ai_query/
+            - 源码: https://github.com/benodiwal/pg_ai_query
     ja-JP:
         description: OpenAI と Anthropic AI モデルを使用した自然言語による SQL クエリ生成機能を持つ pg_ai_query 拡張機能内蔵の PostgreSQL
         readme: |
@@ -281,7 +257,7 @@ localization:
 
             ## 📖 クイックスタート
 
-            1. **API キーを設定**: OPENAI_API_KEY または ANTHROPIC_API_KEY を設定
+            1. **API キーを設定**: 設定ファイル `~/.pg_ai.config` を編集して API キーを設定
             2. **接続**: 提供された接続文字列を使用
             3. **クエリ**: `SELECT generate_query('自然言語のクエリ');`
 
@@ -301,8 +277,9 @@ localization:
 
             データアナリスト、開発者、自然言語でデータベースにクエリを実行したい方に最適です!
 
-            → ドキュメント: https://benodiwal.github.io/pg_ai_query/
-            → ソースコード: https://github.com/benodiwal/pg_ai_query
+            - 設定ガイド: https://benodiwal.github.io/pg_ai_query/configuration.html
+            - ドキュメント: https://benodiwal.github.io/pg_ai_query/
+            - ソースコード: https://github.com/benodiwal/pg_ai_query
     es-ES:
         description: PostgreSQL con extensión pg_ai_query para generación de consultas SQL en lenguaje natural, impulsado por modelos de IA de OpenAI y Anthropic
         readme: |
@@ -320,7 +297,7 @@ localization:
 
             ## 📖 Inicio Rápido
 
-            1. **Configurar Clave API**: Configura OPENAI_API_KEY o ANTHROPIC_API_KEY
+            1. **Configurar Clave API**: Edita el archivo `~/.pg_ai.config` para configurar la clave API
             2. **Conectar**: Usa la cadena de conexión proporcionada
             3. **Consultar**: `SELECT generate_query('tu consulta en lenguaje natural');`
 
@@ -340,8 +317,9 @@ localization:
 
             ¡Perfecto para analistas de datos, desarrolladores y cualquiera que quiera consultar bases de datos usando lenguaje natural!
 
-            → Documentación: https://benodiwal.github.io/pg_ai_query/
-            → Código Fuente: https://github.com/benodiwal/pg_ai_query
+            - Guía de Configuración: https://benodiwal.github.io/pg_ai_query/configuration.html
+            - Documentación: https://benodiwal.github.io/pg_ai_query/
+            - Código Fuente: https://github.com/benodiwal/pg_ai_query
     id-ID:
         description: PostgreSQL dengan ekstensi pg_ai_query untuk pembuatan kueri SQL menggunakan bahasa alami, didukung oleh model AI OpenAI dan Anthropic
         readme: |
@@ -359,7 +337,7 @@ localization:
 
             ## 📖 Mulai Cepat
 
-            1. **Atur Kunci API**: Konfigurasi OPENAI_API_KEY atau ANTHROPIC_API_KEY
+            1. **Atur Kunci API**: Edit file `~/.pg_ai.config` untuk mengatur kunci API
             2. **Hubungkan**: Gunakan string koneksi yang disediakan
             3. **Kueri**: `SELECT generate_query('kueri bahasa alami Anda');`
 
@@ -379,5 +357,6 @@ localization:
 
             Sempurna untuk analis data, developer, dan siapa saja yang ingin melakukan kueri database menggunakan bahasa alami!
 
-            → Dokumentasi: https://benodiwal.github.io/pg_ai_query/
-            → Kode Sumber: https://github.com/benodiwal/pg_ai_query
+            - Panduan Konfigurasi: https://benodiwal.github.io/pg_ai_query/configuration.html
+            - Dokumentasi: https://benodiwal.github.io/pg_ai_query/
+            - Kode Sumber: https://github.com/benodiwal/pg_ai_query
