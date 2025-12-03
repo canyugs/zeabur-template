@@ -138,6 +138,16 @@ spec:
 
     📖 **Full Troubleshooting Guide**: See the [complete README](https://github.com/canyugs/zeabur-template/blob/main/postgresql-ha/README.md#troubleshooting).
 
+    ## Changing Passwords
+
+    To change passwords after deployment:
+
+    1. **Change in PostgreSQL**: `ALTER USER postgres PASSWORD 'new_password';`
+    2. **Update environment variables** in ALL Patroni services
+    3. **Rolling restart** all Patroni services
+
+    📖 **Full Guide**: See [Password Change Guide](https://github.com/canyugs/zeabur-template/blob/main/postgresql-ha/README.md#changing-passwords)
+
     ## Related Templates
 
     **etcd Expansion:**
@@ -158,7 +168,7 @@ spec:
   services:
     - name: etcd1
       icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
-      template: PREBUILT
+      template: PREBUILT_V2
       spec:
         source:
           image: gcr.io/etcd-development/etcd:v3.6.6
@@ -214,7 +224,7 @@ spec:
 
     - name: etcd2
       icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
-      template: PREBUILT
+      template: PREBUILT_V2
       spec:
         source:
           image: gcr.io/etcd-development/etcd:v3.6.6
@@ -270,7 +280,7 @@ spec:
 
     - name: etcd3
       icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
-      template: PREBUILT
+      template: PREBUILT_V2
       spec:
         source:
           image: gcr.io/etcd-development/etcd:v3.6.6
@@ -326,7 +336,7 @@ spec:
 
     - name: patroni1
       icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
-      template: PREBUILT
+      template: PREBUILT_V2
       dependencies:
         - etcd1
         - etcd2
@@ -395,6 +405,18 @@ spec:
             default: ${POSTGRES_ADMIN_PASSWORD}
           ETCD3_HOSTS:
             default: etcd1:2379,etcd2:2379,etcd3:2379
+          POSTGRES_USER:
+            default: postgres
+          POSTGRES_PASSWORD:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
+          POSTGRES_DB:
+            default: postgres
+          POSTGRES_HOST:
+            default: ${CONTAINER_HOSTNAME}
+          POSTGRES_PORT:
+            default: ${DATABASE_PORT}
+          PASSWORD:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
         instructions:
           - title: Superuser Connection String
             content: "postgresql://postgres:${POSTGRES_SUPERUSER_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/postgres"
@@ -413,7 +435,7 @@ spec:
 
     - name: patroni2
       icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
-      template: PREBUILT
+      template: PREBUILT_V2
       dependencies:
         - etcd1
         - etcd2
@@ -482,6 +504,18 @@ spec:
             default: ${POSTGRES_ADMIN_PASSWORD}
           ETCD3_HOSTS:
             default: etcd1:2379,etcd2:2379,etcd3:2379
+          POSTGRES_USER:
+            default: postgres
+          POSTGRES_PASSWORD:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
+          POSTGRES_DB:
+            default: postgres
+          POSTGRES_HOST:
+            default: ${CONTAINER_HOSTNAME}
+          POSTGRES_PORT:
+            default: ${DATABASE_PORT}
+          PASSWORD:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
         instructions:
           - title: Superuser Connection String
             content: "postgresql://postgres:${POSTGRES_SUPERUSER_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/postgres"
@@ -500,7 +534,7 @@ spec:
 
     - name: patroni3
       icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
-      template: PREBUILT
+      template: PREBUILT_V2
       dependencies:
         - etcd1
         - etcd2
@@ -569,6 +603,18 @@ spec:
             default: ${POSTGRES_ADMIN_PASSWORD}
           ETCD3_HOSTS:
             default: etcd1:2379,etcd2:2379,etcd3:2379
+          POSTGRES_USER:
+            default: postgres
+          POSTGRES_PASSWORD:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
+          POSTGRES_DB:
+            default: postgres
+          POSTGRES_HOST:
+            default: ${CONTAINER_HOSTNAME}
+          POSTGRES_PORT:
+            default: ${DATABASE_PORT}
+          PASSWORD:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
         instructions:
           - title: Superuser Connection String
             content: "postgresql://postgres:${POSTGRES_SUPERUSER_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/postgres"
@@ -679,6 +725,16 @@ spec:
         patronictl show-config pg-ha
         ```
 
+        ## 變更密碼
+
+        部署後變更密碼的步驟：
+
+        1. **在 PostgreSQL 中變更**：`ALTER USER postgres PASSWORD 'new_password';`
+        2. **更新所有 Patroni 服務的環境變數**
+        3. **逐一重啟所有 Patroni 服務**
+
+        📖 **完整指南**：請參閱 [密碼變更指南](https://github.com/canyugs/zeabur-template/blob/main/postgresql-ha/README.md#changing-passwords)
+
         ## 相關模板
 
         - [**etcd4**](https://zeabur.com/templates/X877ER)：新增第 4 個 etcd 節點
@@ -784,6 +840,16 @@ spec:
         patronictl list pg-ha
         patronictl show-config pg-ha
         ```
+
+        ## 变更密码
+
+        部署后变更密码的步骤：
+
+        1. **在 PostgreSQL 中变更**：`ALTER USER postgres PASSWORD 'new_password';`
+        2. **更新所有 Patroni 服务的环境变量**
+        3. **逐一重启所有 Patroni 服务**
+
+        📖 **完整指南**：请参阅 [密码变更指南](https://github.com/canyugs/zeabur-template/blob/main/postgresql-ha/README.md#changing-passwords)
 
         ## 相关模板
 
@@ -891,6 +957,16 @@ spec:
         patronictl show-config pg-ha
         ```
 
+        ## パスワードの変更
+
+        デプロイ後にパスワードを変更する手順：
+
+        1. **PostgreSQL で変更**：`ALTER USER postgres PASSWORD 'new_password';`
+        2. **すべての Patroni サービスの環境変数を更新**
+        3. **すべての Patroni サービスをローリング再起動**
+
+        📖 **完全ガイド**：[パスワード変更ガイド](https://github.com/canyugs/zeabur-template/blob/main/postgresql-ha/README.md#changing-passwords)を参照
+
         ## 関連テンプレート
 
         - [**etcd4**](https://zeabur.com/templates/X877ER)：4 番目の etcd ノードを追加
@@ -995,6 +1071,16 @@ spec:
         patronictl show-config pg-ha
         ```
 
+        ## Cambiar Contraseñas
+
+        Pasos para cambiar contraseñas después del despliegue:
+
+        1. **Cambiar en PostgreSQL**: `ALTER USER postgres PASSWORD 'new_password';`
+        2. **Actualizar variables de entorno** en TODOS los servicios Patroni
+        3. **Reinicio continuo** de todos los servicios Patroni
+
+        📖 **Guía completa**: Ver [Guía de Cambio de Contraseñas](https://github.com/canyugs/zeabur-template/blob/main/postgresql-ha/README.md#changing-passwords)
+
         ## Plantillas Relacionadas
 
         - [**etcd4**](https://zeabur.com/templates/X877ER): Agregar 4º nodo etcd
@@ -1098,6 +1184,16 @@ spec:
         patronictl list pg-ha
         patronictl show-config pg-ha
         ```
+
+        ## Mengubah Kata Sandi
+
+        Langkah-langkah untuk mengubah kata sandi setelah deployment:
+
+        1. **Ubah di PostgreSQL**: `ALTER USER postgres PASSWORD 'new_password';`
+        2. **Perbarui variabel lingkungan** di SEMUA layanan Patroni
+        3. **Rolling restart** semua layanan Patroni
+
+        📖 **Panduan Lengkap**: Lihat [Panduan Mengubah Kata Sandi](https://github.com/canyugs/zeabur-template/blob/main/postgresql-ha/README.md#changing-passwords)
 
         ## Template Terkait
 

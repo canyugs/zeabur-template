@@ -46,7 +46,7 @@ spec:
   services:
     - name: patroni5
       icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
-      template: PREBUILT
+      template: PREBUILT_V2
       spec:
         source:
           image: ghcr.io/zalando/spilo-15:3.2-p1
@@ -111,6 +111,18 @@ spec:
             default: ${POSTGRES_ADMIN_PASSWORD}
           ETCD3_HOSTS:
             default: ${ETCD3_HOSTS}
+          POSTGRES_USER:
+            default: postgres
+          POSTGRES_PASSWORD:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
+          POSTGRES_DB:
+            default: postgres
+          POSTGRES_HOST:
+            default: ${CONTAINER_HOSTNAME}
+          POSTGRES_PORT:
+            default: ${DATABASE_PORT}
+          PASSWORD:
+            default: ${POSTGRES_SUPERUSER_PASSWORD}
         instructions:
           - title: Superuser Connection String
             content: "postgresql://postgres:${POSTGRES_SUPERUSER_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/postgres"

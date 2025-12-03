@@ -440,6 +440,122 @@ ETCD_SNAPSHOT_COUNT=100000
 - Create separate users for applications (don't use superuser)
 - Regularly rotate passwords
 
+## Changing Passwords
+
+### Important Considerations
+
+⚠️ **Before changing passwords:**
+- Ensure cluster is healthy (`patronictl list pg-ha`)
+- Schedule maintenance window (brief service interruption possible)
+- Update ALL Patroni nodes with new passwords
+- Change passwords in correct order
+
+### Password Types
+
+| Password | Used For | Environment Variables |
+|----------|----------|----------------------|
+| **Superuser** | postgres user, system admin | `PATRONI_SUPERUSER_PASSWORD`, `PGPASSWORD_SUPERUSER`, `POSTGRES_PASSWORD`, `PASSWORD` |
+| **Replication** | Replication between nodes | `PATRONI_REPLICATION_PASSWORD`, `PGPASSWORD_STANDBY` |
+| **Admin** | Application connections | `PATRONI_admin_PASSWORD`, `PGPASSWORD_ADMIN` |
+
+### Step-by-Step: Change Superuser Password
+
+#### Step 1: Change Password in PostgreSQL
+
+Connect to the leader node and change the password:
+
+```bash
+# Run inside any patroni container
+psql -U postgres -c "ALTER USER postgres PASSWORD 'new_secure_password';"
+```
+
+#### Step 2: Update Environment Variables
+
+In Zeabur Dashboard, update these variables for **ALL Patroni services** (patroni1, patroni2, patroni3, etc.):
+
+```
+PATRONI_SUPERUSER_PASSWORD=new_secure_password
+PGPASSWORD_SUPERUSER=new_secure_password
+POSTGRES_PASSWORD=new_secure_password
+PASSWORD=new_secure_password
+```
+
+#### Step 3: Restart Services (Rolling Restart)
+
+Restart Patroni services one by one:
+
+1. Check current leader: `patronictl list pg-ha`
+2. Restart replica nodes first (wait for healthy between each)
+3. Restart leader node last (triggers failover, then failback)
+
+#### Step 4: Verify
+
+```bash
+# Test new password
+psql -U postgres -c "SELECT 1;"
+
+# Verify cluster health
+patronictl list pg-ha
+```
+
+### Step-by-Step: Change Replication Password
+
+#### Step 1: Change Password in PostgreSQL
+
+```bash
+psql -U postgres -c "ALTER USER replicator PASSWORD 'new_replication_password';"
+```
+
+#### Step 2: Update Environment Variables
+
+Update in **ALL Patroni services**:
+
+```
+PATRONI_REPLICATION_PASSWORD=new_replication_password
+PGPASSWORD_STANDBY=new_replication_password
+```
+
+#### Step 3: Rolling Restart
+
+Same as superuser password change.
+
+### Step-by-Step: Change Admin Password
+
+#### Step 1: Change Password in PostgreSQL
+
+```bash
+psql -U postgres -c "ALTER USER admin PASSWORD 'new_admin_password';"
+```
+
+#### Step 2: Update Environment Variables
+
+Update in **ALL Patroni services**:
+
+```
+PATRONI_admin_PASSWORD=new_admin_password
+PGPASSWORD_ADMIN=new_admin_password
+```
+
+#### Step 3: Rolling Restart
+
+Same as superuser password change.
+
+### Troubleshooting Password Changes
+
+**Problem**: Replication stops working after password change
+
+**Solution**:
+- Ensure ALL nodes have the same password
+- Check `PGPASSWORD_STANDBY` matches PostgreSQL replicator password
+- Verify with: `psql -U postgres -c "SELECT * FROM pg_stat_replication;"`
+
+**Problem**: Patroni can't connect after restart
+
+**Solution**:
+- Verify environment variables match PostgreSQL passwords
+- Check Patroni logs for authentication errors
+- Ensure etcd is healthy: `curl http://etcd1:2379/health`
+
 ### Access Control
 
 ```sql

@@ -41,7 +41,7 @@ spec:
   services:
     - name: etcd5
       icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/etcd/icon/color/etcd-icon-color.svg
-      template: PREBUILT
+      template: PREBUILT_V2
       spec:
         source:
           image: gcr.io/etcd-development/etcd:v3.6.6
