@@ -1,0 +1,414 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: HeyForm
+spec:
+  description: |
+    HeyForm is an open-source form builder that allows anyone to create engaging conversational forms for surveys, questionnaires, quizzes, and polls. No coding skills required.
+  icon: https://raw.githubusercontent.com/heyform/heyform/main/assets/images/logo.svg
+  coverImage: https://raw.githubusercontent.com/heyform/heyform/main/assets/images/screenshot.png
+  tags:
+    - Form Builder
+    - Survey
+    - Open Source
+  variables:
+    - key: PUBLIC_DOMAIN
+      type: DOMAIN
+      name: Domain
+      description: What domain do you want to bind to?
+  readme: |
+    # HeyForm
+
+    HeyForm is an open-source form builder that allows anyone to create engaging conversational forms for surveys, questionnaires, quizzes, and polls. No coding skills required.
+
+    > ⚠️ **Note**: This template uses a patched Docker image (`ghcr.io/canyugs/heyform`) to fix known issues in the official release. Once the official HeyForm team releases an updated version with these fixes, this template will be updated to use the official image.
+
+    ## Features
+
+    - 📝 **Versatile Inputs**: From basic text, email, and phone number fields to advanced options like picture choices, date pickers, and file uploads
+    - 🧠 **Smart Logic**: Conditional logic and URL redirections for dynamic, adaptable forms
+    - 🔗 **Powerful Integrations**: Connect with webhooks, analytics, marketing platforms, and tools like Zapier and Make.com
+    - 🎨 **Visual Themes**: Tailor the look and feel of your forms to match your brand identity
+    - 📊 **Insightful Analytics**: Gain insights with detailed analytics, including drop-off rates and completion rates
+    - 📤 **Data Export**: Easily export your form results to CSV
+
+    ## Getting Started
+
+    After deployment, access your HeyForm instance at the provided URL. 
+    
+    **First-time setup**: You need to create your own account through the registration page. There is no default admin account - simply register a new account and it will become the administrator.
+
+    ## Configuration
+
+    This template includes:
+    - **MongoDB**: Database for storing forms and submissions
+    - **Redis**: Cache and session storage
+    - **HeyForm Application**: Main form builder service
+
+    All services are automatically configured and connected.
+
+    ## Documentation
+
+    - [Official Website](https://heyform.net)
+    - [Documentation](https://docs.heyform.net)
+    - [GitHub Repository](https://github.com/heyform/heyform)
+
+  services:
+    - name: mongodb
+      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/mongodb.svg
+      template: PREBUILT_V2
+      spec:
+        source:
+          image: mongo:8
+          command:
+            - sh
+          args:
+            - -c
+            - sed -i '10,23d' /usr/local/bin/docker-entrypoint.sh && exec docker-entrypoint.sh mongod
+        ports:
+          - id: database
+            port: 27017
+            type: TCP
+        volumes:
+          - id: data
+            dir: /data/db
+        env:
+          MONGO_INITDB_ROOT_USERNAME:
+            default: mongodb
+            expose: true
+          MONGO_INITDB_ROOT_PASSWORD:
+            default: ${PASSWORD}
+            expose: true
+          MONGO_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+            readonly: true
+          MONGO_PORT:
+            default: ${DATABASE_PORT}
+            expose: true
+            readonly: true
+          MONGO_URI:
+            default: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@${MONGO_HOST}:${MONGO_PORT}/heyform?authSource=admin
+            expose: true
+            readonly: true
+          MONGO_USER:
+            default: ${MONGO_INITDB_ROOT_USERNAME}
+            expose: true
+            readonly: true
+          MONGO_PASSWORD:
+            default: ${MONGO_INITDB_ROOT_PASSWORD}
+            expose: true
+            readonly: true
+        instructions:
+          - title: Command to connect to your MongoDB
+            content: mongosh "mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}"
+          - title: MongoDB connection string
+            content: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}
+          - title: MongoDB username
+            content: ${MONGO_INITDB_ROOT_USERNAME}
+          - title: MongoDB password
+            content: ${MONGO_INITDB_ROOT_PASSWORD}
+          - title: MongoDB host
+            content: ${PORT_FORWARDED_HOSTNAME}
+          - title: MongoDB port
+            content: ${DATABASE_PORT_FORWARDED_PORT}
+
+    - name: redis
+      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/redis.svg
+      template: PREBUILT_V2
+      spec:
+        source:
+          image: redis:7.2.5-alpine
+          command:
+            - redis-server
+            - --requirepass
+            - ${REDIS_PASSWORD}
+        ports:
+          - id: database
+            port: 6379
+            type: TCP
+        volumes:
+          - id: data
+            dir: /data
+        env:
+          REDIS_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+            readonly: true
+          REDIS_PORT:
+            default: ${DATABASE_PORT}
+            expose: true
+            readonly: true
+          REDIS_PASSWORD:
+            default: ${PASSWORD}
+            expose: true
+          REDIS_DB:
+            default: "0"
+            expose: true
+        instructions:
+          - title: Command to connect to your Redis
+            content: redis-cli -h ${PORT_FORWARDED_HOSTNAME} -p ${DATABASE_PORT_FORWARDED_PORT} -a ${REDIS_PASSWORD}
+          - title: Redis Connection String
+            content: redis://:${REDIS_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}
+          - title: Redis password
+            content: ${REDIS_PASSWORD}
+          - title: Redis host
+            content: ${PORT_FORWARDED_HOSTNAME}
+          - title: Redis port
+            content: ${DATABASE_PORT_FORWARDED_PORT}
+
+    - name: heyform
+      icon: https://raw.githubusercontent.com/heyform/heyform/main/assets/images/logo.svg
+      template: PREBUILT_V2
+      dependencies:
+        - mongodb
+        - redis
+      domainKey: PUBLIC_DOMAIN
+      spec:
+        source:
+          image: ghcr.io/canyugs/heyform:4757c2b
+        ports:
+          - id: web
+            port: 9157
+            type: HTTP
+        volumes:
+          - id: uploads
+            dir: /app/static/upload
+        env:
+          APP_LISTEN_PORT:
+            default: "9157"
+          APP_LISTEN_HOSTNAME:
+            default: "0.0.0.0"
+          APP_HOMEPAGE_URL:
+            default: ${ZEABUR_WEB_URL}
+          SESSION_KEY:
+            default: ${PASSWORD}
+          FORM_ENCRYPTION_KEY:
+            default: ${PASSWORD}
+          NODE_ENV:
+            default: production
+        instructions:
+          - title: Application URL
+            content: ${ZEABUR_WEB_URL}
+
+localization:
+  zh-TW:
+    description: |
+      HeyForm 是一個開源表單建構工具，讓任何人都能建立引人入勝的對話式表單，用於調查、問卷、測驗和投票。無需編程技能。
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: 網域
+        description: 您想要綁定哪個網域？
+    readme: |
+      # HeyForm
+
+      HeyForm 是一個開源表單建構工具，讓任何人都能建立引人入勝的對話式表單，用於調查、問卷、測驗和投票。無需編程技能。
+
+      > ⚠️ **注意**：此模板使用修補過的 Docker 映像檔（`ghcr.io/canyugs/heyform`）來修復官方版本中的已知問題。一旦官方 HeyForm 團隊發布包含這些修復的更新版本，此模板將更新為使用官方映像檔。
+
+      ## 功能特色
+
+      - 📝 **多樣化輸入**：從基本的文字、電子郵件和電話號碼欄位，到進階選項如圖片選擇、日期選擇器和檔案上傳
+      - 🧠 **智慧邏輯**：條件邏輯和 URL 重新導向，打造動態、可調整的表單
+      - 🔗 **強大整合**：連接 Webhook、分析工具、行銷平台，以及 Zapier 和 Make.com 等工具
+      - 🎨 **視覺主題**：自訂表單的外觀和風格，以符合您的品牌識別
+      - 📊 **深入分析**：透過詳細分析獲得洞察，包括跳出率和完成率
+      - 📤 **資料匯出**：輕鬆將表單結果匯出為 CSV
+
+      ## 開始使用
+
+      部署完成後，透過提供的 URL 存取您的 HeyForm 實例。
+
+      **首次設定**：您需要透過註冊頁面建立自己的帳號。沒有預設的管理員帳號 - 只需註冊一個新帳號，它就會成為管理員。
+
+      ## 配置
+
+      此模板包含：
+      - **MongoDB**：用於儲存表單和提交資料的資料庫
+      - **Redis**：快取和工作階段儲存
+      - **HeyForm 應用程式**：主要表單建構服務
+
+      所有服務都已自動配置和連接。
+
+      ## 文件
+
+      - [官方網站](https://heyform.net)
+      - [文件](https://docs.heyform.net)
+      - [GitHub 儲存庫](https://github.com/heyform/heyform)
+
+  zh-CN:
+    description: |
+      HeyForm 是一个开源表单构建工具，让任何人都能创建引人入胜的对话式表单，用于调查、问卷、测验和投票。无需编程技能。
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: 域名
+        description: 您想要绑定哪个域名？
+    readme: |
+      # HeyForm
+
+      HeyForm 是一个开源表单构建工具，让任何人都能创建引人入胜的对话式表单，用于调查、问卷、测验和投票。无需编程技能。
+
+      > ⚠️ **注意**：此模板使用修补过的 Docker 镜像（`ghcr.io/canyugs/heyform`）来修复官方版本中的已知问题。一旦官方 HeyForm 团队发布包含这些修复的更新版本，此模板将更新为使用官方镜像。
+
+      ## 功能特色
+
+      - 📝 **多样化输入**：从基本的文本、电子邮件和电话号码字段，到高级选项如图片选择、日期选择器和文件上传
+      - 🧠 **智能逻辑**：条件逻辑和 URL 重定向，打造动态、可调整的表单
+      - 🔗 **强大集成**：连接 Webhook、分析工具、营销平台，以及 Zapier 和 Make.com 等工具
+      - 🎨 **视觉主题**：自定义表单的外观和风格，以符合您的品牌识别
+      - 📊 **深入分析**：通过详细分析获得洞察，包括跳出率和完成率
+      - 📤 **数据导出**：轻松将表单结果导出为 CSV
+
+      ## 开始使用
+
+      部署完成后，通过提供的 URL 访问您的 HeyForm 实例。
+
+      **首次设置**：您需要通过注册页面创建自己的账号。没有默认的管理员账号 - 只需注册一个新账号，它就会成为管理员。
+
+      ## 配置
+
+      此模板包含：
+      - **MongoDB**：用于存储表单和提交数据的数据库
+      - **Redis**：缓存和会话存储
+      - **HeyForm 应用程序**：主要表单构建服务
+
+      所有服务都已自动配置和连接。
+
+      ## 文档
+
+      - [官方网站](https://heyform.net)
+      - [文档](https://docs.heyform.net)
+      - [GitHub 仓库](https://github.com/heyform/heyform)
+
+  ja-JP:
+    description: |
+      HeyForm は、誰でも調査、アンケート、クイズ、投票用の魅力的な会話型フォームを作成できるオープンソースのフォームビルダーです。コーディングスキルは不要です。
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: ドメイン
+        description: どのドメインをバインドしますか？
+    readme: |
+      # HeyForm
+
+      HeyForm は、誰でも調査、アンケート、クイズ、投票用の魅力的な会話型フォームを作成できるオープンソースのフォームビルダーです。コーディングスキルは不要です。
+
+      > ⚠️ **注意**：このテンプレートは、公式リリースの既知の問題を修正するためにパッチを適用した Docker イメージ（`ghcr.io/canyugs/heyform`）を使用しています。公式の HeyForm チームがこれらの修正を含む更新バージョンをリリースしたら、このテンプレートは公式イメージを使用するように更新されます。
+
+      ## 機能
+
+      - 📝 **多様な入力**：基本的なテキスト、メール、電話番号フィールドから、画像選択、日付ピッカー、ファイルアップロードなどの高度なオプションまで
+      - 🧠 **スマートロジック**：条件付きロジックと URL リダイレクトによる動的で適応可能なフォーム
+      - 🔗 **強力な統合**：Webhook、分析、マーケティングプラットフォーム、Zapier や Make.com などのツールと接続
+      - 🎨 **ビジュアルテーマ**：ブランドアイデンティティに合わせてフォームの外観をカスタマイズ
+      - 📊 **詳細な分析**：離脱率や完了率を含む詳細な分析でインサイトを取得
+      - 📤 **データエクスポート**：フォーム結果を CSV に簡単にエクスポート
+
+      ## はじめに
+
+      デプロイ後、提供された URL から HeyForm インスタンスにアクセスしてください。
+
+      **初回セットアップ**：登録ページから自分のアカウントを作成する必要があります。デフォルトの管理者アカウントはありません - 新しいアカウントを登録するだけで、それが管理者になります。
+
+      ## 構成
+
+      このテンプレートには以下が含まれます：
+      - **MongoDB**：フォームと送信データを保存するデータベース
+      - **Redis**：キャッシュとセッションストレージ
+      - **HeyForm アプリケーション**：メインのフォームビルダーサービス
+
+      すべてのサービスは自動的に構成され、接続されています。
+
+      ## ドキュメント
+
+      - [公式ウェブサイト](https://heyform.net)
+      - [ドキュメント](https://docs.heyform.net)
+      - [GitHub リポジトリ](https://github.com/heyform/heyform)
+
+  es-ES:
+    description: |
+      HeyForm es un creador de formularios de código abierto que permite a cualquier persona crear formularios conversacionales atractivos para encuestas, cuestionarios, quizzes y votaciones. No se requieren habilidades de programación.
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: Dominio
+        description: ¿Qué dominio desea vincular?
+    readme: |
+      # HeyForm
+
+      HeyForm es un creador de formularios de código abierto que permite a cualquier persona crear formularios conversacionales atractivos para encuestas, cuestionarios, quizzes y votaciones. No se requieren habilidades de programación.
+
+      > ⚠️ **Nota**: Esta plantilla utiliza una imagen Docker parcheada (`ghcr.io/canyugs/heyform`) para corregir problemas conocidos en la versión oficial. Una vez que el equipo oficial de HeyForm lance una versión actualizada con estas correcciones, esta plantilla se actualizará para usar la imagen oficial.
+
+      ## Características
+
+      - 📝 **Entradas versátiles**: Desde campos básicos de texto, correo electrónico y número de teléfono hasta opciones avanzadas como selección de imágenes, selectores de fecha y carga de archivos
+      - 🧠 **Lógica inteligente**: Lógica condicional y redirecciones de URL para formularios dinámicos y adaptables
+      - 🔗 **Integraciones potentes**: Conecte con webhooks, análisis, plataformas de marketing y herramientas como Zapier y Make.com
+      - 🎨 **Temas visuales**: Personalice la apariencia de sus formularios para que coincidan con la identidad de su marca
+      - 📊 **Análisis detallado**: Obtenga información con análisis detallados, incluyendo tasas de abandono y finalización
+      - 📤 **Exportación de datos**: Exporte fácilmente los resultados de sus formularios a CSV
+
+      ## Primeros pasos
+
+      Después del despliegue, acceda a su instancia de HeyForm en la URL proporcionada.
+
+      **Configuración inicial**: Necesita crear su propia cuenta a través de la página de registro. No hay una cuenta de administrador predeterminada - simplemente registre una nueva cuenta y se convertirá en el administrador.
+
+      ## Configuración
+
+      Esta plantilla incluye:
+      - **MongoDB**: Base de datos para almacenar formularios y envíos
+      - **Redis**: Caché y almacenamiento de sesiones
+      - **Aplicación HeyForm**: Servicio principal del creador de formularios
+
+      Todos los servicios están configurados y conectados automáticamente.
+
+      ## Documentación
+
+      - [Sitio web oficial](https://heyform.net)
+      - [Documentación](https://docs.heyform.net)
+      - [Repositorio de GitHub](https://github.com/heyform/heyform)
+
+  id-ID:
+    description: |
+      HeyForm adalah pembuat formulir sumber terbuka yang memungkinkan siapa saja membuat formulir percakapan yang menarik untuk survei, kuesioner, kuis, dan jajak pendapat. Tidak memerlukan keterampilan pemrograman.
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: Domain
+        description: Domain apa yang ingin Anda ikat?
+    readme: |
+      # HeyForm
+
+      HeyForm adalah pembuat formulir sumber terbuka yang memungkinkan siapa saja membuat formulir percakapan yang menarik untuk survei, kuesioner, kuis, dan jajak pendapat. Tidak memerlukan keterampilan pemrograman.
+
+      > ⚠️ **Catatan**: Template ini menggunakan image Docker yang telah dipatch (`ghcr.io/canyugs/heyform`) untuk memperbaiki masalah yang diketahui dalam rilis resmi. Setelah tim resmi HeyForm merilis versi yang diperbarui dengan perbaikan ini, template ini akan diperbarui untuk menggunakan image resmi.
+
+      ## Fitur
+
+      - 📝 **Input serbaguna**: Dari bidang teks dasar, email, dan nomor telepon hingga opsi lanjutan seperti pilihan gambar, pemilih tanggal, dan unggah file
+      - 🧠 **Logika cerdas**: Logika kondisional dan pengalihan URL untuk formulir yang dinamis dan dapat disesuaikan
+      - 🔗 **Integrasi kuat**: Hubungkan dengan webhook, analitik, platform pemasaran, dan alat seperti Zapier dan Make.com
+      - 🎨 **Tema visual**: Sesuaikan tampilan dan nuansa formulir Anda agar sesuai dengan identitas merek Anda
+      - 📊 **Analitik mendalam**: Dapatkan wawasan dengan analitik terperinci, termasuk tingkat pengabaian dan penyelesaian
+      - 📤 **Ekspor data**: Ekspor hasil formulir Anda ke CSV dengan mudah
+
+      ## Memulai
+
+      Setelah deployment, akses instance HeyForm Anda di URL yang disediakan.
+
+      **Pengaturan pertama kali**: Anda perlu membuat akun Anda sendiri melalui halaman pendaftaran. Tidak ada akun admin default - cukup daftarkan akun baru dan itu akan menjadi administrator.
+
+      ## Konfigurasi
+
+      Template ini mencakup:
+      - **MongoDB**: Database untuk menyimpan formulir dan pengiriman
+      - **Redis**: Cache dan penyimpanan sesi
+      - **Aplikasi HeyForm**: Layanan pembuat formulir utama
+
+      Semua layanan dikonfigurasi dan dihubungkan secara otomatis.
+
+      ## Dokumentasi
+
+      - [Situs web resmi](https://heyform.net)
+      - [Dokumentasi](https://docs.heyform.net)
+      - [Repositori GitHub](https://github.com/heyform/heyform)

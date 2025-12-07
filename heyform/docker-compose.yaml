@@ -1,0 +1,45 @@
+networks:
+  keydb:
+  mongo:
+
+services:
+  heyform:
+    build:
+      context: ./heyform-source
+      dockerfile: Dockerfile
+    restart: always
+    volumes:
+      # Persist uploaded images
+      - ./assets:/app/static/upload
+    depends_on:
+      - mongo
+      - keydb
+    ports:
+      - '9157:9157'
+    environment:
+      APP_HOMEPAGE_URL: http://localhost:9157
+      SESSION_KEY: key1
+      FORM_ENCRYPTION_KEY: key2
+      MONGO_URI: 'mongodb://mongo:27017/heyform'
+      REDIS_HOST: keydb
+      REDIS_PORT: 6379
+      VERIFY_USER_EMAIL: 'false'
+
+  mongo:
+    image: mongo:8
+    restart: always
+    volumes:
+      # Persist MongoDB data
+      - mongodb_data:/data/db
+
+  keydb:
+    image: eqalpha/keydb:alpine
+    restart: always
+    command: keydb-server --appendonly yes --protected-mode no
+    volumes:
+      # Persist KeyDB data
+      - keydb:/data
+
+volumes:
+  mongodb_data:
+  keydb:
