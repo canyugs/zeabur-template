@@ -1,0 +1,564 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: SillyTavern
+spec:
+    description: The ultimate sandbox for AI storytelling and roleplaying, SillyTavern is a powerful, free, and open-source user interface for chatting with AI characters.
+    icon: https://avatars.githubusercontent.com/u/134869877
+    variables:
+        - key: PUBLIC_DOMAIN
+          type: DOMAIN
+          name: Domain
+          description: What is the domain you want for your SillyTavern?
+    tags:
+        - Tool
+    readme: |
+        ### Demystifying SillyTavern: Your Gateway to Interactive AI Storytelling
+
+        SillyTavern is a user interface that empowers you to engage in creative and immersive conversations with AI language models. It acts as a feature-rich control panel, allowing you to create, manage, and interact with a vast array of AI characters.
+
+        Think of SillyTavern not as the AI itself, but as the sophisticated "tavern" where you can meet and interact with these AI personalities. It provides a unified interface for various Large Language Model (LLM) APIs, giving you a central hub for your AI-powered adventures. This free and open-source project is a product of a passionate community of AI enthusiasts and has grown to be a leading tool for AI hobbyists.
+
+        ### Installation: One Click and You're Ready to Go
+
+        Getting started with SillyTavern is incredibly simple. We offer one-click installers for Windows and Linux, making the setup process a breeze. With just a single click, the application is installed and ready to launch—no complex configuration required. For MacOS users or those who prefer a zero-installation approach, SillyTavern can be run directly in your browser using Google Colab.
+
+        ### What You Need to Get Started
+
+        While SillyTavern itself is a free application, you will need to connect it to an AI backend to generate responses. SillyTavern is just the interface; the "brains" of the operation come from a separate AI model. Here are some of your options:
+
+        *   **Cloud-Based APIs:** You can connect SillyTavern to paid web services like OpenAI, Claude, and others. This is an easy way to get started and often provides the highest quality AI writing.
+        *   **Local Models:** For those with powerful computers, you can run AI models locally using services like KoboldAI or oobabooga's text-generation-webui. This gives you more control and privacy.
+        *   **Free Options:** The AI Horde offers a way to get started with AI chatting without any cost.
+
+        ### The Core of SillyTavern: Character Cards
+
+        The entire SillyTavern experience is built around "character cards." These cards are essentially a collection of prompts and information that define an AI's personality, background, and behavior. This is what allows for persistent and in-character conversations.
+
+        Character cards are incredibly versatile. You can create:
+
+        *   Fictional characters from your favorite books or movies.
+        *   Simulations of famous personalities.
+        *   Specialized assistants for tasks like writing or coding.
+        *   Abstract scenarios for interactive adventures.
+
+        ### Creating Your Own AI Character
+
+        Crafting your own AI personality is a straightforward process. Here's a quick guide to get you started with a character named "Amanda":
+
+        1.  **Navigate to Character Management:** Click the "Character Management" button and select "Create New Character."
+        2.  **Name Your Character:** Give your character a name, for example, "Amanda."
+        3.  **Upload an Avatar (Optional):** You can give your character a visual representation by clicking "Select Avatar."
+        4.  **Write a Description:** This is where you bring your character to life. The more detail you provide, the better the AI can portray them. For example: "Amanda is a student on her gap year. She's a 6-foot-tall volleyball player with an athletic build and long brown hair. She is a huge fan of the Victorian England period and is extremely cheerful and outgoing."
+        5.  **Craft a First Message:** This sets the tone for the conversation. For example: "*Amanda waves at you* Hey! Are you a backpacker too?"
+        6.  **Create Your Character:** Click "Create Character" and you're ready to start chatting.
+
+        You can also create more complex scenarios by adding more details to the description, including your own role in the interaction. This gives the AI a rich prompt to build upon.
+
+        ### Key Features and Extensibility
+
+        SillyTavern is packed with features that give you granular control over your AI interactions, including:
+
+        *   **World Info:** Create a consistent world with its own lore, locations, and rules.
+        *   **Group Chats:** Have dynamic conversations with multiple AI characters at once.
+        *   **Rich Customization:** Personalize the interface with different themes, backgrounds, and custom CSS.
+        *   **User Personas:** Define your own character so the AI knows who it's talking to.
+        *   **RAG Support:** Allow the AI to reference documents you provide for more informed discussions.
+
+        Beyond these core features, SillyTavern's true power lies in its extensions. These add-ons can transform your experience into a multimedia creative suite, with capabilities like:
+
+        *   **Image Generation:** Bring your stories to life with images generated by Stable Diffusion, FLUX, or DALL-E.
+        *   **Text-to-Speech:** Hear your AI characters' responses spoken aloud with services like ElevenLabs.
+        *   **Web Search:** Give your AI characters access to real-time information from the web.
+
+        ### Configuration
+
+        **Authentication:**
+        *   Default username: Configurable via `ST_USERNAME` environment variable (default: `user`)
+        *   Default password: Auto-generated, check `ST_PASSWORD` in environment variables
+
+        **Session Timeout (`ST_SESSION_TIMEOUT`):**
+        *   **-1:** Session never expires (default)
+        *   **0:** Session expires when browser closes
+        *   **Positive number:** Session expires after N seconds of inactivity (e.g., 86400 for 24 hours)
+
+        ### Your AI Adventure Awaits
+
+        Dive into a world of limitless storytelling, create unforgettable characters, and explore the boundaries of your imagination. **Download SillyTavern today and bring your stories to life!**
+    services:
+        - name: sillytavern
+          icon: https://avatars.githubusercontent.com/u/134869877
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: ghcr.io/sillytavern/sillytavern:latest
+            ports:
+                - id: web
+                  port: 8000
+                  type: HTTP
+            volumes:
+                - id: data
+                  dir: /home/node/app/data
+            instructions:
+                - title: Default Username
+                  content: ${ST_USERNAME}
+                - title: Default Password
+                  content: ${ST_PASSWORD}
+            configs:
+                - path: /home/node/app/config/config.yaml
+                  template: |
+                    dataRoot: ./data
+                    listen: false
+                    port: 8000
+                    whitelistMode: false
+                    enableForwardedWhitelist: true
+                    whitelist:
+                      - 127.0.0.1
+                    basicAuthMode: true
+                    basicAuthUser:
+                      username: ${ST_USERNAME}
+                      password: ${ST_PASSWORD}
+                    enableCorsProxy: false
+                    enableUserAccounts: false
+                    enableDiscreetLogin: false
+                    cookieSecret: ${ST_COOKIE_SECRET}
+                    disableCsrfProtection: false
+                    securityOverride: false
+                    sessionTimeout: ${ST_SESSION_TIMEOUT}
+                    autorun: true
+                    disableThumbnails: false
+                    thumbnailsQuality: 95
+                    avatarThumbnailsPng: false
+                    allowKeysExposure: false
+                    skipContentCheck: false
+                    disableChatBackup: false
+                    numberOfBackups: 50
+                    whitelistImportDomains:
+                      - localhost
+                      - cdn.discordapp.com
+                      - files.catbox.moe
+                      - raw.githubusercontent.com
+                    requestOverrides: []
+                    enableExtensions: true
+                    extras:
+                      disableAutoDownload: false
+                      classificationModel: Cohee/distilbert-base-uncased-go-emotions-onnx
+                      captioningModel: Xenova/vit-gpt2-image-captioning
+                      embeddingModel: Cohee/jina-embeddings-v2-base-en
+                      promptExpansionModel: Cohee/fooocus_expansion-onnx
+                      speechToTextModel: Xenova/whisper-small
+                      textToSpeechModel: Xenova/speecht5_tts
+                    openai:
+                      randomizeUserId: false
+                      captionSystemPrompt: ""
+                    deepl:
+                      formality: default
+                    enableServerPlugins: false
+                  envsubst: true
+            env:
+                ST_USERNAME:
+                    default: zeabur
+                ST_PASSWORD:
+                    default: ${PASSWORD}
+                ST_COOKIE_SECRET:
+                    default: ${PASSWORD}
+                ST_SESSION_TIMEOUT:
+                    default: "-1"
+          domainKey: PUBLIC_DOMAIN
+localization:
+    es-ES:
+        description: El sandbox definitivo para la narración de historias y el rol con IA, SillyTavern es una interfaz de usuario potente, gratuita y de código abierto para chatear con personajes de IA.
+        variables:
+            - key: PUBLIC_DOMAIN
+              name: Dominio
+              description: ¿Cuál es el dominio que deseas para tu SillyTavern?
+        readme: |
+            ### Desmitificando SillyTavern: Tu Puerta de Entrada a la Narración Interactiva con IA
+
+            SillyTavern es una interfaz de usuario que te permite participar en conversaciones creativas e inmersivas con modelos de lenguaje de IA. Actúa como un panel de control rico en funciones, permitiéndote crear, gestionar e interactuar con una amplia gama de personajes de IA.
+
+            No pienses en SillyTavern como la IA en sí, sino como la sofisticada "taberna" donde puedes conocer e interactuar con estas personalidades de IA. Proporciona una interfaz unificada para varias API de Modelos de Lenguaje Grandes (LLM), dándote un centro neurálgico para tus aventuras impulsadas por IA. Este proyecto gratuito y de código abierto es producto de una apasionada comunidad de entusiastas de la IA y se ha convertido en una herramienta líder para los aficionados a la IA.
+
+            ### Instalación: Un Clic y Estás Listo
+
+            Empezar a usar SillyTavern es increíblemente sencillo. Ofrecemos instaladores de un solo clic para Windows y Linux, lo que hace que el proceso de configuración sea pan comido. Con solo un clic, la aplicación se instala y está lista para ejecutarse, sin necesidad de configuraciones complejas. Para los usuarios de MacOS o aquellos que prefieren un enfoque sin instalación, SillyTavern se puede ejecutar directamente en tu navegador usando Google Colab.
+
+            ### Lo que Necesitas para Empezar
+
+            Aunque SillyTavern es una aplicación gratuita, necesitarás conectarla a un backend de IA para generar respuestas. SillyTavern es solo la interfaz; los "cerebros" de la operación provienen de un modelo de IA separado. Aquí tienes algunas de tus opciones:
+
+            *   **APIs Basadas en la Nube:** Puedes conectar SillyTavern a servicios web de pago como OpenAI, Claude y otros. Esta es una forma fácil de empezar y a menudo proporciona la escritura de IA de mayor calidad.
+            *   **Modelos Locales:** Aquellos con ordenadores potentes pueden ejecutar modelos de IA localmente usando servicios como KoboldAI o text-generation-webui de oobabooga. Esto te da más control y privacidad.
+            *   **Opciones Gratuitas:** The AI Horde ofrece una forma de empezar a chatear con IA sin ningún coste.
+
+            ### El Corazón de SillyTavern: Tarjetas de Personaje
+
+            Toda la experiencia de SillyTavern se construye alrededor de las "tarjetas de personaje". Estas tarjetas son esencialmente una colección de prompts e información que definen la personalidad, el trasfondo y el comportamiento de una IA. Esto es lo que permite conversaciones persistentes y acordes con el personaje.
+
+            Las tarjetas de personaje son increíblemente versátiles. Puedes crear:
+
+            *   Personajes de ficción de tus libros o películas favoritas.
+            *   Simulaciones de personalidades famosas.
+            *   Asistentes especializados para tareas como escribir o programar.
+            *   Escenarios abstractos para aventuras interactivas.
+
+            ### Creando tu Propio Personaje de IA
+
+            Crear tu propia personalidad de IA es un proceso sencillo. Aquí tienes una guía rápida para empezar con un personaje llamado "Amanda":
+
+            1.  **Navega a Gestión de Personajes:** Haz clic en el botón "Gestión de Personajes" y selecciona "Crear Nuevo Personaje".
+            2.  **Nombra a tu Personaje:** Dale un nombre a tu personaje, por ejemplo, "Amanda".
+            3.  **Sube un Avatar (Opcional):** Puedes darle a tu personaje una representación visual haciendo clic en "Seleccionar Avatar".
+            4.  **Escribe una Descripción:** Aquí es donde das vida a tu personaje. Cuantos más detalles proporciones, mejor podrá la IA interpretarlo. Por ejemplo: "Amanda es una estudiante en su año sabático. Es una jugadora de voleibol de 1,80 m con una complexión atlética y pelo largo y castaño. Es una gran fan del período de la Inglaterra victoriana y es extremadamente alegre y extrovertida".
+            5.  **Crea un Primer Mensaje:** Esto establece el tono de la conversación. Por ejemplo: "*Amanda te saluda con la mano* ¡Hola! ¿Tú también eres mochilero?"
+            6.  **Crea tu Personaje:** Haz clic en "Crear Personaje" y estarás listo para empezar a chatear.
+
+            También puedes crear escenarios más complejos añadiendo más detalles a la descripción, incluyendo tu propio papel en la interacción. Esto le da a la IA un prompt rico sobre el cual construir.
+
+            ### Características Clave y Extensibilidad
+
+            SillyTavern está repleto de características que te dan un control granular sobre tus interacciones con la IA, incluyendo:
+
+            *   **World Info:** Crea un mundo consistente con su propia historia, ubicaciones y reglas.
+            *   **Chats Grupales:** Ten conversaciones dinámicas con múltiples personajes de IA a la vez.
+            *   **Amplia Personalización:** Personaliza la interfaz con diferentes temas, fondos y CSS personalizado.
+            *   **Personas de Usuario:** Define tu propio personaje para que la IA sepa con quién está hablando.
+            *   **Soporte RAG:** Permite que la IA haga referencia a documentos que proporciones para discusiones más informadas.
+
+            Más allá de estas características principales, el verdadero poder de SillyTavern reside en sus extensiones. Estos complementos pueden transformar tu experiencia en una suite creativa multimedia, con capacidades como:
+
+            *   **Generación de Imágenes:** Da vida a tus historias con imágenes generadas por Stable Diffusion, FLUX o DALL-E.
+            *   **Texto a Voz:** Escucha las respuestas de tus personajes de IA en voz alta con servicios como ElevenLabs.
+            *   **Búsqueda Web:** Dale a tus personajes de IA acceso a información en tiempo real de la web.
+
+            ### Configuración
+
+            **Autenticación:**
+            *   Nombre de usuario predeterminado: Configurable mediante la variable de entorno `ST_USERNAME` (predeterminado: `user`)
+            *   Contraseña predeterminada: Generada automáticamente, consulta `ST_PASSWORD` en las variables de entorno
+
+            **Tiempo de Espera de Sesión (`ST_SESSION_TIMEOUT`):**
+            *   **-1:** La sesión nunca expira (predeterminado)
+            *   **0:** La sesión expira cuando se cierra el navegador
+            *   **Número positivo:** La sesión expira después de N segundos de inactividad (ej., 86400 para 24 horas)
+
+            ### Tu Aventura con IA te Espera
+
+            Sumérgete en un mundo de narración sin límites, crea personajes inolvidables y explora los límites de tu imaginación. **¡Descarga SillyTavern hoy y da vida a tus historias!**
+    id-ID:
+        description: Kotak pasir terbaik untuk penceritaan dan permainan peran AI, SillyTavern adalah antarmuka pengguna yang kuat, gratis, dan sumber terbuka untuk mengobrol dengan karakter AI.
+        variables:
+            - key: PUBLIC_DOMAIN
+              name: Domain
+              description: Apa domain yang Anda inginkan untuk SillyTavern Anda?
+        readme: |
+            ### Mengungkap SillyTavern: Gerbang Anda Menuju Penceritaan AI Interaktif
+
+            SillyTavern adalah antarmuka pengguna yang memberdayakan Anda untuk terlibat dalam percakapan kreatif dan imersif dengan model bahasa AI. Ini berfungsi sebagai panel kontrol yang kaya fitur, memungkinkan Anda untuk membuat, mengelola, dan berinteraksi dengan beragam karakter AI.
+
+            Anggaplah SillyTavern bukan sebagai AI itu sendiri, tetapi sebagai "kedai" canggih tempat Anda dapat bertemu dan berinteraksi dengan kepribadian AI ini. Ini menyediakan antarmuka terpadu untuk berbagai API Model Bahasa Besar (LLM), memberi Anda hub pusat untuk petualangan bertenaga AI Anda. Proyek gratis dan sumber terbuka ini adalah produk dari komunitas penggemar AI yang bersemangat dan telah berkembang menjadi alat terkemuka bagi para hobiis AI.
+
+            ### Instalasi: Sekali Klik dan Anda Siap
+
+            Memulai dengan SillyTavern sangatlah sederhana. Kami menawarkan pemasang sekali klik untuk Windows dan Linux, membuat proses penyiapan menjadi sangat mudah. Hanya dengan satu klik, aplikasi terinstal dan siap diluncurkan—tidak diperlukan konfigurasi yang rumit. Untuk pengguna MacOS atau mereka yang lebih suka pendekatan tanpa instalasi, SillyTavern dapat dijalankan langsung di browser Anda menggunakan Google Colab.
+
+            ### Yang Anda Butuhkan untuk Memulai
+
+            Meskipun SillyTavern sendiri adalah aplikasi gratis, Anda perlu menghubungkannya ke backend AI untuk menghasilkan respons. SillyTavern hanyalah antarmuka; "otak" dari operasi ini berasal dari model AI yang terpisah. Berikut adalah beberapa pilihan Anda:
+
+            *   **API Berbasis Cloud:** Anda dapat menghubungkan SillyTavern ke layanan web berbayar seperti OpenAI, Claude, dan lainnya. Ini adalah cara mudah untuk memulai dan seringkali memberikan tulisan AI kualitas tertinggi.
+            *   **Model Lokal:** Bagi mereka yang memiliki komputer kuat, Anda dapat menjalankan model AI secara lokal menggunakan layanan seperti KoboldAI atau text-generation-webui dari oobabooga. Ini memberi Anda lebih banyak kontrol dan privasi.
+            *   **Opsi Gratis:** AI Horde menawarkan cara untuk memulai mengobrol dengan AI tanpa biaya apa pun.
+
+            ### Inti dari SillyTavern: Kartu Karakter
+
+            Seluruh pengalaman SillyTavern dibangun di sekitar "kartu karakter." Kartu-kartu ini pada dasarnya adalah kumpulan prompt dan informasi yang mendefinisikan kepribadian, latar belakang, dan perilaku AI. Inilah yang memungkinkan percakapan yang persisten dan sesuai dengan karakter.
+
+            Kartu karakter sangat serbaguna. Anda dapat membuat:
+
+            *   Karakter fiksi dari buku atau film favorit Anda.
+            *   Simulasi tokoh terkenal.
+            *   Asisten khusus untuk tugas-tugas seperti menulis atau coding.
+            *   Skenario abstrak untuk petualangan interaktif.
+
+            ### Membuat Karakter AI Anda Sendiri
+
+            Membuat kepribadian AI Anda sendiri adalah proses yang mudah. Berikut panduan cepat untuk memulai dengan karakter bernama "Amanda":
+
+            1.  **Navigasi ke Manajemen Karakter:** Klik tombol "Manajemen Karakter" dan pilih "Buat Karakter Baru."
+            2.  **Beri Nama Karakter Anda:** Beri nama karakter Anda, misalnya, "Amanda."
+            3.  **Unggah Avatar (Opsional):** Anda dapat memberikan representasi visual pada karakter Anda dengan mengklik "Pilih Avatar."
+            4.  **Tulis Deskripsi:** Di sinilah Anda menghidupkan karakter Anda. Semakin banyak detail yang Anda berikan, semakin baik AI dapat menggambarkannya. Contoh: "Amanda adalah seorang mahasiswa yang sedang cuti kuliah. Dia adalah pemain voli setinggi 6 kaki dengan postur atletis dan rambut cokelat panjang. Dia penggemar berat periode Victoria di Inggris dan sangat ceria serta ramah."
+            5.  **Buat Pesan Pertama:** Ini mengatur nada percakapan. Contoh: "*Amanda melambai padamu* Hai! Apakah kamu juga seorang backpacker?"
+            6.  **Buat Karakter Anda:** Klik "Buat Karakter" dan Anda siap untuk mulai mengobrol.
+
+            Anda juga dapat membuat skenario yang lebih kompleks dengan menambahkan lebih banyak detail pada deskripsi, termasuk peran Anda sendiri dalam interaksi tersebut. Ini memberi AI prompt yang kaya untuk dikembangkan.
+
+            ### Fitur Utama dan Ekstensibilitas
+
+            SillyTavern penuh dengan fitur yang memberi Anda kontrol terperinci atas interaksi AI Anda, termasuk:
+
+            *   **Info Dunia:** Ciptakan dunia yang konsisten dengan pengetahuan, lokasi, dan aturannya sendiri.
+            *   **Obrolan Grup:** Lakukan percakapan dinamis dengan beberapa karakter AI sekaligus.
+            *   **Kustomisasi Kaya:** Personalisasi antarmuka dengan tema, latar belakang, dan CSS kustom yang berbeda.
+            *   **Persona Pengguna:** Tentukan karakter Anda sendiri agar AI tahu siapa yang diajak bicara.
+            *   **Dukungan RAG:** Izinkan AI untuk merujuk dokumen yang Anda berikan untuk diskusi yang lebih terinformasi.
+
+            Di luar fitur inti ini, kekuatan sejati SillyTavern terletak pada ekstensinya. Pengaya ini dapat mengubah pengalaman Anda menjadi suite kreatif multimedia, dengan kemampuan seperti:
+
+            *   **Pembuatan Gambar:** Hidupkan cerita Anda dengan gambar yang dihasilkan oleh Stable Diffusion, FLUX, atau DALL-E.
+            *   **Teks-ke-Suara:** Dengarkan respons karakter AI Anda diucapkan dengan layanan seperti ElevenLabs.
+            *   **Pencarian Web:** Beri karakter AI Anda akses ke informasi real-time dari web.
+
+            ### Konfigurasi
+
+            **Autentikasi:**
+            *   Nama pengguna default: Dapat dikonfigurasi melalui variabel lingkungan `ST_USERNAME` (default: `user`)
+            *   Kata sandi default: Dibuat otomatis, periksa `ST_PASSWORD` di variabel lingkungan
+
+            **Batas Waktu Sesi (`ST_SESSION_TIMEOUT`):**
+            *   **-1:** Sesi tidak pernah kedaluwarsa (default)
+            *   **0:** Sesi kedaluwarsa saat browser ditutup
+            *   **Angka positif:** Sesi kedaluwarsa setelah N detik tidak aktif (mis., 86400 untuk 24 jam)
+
+            ### Petualangan AI Anda Menanti
+
+            Selami dunia penceritaan tanpa batas, ciptakan karakter yang tak terlupakan, dan jelajahi batas imajinasi Anda. **Unduh SillyTavern hari ini dan hidupkan cerita Anda!**
+    ja-JP:
+        description: AIによるストーリーテリングとロールプレイングのための究極のサンドボックス、SillyTavernは、AIキャラクターとチャットするための強力で無料のオープンソース・ユーザーインターフェースです。
+        variables:
+            - key: PUBLIC_DOMAIN
+              name: ドメイン
+              description: SillyTavernに使用するドメインは何ですか？
+        readme: |
+            ### SillyTavernを解き明かす：インタラクティブなAIストーリーテリングへのゲートウェイ
+
+            SillyTavernは、AI言語モデルとの創造的で没入感のある会話を可能にするユーザーインターフェースです。機能豊富なコントロールパネルとして機能し、多種多様なAIキャラクターを作成、管理し、対話することができます。
+
+            SillyTavernをAIそのものと考えるのではなく、これらのAIパーソナリティと出会い、対話できる洗練された「酒場」と考えてください。さまざまな大規模言語モデル（LLM）のAPIに統一されたインターフェースを提供し、AIを活用した冒険の中心的なハブとなります。この無料のオープンソースプロジェクトは、情熱的なAI愛好家のコミュニティの産物であり、AIホビイストにとって主要なツールへと成長しました。
+
+            ### インストール：ワンクリックですぐに準備完了
+
+            SillyTavernの導入は非常に簡単です。WindowsおよびLinux向けのワンクリックインストーラーを提供しており、セットアッププロセスを容易にします。複雑な設定は不要で、ワンクリックでアプリケーションがインストールされ、起動準備が整います。MacOSユーザーやインストール不要のアプローチを好む方向けに、SillyTavernはGoogle Colabを使用してブラウザで直接実行することもできます。
+
+            ### 始めるために必要なもの
+
+            SillyTavern自体は無料のアプリケーションですが、応答を生成するためにはAIバックエンドに接続する必要があります。SillyTavernはあくまでインターフェースであり、操作の「頭脳」は別のAIモデルから提供されます。以下にいくつかの選択肢があります：
+
+            *   **クラウドベースのAPI:** OpenAIやClaudeなどの有料ウェブサービスにSillyTavernを接続できます。これは始めるのに簡単な方法であり、しばしば最高品質のAIライティングを提供します。
+            *   **ローカルモデル:** 強力なコンピューターをお持ちの方は、KoboldAIやoobaboogaのtext-generation-webuiなどのサービスを使用して、ローカルでAIモデルを実行できます。これにより、より多くの制御とプライバシーが得られます。
+            *   **無料オプション:** AI Hordeを利用すれば、無料でAIチャットを始めることができます。
+
+            ### SillyTavernの核：キャラクターカード
+
+            SillyTavernの体験全体は、「キャラクターカード」を中心に構築されています。これらのカードは、AIの性格、背景、行動を定義するプロンプトと情報の集合体です。これにより、キャラクターに沿った一貫性のある会話が可能になります。
+
+            キャラクターカードは非常に多機能です。以下のようなものを作成できます：
+
+            *   お気に入りの本や映画の架空のキャラクター。
+            *   有名人のシミュレーション。
+            *   執筆やコーディングなどのタスクに特化したアシスタント。
+            *   インタラクティブな冒険のための抽象的なシナリオ。
+
+            ### 自分だけのAIキャラクターを作成する方法
+
+            独自のAIパーソナリティを作成するのは簡単なプロセスです。以下に、「アマンダ」という名前のキャラクターで始めるためのクイックガイドを示します：
+
+            1.  **キャラクター管理へ移動:** 「キャラクター管理」ボタンをクリックし、「新しいキャラクターを作成」を選択します。
+            2.  **キャラクターに名前を付ける:** キャラクターに「アマンダ」などの名前を付けます。
+            3.  **アバターをアップロード（任意）:** 「アバターを選択」をクリックして、キャラクターの視覚的な表現を与えることができます。
+            4.  **説明を記述:** ここでキャラクターに命を吹き込みます。詳細を提供するほど、AIはキャラクターをより良く描写できます。例：「アマンダはギャップイヤー中の学生です。身長6フィートのバレーボール選手で、運動能力の高い体型と長い茶色の髪をしています。彼女はヴィクトリア朝イングランド時代の大ファンで、非常に陽気で社交的です。」
+            5.  **最初のメッセージを作成:** これが会話のトーンを設定します。例：「*アマンダがあなたに手を振る* ねえ！あなたもバックパッカー？」
+            6.  **キャラクターを作成:** 「キャラクターを作成」をクリックすれば、チャットを開始する準備が整います。
+
+            説明にさらに詳細を追加し、対話における自分自身の役割を含めることで、より複雑なシナリオを作成することもできます。これにより、AIが構築するための豊富なプロンプトが提供されます。
+
+            ### 主な機能と拡張性
+
+            SillyTavernには、AIとの対話を細かく制御できる機能が満載です。
+
+            *   **ワールド情報:** 独自の伝承、場所、ルールを持つ一貫した世界を作成します。
+            *   **グループチャット:** 一度に複数のAIキャラクターとダイナミックな会話を行います。
+            *   **豊富なカスタマイズ:** 異なるテーマ、背景、カスタムCSSでインターフェースをパーソナライズします。
+            *   **ユーザーペルソナ:** AIが誰と話しているかを知るために、自分自身のキャラクターを定義します。
+            *   **RAGサポート:** より情報に基づいた議論のために、提供したドキュメントをAIに参照させます。
+
+            これらのコア機能を超えて、SillyTavernの真の力はその拡張機能にあります。これらのアドオンは、あなたの体験をマルチメディアクリエイティブスイートに変えることができます。
+
+            *   **画像生成:** Stable Diffusion、FLUX、またはDALL-Eによって生成された画像で、あなたの物語に命を吹き込みます。
+            *   **テキスト読み上げ:** ElevenLabsなどのサービスを使用して、AIキャラクターの応答を音声で聞きます。
+            *   **ウェブ検索:** ウェブからのリアルタイム情報へのアクセスをAIキャラクターに与えます。
+
+            ### 設定
+
+            **認証:**
+            *   デフォルトユーザー名: 環境変数 `ST_USERNAME` で設定可能（デフォルト: `user`）
+            *   デフォルトパスワード: 自動生成、環境変数の `ST_PASSWORD` を確認してください
+
+            **セッションタイムアウト (`ST_SESSION_TIMEOUT`):**
+            *   **-1:** セッションは期限切れになりません（デフォルト）
+            *   **0:** ブラウザを閉じるとセッションが期限切れになります
+            *   **正の数:** N秒間非アクティブ後にセッションが期限切れになります（例：86400で24時間）
+
+            ### あなたのAIアドベンチャーが待っています
+
+            無限のストーリーテリングの世界に飛び込み、忘れられないキャラクターを創造し、想像力の限界を探求してください。**今すぐSillyTavernをダウンロードして、あなたの物語に命を吹き込みましょう！**
+    zh-CN:
+        description: 作为 AI 故事叙述和角色扮演的终极沙盒，SillyTavern 是一款功能强大、免费且开源的用户界面，用于与 AI 角色聊天。
+        variables:
+            - key: PUBLIC_DOMAIN
+              name: 域名
+              description: 您想为 SillyTavern 使用什么域名？
+        readme: |
+            ### 揭秘 SillyTavern：通往交互式 AI 故事叙述的大门
+
+            SillyTavern 是一个用户界面，它使您能够与 AI 语言模型进行富有创造性和沉浸感的对话。它就像一个功能丰富的控制面板，允许您创建、管理并与各种各样的 AI 角色互动。
+
+            不要将 SillyTavern 视为 AI 本身，而应将其看作一个精致的“酒馆”，在这里您可以遇见这些 AI 人格并与之互动。它为各种大型语言模型（LLM）API 提供了统一的界面，为您由 AI 驱动的冒险提供了一个中心枢纽。这个免费的开源项目是一群热情的 AI 爱好者的社区产物，并已成长为 AI 业余爱好者的领先工具。
+
+            ### 安装：一键即可，随时可用
+
+            开始使用 SillyTavern 非常简单。我们为 Windows 和 Linux 提供了一键式安装程序，使设置过程变得轻而易举。只需单击一下，应用程序即可安装并准备启动——无需复杂的配置。对于 MacOS 用户或喜欢零安装方式的用户，SillyTavern 可以使用 Google Colab 直接在您的浏览器中运行。
+
+            ### 开始前您需要什么
+
+            虽然 SillyTavern 本身是一个免费的应用程序，但您需要将其连接到 AI 后端才能生成响应。SillyTavern 只是界面；操作的“大脑”来自一个独立的 AI 模型。以下是您的一些选择：
+
+            *   **基于云的 API：** 您可以将 SillyTavern 连接到像 OpenAI、Claude 等付费网络服务。这是一个简单的入门方式，并且通常能提供最高质量的 AI 写作。
+            *   **本地模型：** 对于拥有强大计算机的用户，您可以使用像 KoboldAI 或 oobabooga 的 text-generation-webui 这样的服务在本地运行 AI 模型。这为您提供了更多的控制权和隐私。
+            *   **免费选项：** AI Horde 提供了一种无需任何费用即可开始与 AI 聊天的方式。
+
+            ### SillyTavern 的核心：角色卡
+
+            整个 SillyTavern 的体验都围绕着“角色卡”构建。这些卡片本质上是定义 AI 个性、背景和行为的提示和信息的集合。这使得进行持久且符合角色设定的对话成为可能。
+
+            角色卡功能极其丰富。您可以创建：
+
+            *   来自您最喜爱的书籍或电影的虚构角色。
+            *   著名人物的模拟。
+            *   为写作或编码等任务量身定制的专业助手。
+            *   用于互动冒险的抽象场景。
+
+            ### 创建您自己的 AI 角色
+
+            打造您自己的 AI 人格是一个简单的过程。这里有一个快速指南，帮助您开始创建一个名为“Amanda”的角色：
+
+            1.  **导航到角色管理：** 点击“角色管理”按钮并选择“创建新角色”。
+            2.  **为您的角色命名：** 给您的角色起个名字，例如“Amanda”。
+            3.  **上传头像（可选）：** 您可以通过点击“选择头像”为您的角色提供一个视觉形象。
+            4.  **撰写描述：** 在这里，您可以赋予角色生命。您提供的细节越多，AI 就能更好地描绘他们。例如：“阿曼达是一名在间隔年旅行的学生。她身高6英尺，是一名排球运动员，身材健美，留着长长的棕色头发。她非常喜欢维多利亚时代的英国，并且非常开朗外向。”
+            5.  **编写第一条消息：** 这为对话定下了基调。例如：“*阿曼达向你挥手* 嘿！你也是背包客吗？”
+            6.  **创建您的角色：** 点击“创建角色”，您就可以开始聊天了。
+
+            您还可以通过在描述中添加更多细节来创建更复杂的场景，包括您自己在互动中的角色。这为 AI 提供了丰富的提示以供其发挥。
+
+            ### 主要功能与可扩展性
+
+            SillyTavern 功能丰富，让您能够精细控制与 AI 的互动，包括：
+
+            *   **世界信息：** 创建一个拥有自己传说、地点和规则的一致世界。
+            *   **群组聊天：** 同时与多个 AI 角色进行动态对话。
+            *   **丰富的自定义：** 使用不同的主题、背景和自定义 CSS 个性化界面。
+            *   **用户人设：** 定义您自己的角色，以便 AI 知道它在和谁说话。
+            *   **RAG 支持：** 允许 AI 参考您提供的文档，以进行更深入的讨论。
+
+            除了这些核心功能，SillyTavern 的真正力量在于其扩展。这些附加组件可以将您的体验转变为一个多媒体创作套件，具备以下能力：
+
+            *   **图像生成：** 使用由 Stable Diffusion、FLUX 或 DALL-E 生成的图像，让您的故事栩栩如生。
+            *   **文本转语音：** 使用像 ElevenLabs 这样的服务，听到您的 AI 角色的回应。
+            *   **网络搜索：** 让您的 AI 角色能够访问来自网络的实时信息。
+
+            ### 配置
+
+            **身份验证：**
+            *   默认用户名：可通过环境变量 `ST_USERNAME` 配置（默认：`user`）
+            *   默认密码：自动生成，请在环境变量中查看 `ST_PASSWORD`
+
+            **会话超时 (`ST_SESSION_TIMEOUT`)：**
+            *   **-1：** 会话永不过期（默认）
+            *   **0：** 关闭浏览器时会话过期
+            *   **正数：** 不活动 N 秒后会话过期（例如，86400 表示 24 小时）
+
+            ### 您的 AI 冒险正等待着您
+
+            潜入一个无限叙事的世界，创造难忘的角色，探索您想象力的边界。**立即下载 SillyTavern，将您的故事变为现实！**
+    zh-TW:
+        description: 作為 AI 故事敘述和角色扮演的終極沙盒，SillyTavern 是一款功能強大、免費且開源的使用者介面，用於與 AI 角色聊天。
+        variables:
+            - key: PUBLIC_DOMAIN
+              name: 網域
+              description: 您想要為 SillyTavern 使用什麼網域？
+        readme: |-
+            ### 揭秘 SillyTavern：通往互動式 AI 故事敘述的大門
+
+            SillyTavern 是一個使用者介面，它使您能夠與 AI 語言模型進行富有創造性和沉浸感的對話。它就像一個功能豐富的控制面板，允許您創建、管理並與各種各樣的 AI 角色互動。
+
+            不要將 SillyTavern 視為 AI 本身，而應將其看作一個精緻的「酒館」，在這裡您可以遇見這些 AI 人格並與之互動。它為各種大型語言模型（LLM）API 提供了統一的介面，為您由 AI 驅動的冒險提供了一個中心樞紐。這個免費的開源專案是一群熱情的 AI 愛好者的社群產物，並已成長為 AI 業餘愛好者的領先工具。
+
+            ### 安裝：一鍵即可，隨時可用
+
+            開始使用 SillyTavern 非常簡單。我們為 Windows 和 Linux 提供了一鍵式安裝程式，使設定過程變得輕而易舉。只需點擊一下，應用程式即可安裝並準備啟動——無需複雜的配置。對於 MacOS 用戶或喜歡零安裝方式的用戶，SillyTavern 可以使用 Google Colab 直接在您的瀏覽器中運行。
+
+            ### 開始前您需要什麼
+
+            雖然 SillyTavern 本身是一個免費的應用程式，但您需要將其連接到 AI 後端才能生成回應。SillyTavern 只是介面；操作的「大腦」來自一個獨立的 AI 模型。以下是您的一些選擇：
+
+            *   **雲端 API：** 您可以將 SillyTavern 連接到像 OpenAI、Claude 等付費網路服務。這是一個簡單的入門方式，並且通常能提供最高品質的 AI 寫作。
+            *   **本地模型：** 對於擁有強大電腦的用戶，您可以使用像 KoboldAI 或 oobabooga 的 text-generation-webui 這樣的服務在本地運行 AI 模型。這為您提供了更多的控制權和隱私。
+            *   **免費選項：** AI Horde 提供了一種無需任何費用即可開始與 AI 聊天的方式。
+
+            ### SillyTavern 的核心：角色卡
+
+            整個 SillyTavern 的體驗都圍繞著「角色卡」建構。這些卡片本質上是定義 AI 個性、背景和行為的提示和資訊的集合。這使得進行持久且符合角色設定的對話成為可能。
+
+            角色卡功能極其豐富。您可以創建：
+
+            *   來自您最喜愛的書籍或電影的虛構角色。
+            *   著名人物的模擬。
+            *   為寫作或編碼等任務量身定制的專業助理。
+            *   用於互動冒險的抽象場景。
+
+            ### 創建您自己的 AI 角色
+
+            打造您自己的 AI 人格是一個簡單的過程。這裡有一個快速指南，幫助您開始創建一個名叫「Amanda」的角色：
+
+            1.  **導航至角色管理：** 點擊「角色管理」按鈕並選擇「創建新角色」。
+            2.  **為您的角色命名：** 給您的角色起個名字，例如「Amanda」。
+            3.  **上傳頭像（可選）：** 您可以透過點擊「選擇頭像」為您的角色提供一個視覺形象。
+            4.  **撰寫描述：** 在這裡，您可以賦予角色生命。您提供的細節越多，AI 就能更好地描繪他們。例如：「阿曼達是一名在空檔年旅行的學生。她身高6英尺，是一名排球運動員，身材健美，留著長長的棕色頭髮。她非常喜歡維多利亞時代的英國，並且非常開朗外向。」
+            5.  **編寫第一條訊息：** 這為對話定下了基調。例如：「*阿曼達向你揮手* 嘿！你也是背包客嗎？」
+            6.  **創建您的角色：** 點擊「創建角色」，您就可以開始聊天了。
+
+            您還可以透過在描述中添加更多細節來創建更複雜的場景，包括您自己在互動中的角色。這為 AI 提供了豐富的提示以供其發揮。
+
+            ### 主要功能與可擴展性
+
+            SillyTavern 功能豐富，讓您能夠精細控制與 AI 的互動，包括：
+
+            *   **世界資訊：** 創建一個擁有自己傳說、地點和規則的一致世界。
+            *   **群組聊天：** 同時與多個 AI 角色進行動態對話。
+            *   **豐富的自訂：** 使用不同的主題、背景和自訂 CSS 個人化介面。
+            *   **用戶人設：** 定義您自己的角色，以便 AI 知道它在和誰說話。
+            *   **RAG 支援：** 允許 AI 參考您提供的文件，以進行更深入的討論。
+
+            除了這些核心功能，SlyTavern 的真正力量在於其擴充功能。這些附加元件可以將您的體驗轉變為一個多媒體創作套件，具備以下能力：
+
+            *   **圖像生成：** 使用由 Stable Diffusion、FLUX 或 DALL-E 生成的圖像，讓您的故事栩栩如生。
+            *   **文字轉語音：** 使用像 ElevenLabs 這樣的服務，聽到您的 AI 角色的回應。
+            *   **網路搜尋：** 讓您的 AI 角色能夠存取來自網路的即時資訊。
+
+            ### 設定
+
+            **身份驗證：**
+            *   預設使用者名稱：可透過環境變數 `ST_USERNAME` 設定（預設：`user`）
+            *   預設密碼：自動產生，請在環境變數中查看 `ST_PASSWORD`
+
+            **工作階段逾時 (`ST_SESSION_TIMEOUT`)：**
+            *   **-1：** 工作階段永不過期（預設）
+            *   **0：** 關閉瀏覽器時工作階段過期
+            *   **正數：** 不活動 N 秒後工作階段過期（例如，86400 表示 24 小時）
+
+            ### 您的 AI 冒險正等待著您
+
+            潛入一個無限敘事的世界，創造難忘的角色，探索您想像力的邊界。**立即下載 SillyTavern，讓您的故事栩栩如生！**
