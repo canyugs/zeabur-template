@@ -1,0 +1,859 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: OpenPanel
+spec:
+    description: An open-source analytics platform that combines the power of Mixpanel with the simplicity of Plausible. Provides web analytics and product analytics functionality.
+    coverImage: https://raw.githubusercontent.com/Openpanel-dev/openpanel/refs/heads/main/apps/public/public/ogimage.png
+    icon: https://openpanel.dev/favicon.ico
+    variables:
+        - key: ADMIN_EMAIL
+          type: STRING
+          name: Admin Email
+          description: Administrator email address
+    tags:
+        - Analytics
+        - Dashboard
+        - Self-hosted
+        - Open Source
+    readme: |
+        ⚠️ **IMPORTANT LIMITATION**:
+        This template only supports your own root domain (zone apex). Subdomains (e.g., xxx.zeabur.app) or Zeabur-provided domains are NOT supported. You must use your own root domain, and set all related environment variables (such as OAuth redirect URI) to this domain. If you do not have your own root domain, do not install this template.
+
+        **After updating environment variables, you must restart all services for the changes to take effect.**
+
+        # OpenPanel
+
+        OpenPanel is a powerful analytics platform that captures and visualizes user behavior across web, mobile apps, and backend services. It combines the power of Mixpanel with the simplicity of Plausible.
+
+        ## Features
+
+        - **Real-time Analytics**: Real-time tracking of user behavior and events
+        - **Event Tracking**: Custom event tracking and analysis
+        - **User Analytics**: User behavior analysis and funnel analysis
+        - **Dashboard**: Beautiful data visualization dashboard
+        - **Privacy Friendly**: Complete control over your data, GDPR compliant
+        - **Open Source**: Fully open source and customizable
+
+        ## Tech Stack
+
+        - **Next.js**: Dashboard frontend
+        - **Fastify**: Event API
+        - **PostgreSQL**: Store basic information
+        - **ClickHouse**: Store event data
+        - **Redis**: Cache layer, pub/sub and queue
+
+        ## Architecture
+
+        This template deploys OpenPanel with the following services:
+        - **Caddy**: Reverse proxy and entry point for all traffic
+        - **PostgreSQL**: Primary database for configuration and user data
+        - **Redis**: Cache and queue system
+        - **ClickHouse**: Analytics database for event storage
+        - **API**: Backend API service
+        - **Dashboard**: Frontend dashboard
+        - **Worker**: Background task processor
+
+        ## Usage
+
+        1. After deployment, bind a domain to the `Caddy` service (this is the entry point)
+        2. Visit your domain to access OpenPanel
+        3. Create your first admin account using the provided email
+        4. Start tracking your website or app
+
+        ⚠️ **Important**: Make sure to bind your domain to the `Caddy` service, as it is the single entry point that routes traffic to the appropriate services.
+
+        ## Environment Configuration
+
+        All environment variables are pre-configured based on OpenPanel's requirements including database connections, API endpoints, and worker settings.
+
+        ### OAuth Login Setup (Optional)
+
+        If you need Google or GitHub login functionality, you can add the following environment variables to your API and Dashboard services:
+
+        ```
+        # GitHub OAuth
+        GITHUB_CLIENT_ID=
+        GITHUB_CLIENT_SECRET=
+        GITHUB_REDIRECT_URI=https://your-domain/api/oauth/github/callback
+
+        # Google OAuth
+        GOOGLE_CLIENT_ID=
+        GOOGLE_CLIENT_SECRET=
+        GOOGLE_REDIRECT_URI=https://your-domain/api/oauth/google/callback
+        ```
+
+        Make sure to replace `your-domain` with the actual root domain you bind to the Caddy service.
+
+        ## Official Resources
+
+        - Website: https://openpanel.dev
+        - Documentation: https://openpanel.dev/docs
+        - GitHub: https://github.com/Openpanel-dev/openpanel
+
+        ## Support
+
+        For help, please visit OpenPanel's Discord community or GitHub Issues.
+    services:
+        - name: postgresql
+          icon: https://cdn.zeabur.com/marketplace/postgresql.svg
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: postgres:14-alpine
+            ports:
+                - id: database
+                  port: 5432
+                  type: TCP
+            volumes:
+                - id: data
+                  dir: /var/lib/postgresql/data
+            instructions:
+                - title: PostgreSQL Connection String
+                  content: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DATABASE}
+                - title: PostgreSQL Username
+                  content: ${POSTGRES_USERNAME}
+                - title: PostgreSQL Password
+                  content: ${POSTGRES_PASSWORD}
+                - title: PostgreSQL Database
+                  content: ${POSTGRES_DATABASE}
+            env:
+                DATABASE_URL:
+                    default: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}?schema=public
+                POSTGRES_CONNECTION_STRING:
+                    default: ${DATABASE_URL}
+                    expose: true
+                POSTGRES_DATABASE:
+                    default: ${POSTGRES_DB}
+                    expose: true
+                POSTGRES_DB:
+                    default: postgres
+                    expose: true
+                POSTGRES_HOST:
+                    default: ${CONTAINER_HOSTNAME}
+                    expose: true
+                POSTGRES_PASSWORD:
+                    default: ${PASSWORD}
+                    expose: true
+                POSTGRES_PORT:
+                    default: ${DATABASE_PORT}
+                    expose: true
+                POSTGRES_USER:
+                    default: postgres
+                    expose: true
+                POSTGRES_USERNAME:
+                    default: ${POSTGRES_USER}
+                    expose: true
+            healthCheck:
+                type: TCP
+                port: database
+        - name: redis
+          icon: https://service-icons.zeabur.com/marketplace/redis.svg
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: redis/redis-stack-server:7.4.0-v8
+            ports:
+                - id: database
+                  port: 6379
+                  type: TCP
+            volumes:
+                - id: data
+                  dir: /data
+            instructions:
+                - title: Command to connect to your Redis
+                  content: redis-cli -h ${PORT_FORWARDED_HOSTNAME} -p ${DATABASE_PORT_FORWARDED_PORT} -a ${REDIS_PASSWORD}
+                - title: Redis Connection String
+                  content: redis://:${REDIS_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}
+                - title: Redis password
+                  content: ${REDIS_PASSWORD}
+                - title: Redis host
+                  content: ${PORT_FORWARDED_HOSTNAME}
+                - title: Redis port
+                  content: ${DATABASE_PORT_FORWARDED_PORT}
+            env:
+                REDIS_ARGS:
+                    default: --requirepass ${REDIS_PASSWORD}
+                REDIS_CONNECTION_STRING:
+                    default: redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
+                    expose: true
+                REDIS_HOST:
+                    default: ${CONTAINER_HOSTNAME}
+                    expose: true
+                REDIS_PASSWORD:
+                    default: ${PASSWORD}
+                    expose: true
+                REDIS_PORT:
+                    default: ${DATABASE_PORT}
+                    expose: true
+                REDIS_URI:
+                    default: ${REDIS_CONNECTION_STRING}
+                    expose: true
+            healthCheck:
+                type: TCP
+                port: database
+        - name: clickhouse
+          icon: https://avatars.githubusercontent.com/u/54801242
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: clickhouse/clickhouse-server:25.8-alpine
+            ports:
+                - id: http
+                  port: 8123
+                  type: HTTP
+                - id: native
+                  port: 9000
+                  type: TCP
+            volumes:
+                - id: data
+                  dir: /var/lib/clickhouse
+                - id: logs
+                  dir: /var/log/clickhouse-server
+            instructions:
+                - title: ClickHouse HTTP Interface URL
+                  content: http://${PORT_FORWARDED_HOSTNAME}:${HTTP_PORT_FORWARDED_PORT}
+                - title: ClickHouse Username
+                  content: ${CLICKHOUSE_USER}
+                - title: ClickHouse Password
+                  content: ${CLICKHOUSE_PASSWORD}
+                - title: ClickHouse Database
+                  content: ${CLICKHOUSE_DB}
+            env:
+                CLICKHOUSE_CONNECTION_STRING:
+                    default: ${CLICKHOUSE_URL}
+                    expose: true
+                CLICKHOUSE_DB:
+                    default: openpanel
+                    expose: true
+                CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT:
+                    default: "1"
+                CLICKHOUSE_HOST:
+                    default: ${CONTAINER_HOSTNAME}
+                    expose: true
+                CLICKHOUSE_HTTP_PORT:
+                    default: ${HTTP_PORT}
+                    expose: true
+                CLICKHOUSE_PASSWORD:
+                    default: ${PASSWORD}
+                    expose: true
+                CLICKHOUSE_PORT:
+                    default: ${NATIVE_PORT}
+                    expose: true
+                CLICKHOUSE_URL:
+                    default: http://${CLICKHOUSE_USER}:${CLICKHOUSE_PASSWORD}@${CLICKHOUSE_HOST}:${CLICKHOUSE_HTTP_PORT}/${CLICKHOUSE_DB}
+                CLICKHOUSE_USER:
+                    default: default
+                    expose: true
+            configs:
+                - path: /etc/clickhouse-server/config.d/docker_related_config.xml
+                  template: |-
+                    <clickhouse>
+                          <!-- Listen wildcard address to allow accepting connections from other containers and host network. -->
+                        <listen_host>::</listen_host>
+                        <listen_host>0.0.0.0</listen_host>
+                        <listen_try>1</listen_try>
+
+                        <logger>
+                            <level>information</level>
+                            <console>1</console>
+                        </logger>
+                    </clickhouse>
+                  permission: null
+                  envsubst: null
+        - name: api
+          icon: https://openpanel.dev/favicon.ico
+          dependencies:
+            - postgresql
+            - redis
+            - clickhouse
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: lindesvard/openpanel-api:2.0.0
+            command:
+                - sh
+                - -c
+                - echo "Running migrations..." && CI=true pnpm -r run migrate:deploy && pnpm start
+            ports:
+                - id: api
+                  port: 3000
+                  type: HTTP
+            env:
+                ADMIN_EMAIL:
+                    default: ${ADMIN_EMAIL}
+                API_CORS_ORIGINS:
+                    default: ${OPENPANEL_PUBLIC_URL}
+                ALLOW_INVITATION:
+                    default: "true"
+                ALLOW_REGISTRATION:
+                    default: "false"
+                BATCH_INTERVAL:
+                    default: "10000"
+                BATCH_SIZE:
+                    default: "5000"
+                CI:
+                    default: "true"
+                CLICKHOUSE_URL:
+                    default: ${CLICKHOUSE_CONNECTION_STRING}
+                COOKIE_SECRET:
+                    default: ${PASSWORD}
+                DATABASE_URL:
+                    default: ${POSTGRES_CONNECTION_STRING}
+                DATABASE_URL_DIRECT:
+                    default: ${POSTGRES_CONNECTION_STRING}
+                NEXT_PUBLIC_API_URL:
+                    default: ${OPENPANEL_PUBLIC_URL}/api
+                NEXT_PUBLIC_SELF_HOSTED:
+                    default: "true"
+                NEXTAUTH_SECRET:
+                    default: ${PASSWORD}
+                NEXTAUTH_URL:
+                    default: ${OPENPANEL_PUBLIC_URL}
+                NEXTAUTH_URL_INTERNAL:
+                    default: ${OPENPANEL_PUBLIC_URL}
+                NODE_ENV:
+                    default: production
+                PORT:
+                    default: "3000"
+                REDIS_URL:
+                    default: ${REDIS_CONNECTION_STRING}
+        - name: dashboard
+          icon: https://openpanel.dev/favicon.ico
+          dependencies:
+            - api
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: lindesvard/openpanel-dashboard:2.0.0
+            ports:
+                - id: web
+                  port: 3000
+                  type: HTTP
+            env:
+                ADMIN_EMAIL:
+                    default: ${ADMIN_EMAIL}
+                ALLOW_INVITATION:
+                    default: "true"
+                ALLOW_REGISTRATION:
+                    default: "false"
+                CLICKHOUSE_URL:
+                    default: ${CLICKHOUSE_CONNECTION_STRING}
+                COOKIE_SECRET:
+                    default: ${PASSWORD}
+                DATABASE_URL:
+                    default: ${POSTGRES_CONNECTION_STRING}
+                DATABASE_URL_DIRECT:
+                    default: ${POSTGRES_CONNECTION_STRING}
+                NEXT_PUBLIC_API_URL:
+                    default: ${OPENPANEL_PUBLIC_URL}/api
+                NEXT_PUBLIC_DASHBOARD_URL:
+                    default: ${OPENPANEL_PUBLIC_URL}
+                    expose: true
+                NEXT_PUBLIC_SELF_HOSTED:
+                    default: "true"
+                NEXTAUTH_SECRET:
+                    default: ${PASSWORD}
+                NEXTAUTH_URL:
+                    default: ${OPENPANEL_PUBLIC_URL}
+                NEXTAUTH_URL_INTERNAL:
+                    default: ${OPENPANEL_PUBLIC_URL}
+                NODE_ENV:
+                    default: production
+                PORT:
+                    default: "3000"
+                REDIS_URL:
+                    default: ${REDIS_CONNECTION_STRING}
+        - name: worker
+          icon: https://openpanel.dev/favicon.ico
+          dependencies:
+            - api
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: lindesvard/openpanel-worker:2.0.0
+            ports:
+                - id: worker
+                  port: 3000
+                  type: HTTP
+            env:
+                ADMIN_EMAIL:
+                    default: ${ADMIN_EMAIL}
+                BATCH_INTERVAL:
+                    default: "10000"
+                BATCH_SIZE:
+                    default: "5000"
+                CLICKHOUSE_URL:
+                    default: ${CLICKHOUSE_CONNECTION_STRING}
+                COOKIE_SECRET:
+                    default: ${PASSWORD}
+                DATABASE_URL:
+                    default: ${POSTGRES_CONNECTION_STRING}
+                DATABASE_URL_DIRECT:
+                    default: ${POSTGRES_CONNECTION_STRING}
+                NEXT_PUBLIC_API_URL:
+                    default: ${OPENPANEL_PUBLIC_URL}/api
+                NEXT_PUBLIC_SELF_HOSTED:
+                    default: "true"
+                NEXTAUTH_SECRET:
+                    default: ${PASSWORD}
+                NEXTAUTH_URL:
+                    default: ${OPENPANEL_PUBLIC_URL}
+                NEXTAUTH_URL_INTERNAL:
+                    default: ${OPENPANEL_PUBLIC_URL}
+                NODE_ENV:
+                    default: production
+                PORT:
+                    default: "3000"
+                REDIS_URL:
+                    default: ${REDIS_CONNECTION_STRING}
+        - name: caddy
+          icon: https://cdn.zeabur.com/caddy.png
+          dependencies:
+            - dashboard
+            - api
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: caddy:2-alpine
+            ports:
+                - id: web
+                  port: 80
+                  type: HTTP
+            env:
+                API_ENDPOINT:
+                    default: http://api:3000
+                DASHBOARD_ENDPOINT:
+                    default: http://dashboard:3000
+                OPENPANEL_PUBLIC_URL:
+                    default: https://${ZEABUR_WEB_DOMAIN}
+                    expose: true
+                PORT:
+                    default: "80"
+            configs:
+                - path: /etc/caddy/Caddyfile
+                  template: |
+                    :${PORT} {
+                      encode gzip
+                      log {
+                        format json
+                      }
+
+                      # API endpoints - handle_path strips /api prefix automatically
+                      handle_path /api* {
+                        reverse_proxy ${API_ENDPOINT} {
+                          header_up Host {upstream_hostport}
+                          header_up X-Real-IP {remote_host}
+                          header_up X-Forwarded-For {remote_host}
+                          header_up X-Forwarded-Proto {scheme}
+                        }
+                      }
+
+                      # All other requests go to dashboard
+                      reverse_proxy ${DASHBOARD_ENDPOINT} {
+                        header_up Host {upstream_hostport}
+                        header_up X-Real-IP {remote_host}
+                        header_up X-Forwarded-For {remote_host}
+                        header_up X-Forwarded-Proto {scheme}
+                      }
+                    }
+                  permission: null
+                  envsubst: true
+          domainKey: PUBLIC_DOMAIN
+localization:
+    zh-CN:
+        readme: |
+            ⚠️ **重要限制**：
+            本模板仅支持自有根域名（zone apex），不支持任何子域名（例如 xxx.zeabur.app）。请务必使用您自己的根域名，并将所有相关环境变量（如 OAuth redirect URI）设为该域名。若您没有自己的根域名，请勿安装本模板。
+
+            **每次更新环境变量后，请务必重启所有服务，否则新设置不会生效。**
+
+            # OpenPanel
+
+            OpenPanel 是一个强大的分析平台，可以捕获并可视化跨网站、移动应用程序和后端服务的用户行为。它结合了 Mixpanel 的强大功能与 Plausible 的简洁性。
+
+            ## 功能特色
+
+            - **实时分析**：实时跟踪用户行为与事件
+            - **事件追踪**：自定义事件跟踪与分析
+            - **用户分析**：用户行为分析与漏斗分析
+            - **仪表盘**：美观的数据可视化仪表盘
+            - **隐私友好**：完全控制您的数据，符合 GDPR 规范
+            - **开源**：完全开源且可自定义
+
+            ## 技术栈
+
+            - **Next.js**：仪表盘前端
+            - **Fastify**：事件 API
+            - **PostgreSQL**：存储基本信息
+            - **ClickHouse**：存储事件数据
+            - **Redis**：缓存层、发布订阅与队列
+
+            ## 架构
+
+            此模板部署 OpenPanel 与以下服务：
+            - **Caddy**：反向代理与所有流量的入口点
+            - **PostgreSQL**：配置与用户数据的主要数据库
+            - **Redis**：缓存与队列系统
+            - **ClickHouse**：事件存储的分析数据库
+            - **API**：后端 API 服务
+            - **Dashboard**：前端仪表盘
+            - **Worker**：后台任务处理器
+
+            ## 使用方法
+
+            1. 部署后，将域名绑定到 `Caddy` 服务（这是入口点）
+            2. 访问您的域名以使用 OpenPanel
+            3. 使用提供的电子邮件创建您的第一个管理员账户
+            4. 开始跟踪您的网站或应用程序
+
+            ⚠️ **重要**：请确保将您的域名绑定到 `Caddy` 服务，因为它是将流量路由到适当服务的单一入口点。
+
+            ## 环境配置
+
+            所有环境变量都根据 OpenPanel 的需求预先配置，包括数据库连接、API 端点和工作器设置。
+
+            ### OAuth 登录配置（可选）
+
+            如果您需要 Google 或 GitHub 登录功能，可以将以下环境变量添加到您的 API 和 Dashboard 服务：
+
+            ```
+            # GitHub OAuth
+            GITHUB_CLIENT_ID=
+            GITHUB_CLIENT_SECRET=
+            GITHUB_REDIRECT_URI=https://your-domain/api/oauth/github/callback
+
+            # Google OAuth
+            GOOGLE_CLIENT_ID=
+            GOOGLE_CLIENT_SECRET=
+            GOOGLE_REDIRECT_URI=https://your-domain/api/oauth/google/callback
+            ```
+
+            请确保将 `your-domain` 替换为您绑定到 Caddy 服务的实际域名。
+
+            ## 官方资源
+
+            - 网站：https://openpanel.dev
+            - 文档：https://openpanel.dev/docs
+            - GitHub：https://github.com/Openpanel-dev/openpanel
+
+            ## 支持
+
+            如需帮助，请访问 OpenPanel 的 Discord 社区或 GitHub Issues。
+    zh-TW:
+        readme: |
+            ⚠️ **重要限制**：
+            本模板僅支援自有根網域（zone apex），不支援任何子網域（例如 xxx.zeabur.app）。請務必使用您自己的根網域，並將所有相關環境變數（如 OAuth redirect URI）設為該網域。若您沒有自己的根網域，請勿安裝本模板。
+
+            **每次更新環境變數後，請務必重啟所有服務，否則新設定不會生效。**
+
+            # OpenPanel
+
+            OpenPanel 是一個強大的分析平台，可以捕捉並視覺化跨網站、行動應用程式和後端服務的用戶行為。它結合了 Mixpanel 的強大功能與 Plausible 的簡潔性。
+
+            ## 功能特色
+
+            - **即時分析**：即時追蹤用戶行為與事件
+            - **事件追蹤**：自訂事件追蹤與分析
+            - **用戶分析**：用戶行為分析與漏斗分析
+            - **儀表板**：美觀的資料視覺化儀表板
+            - **隱私友善**：完全控制您的資料，符合 GDPR 規範
+            - **開源**：完全開源且可自訂
+
+            ## 技術堆疊
+
+            - **Next.js**：儀表板前端
+            - **Fastify**：事件 API
+            - **PostgreSQL**：儲存基本資訊
+            - **ClickHouse**：儲存事件資料
+            - **Redis**：快取層、發布訂閱與佇列
+
+            ## 架構
+
+            此模板部署 OpenPanel 與以下服務：
+            - **Caddy**：反向代理與所有流量的入口點
+            - **PostgreSQL**：設定與用戶資料的主要資料庫
+            - **Redis**：快取與佇列系統
+            - **ClickHouse**：事件儲存的分析資料庫
+            - **API**：後端 API 服務
+            - **Dashboard**：前端儀表板
+            - **Worker**：背景任務處理器
+
+            ## 使用方式
+
+            1. 部署後，將網域綁定到 `Caddy` 服務（這是入口點）
+            2. 造訪您的網域以存取 OpenPanel
+            3. 使用提供的電子郵件建立您的第一個管理員帳戶
+            4. 開始追蹤您的網站或應用程式
+
+            ⚠️ **重要**：請確保將您的網域綁定到 `Caddy` 服務，因為它是將流量路由到適當服務的單一入口點。
+
+            ## 環境設定
+
+            所有環境變數都根據 OpenPanel 的需求預先設定，包括資料庫連接、API 端點和工作器設定。
+
+            ### OAuth 登入設定（選用）
+
+            如果您需要 Google 或 GitHub 登入功能，可以將以下環境變數新增到您的 API 和 Dashboard 服務：
+
+            ```
+            # GitHub OAuth
+            GITHUB_CLIENT_ID=
+            GITHUB_CLIENT_SECRET=
+            GITHUB_REDIRECT_URI=https://your-domain/api/oauth/github/callback
+
+            # Google OAuth
+            GOOGLE_CLIENT_ID=
+            GOOGLE_CLIENT_SECRET=
+            GOOGLE_REDIRECT_URI=https://your-domain/api/oauth/google/callback
+            ```
+
+            請確保將 `your-domain` 替換為您綁定到 Caddy 服務的實際網域名稱。
+
+            ## 官方資源
+
+            - 網站：https://openpanel.dev
+            - 文件：https://openpanel.dev/docs
+            - GitHub：https://github.com/Openpanel-dev/openpanel
+
+            ## 支援
+
+            如需協助，請造訪 OpenPanel 的 Discord 社群或 GitHub Issues。
+    ja-JP:
+        readme: |
+            ⚠️ **重要な制限事項**：
+            このテンプレートは、お持ちのルートドメイン（zone apex）のみをサポートしています。サブドメイン（例：xxx.zeabur.app）はサポートされていません。必ずご自身のルートドメインを使用し、すべての関連環境変数（OAuth redirect URIなど）をそのドメインに設定してください。ルートドメインをお持ちでない場合は、このテンプレートをインストールしないでください。
+
+            **環境変数を更新した後は、変更を有効にするために必ずすべてのサービスを再起動してください。**
+
+            # OpenPanel
+
+            OpenPanelは、ウェブサイト、モバイルアプリ、バックエンドサービス全体のユーザー行動をキャプチャし可視化する強力な分析プラットフォームです。Mixpanelのパワーとplausibleのシンプルさを兼ね備えています。
+
+            ## 機能
+
+            - **リアルタイム分析**：ユーザーの行動とイベントをリアルタイムで追跡
+            - **イベントトラッキング**：カスタムイベントの追跡と分析
+            - **ユーザー分析**：ユーザー行動分析とファネル分析
+            - **ダッシュボード**：美しいデータ可視化ダッシュボード
+            - **プライバシーフレンドリー**：データの完全な制御、GDPR準拠
+            - **オープンソース**：完全なオープンソースでカスタマイズ可能
+
+            ## 技術スタック
+
+            - **Next.js**：ダッシュボードフロントエンド
+            - **Fastify**：イベントAPI
+            - **PostgreSQL**：基本情報の保存
+            - **ClickHouse**：イベントデータの保存
+            - **Redis**：キャッシュ層、Pub/Sub、キュー
+
+            ## アーキテクチャ
+
+            このテンプレートは以下のサービスでOpenPanelをデプロイします：
+            - **Caddy**：リバースプロキシとすべてのトラフィックのエントリーポイント
+            - **PostgreSQL**：設定とユーザーデータのメインデータベース
+            - **Redis**：キャッシュとキューシステム
+            - **ClickHouse**：イベントストレージ用の分析データベース
+            - **API**：バックエンドAPIサービス
+            - **Dashboard**：フロントエンドダッシュボード
+            - **Worker**：バックグラウンドタスクプロセッサー
+
+            ## 使用方法
+
+            1. デプロイ後、`Caddy`サービスにドメインをバインド（これがエントリーポイント）
+            2. ドメインにアクセスしてOpenPanelを使用
+            3. 提供されたメールアドレスで最初の管理者アカウントを作成
+            4. ウェブサイトやアプリのトラッキングを開始
+
+            ⚠️ **重要**：`Caddy`サービスにドメインをバインドしてください。これが適切なサービスにトラフィックをルーティングする単一のエントリーポイントです。
+
+            ## 環境設定
+
+            すべての環境変数は、データベース接続、APIエンドポイント、ワーカー設定を含むOpenPanelの要件に基づいて事前設定されています。
+
+            ### OAuthログイン設定（オプション）
+
+            GoogleまたはGitHubログイン機能が必要な場合は、APIとDashboardサービスに以下の環境変数を追加できます：
+
+            ```
+            # GitHub OAuth
+            GITHUB_CLIENT_ID=
+            GITHUB_CLIENT_SECRET=
+            GITHUB_REDIRECT_URI=https://your-domain/api/oauth/github/callback
+
+            # Google OAuth
+            GOOGLE_CLIENT_ID=
+            GOOGLE_CLIENT_SECRET=
+            GOOGLE_REDIRECT_URI=https://your-domain/api/oauth/google/callback
+            ```
+
+            `your-domain`をCaddyサービスにバインドした実際のドメインに置き換えてください。
+
+            ## 公式リソース
+
+            - ウェブサイト：https://openpanel.dev
+            - ドキュメント：https://openpanel.dev/docs
+            - GitHub：https://github.com/Openpanel-dev/openpanel
+
+            ## サポート
+
+            ヘルプが必要な場合は、OpenPanelのDiscordコミュニティまたはGitHub Issuesをご覧ください。
+    es-ES:
+        readme: |
+            ⚠️ **LIMITACIÓN IMPORTANTE**:
+            Esta plantilla solo soporta tu propio dominio raíz (zone apex). Los subdominios (ej. xxx.zeabur.app) NO están soportados. Debes usar tu propio dominio raíz y configurar todas las variables de entorno relacionadas (como OAuth redirect URI) a este dominio. Si no tienes tu propio dominio raíz, no instales esta plantilla.
+
+            **Después de actualizar las variables de entorno, debes reiniciar todos los servicios para que los cambios surtan efecto.**
+
+            # OpenPanel
+
+            OpenPanel es una potente plataforma de análisis que captura y visualiza el comportamiento del usuario en sitios web, aplicaciones móviles y servicios backend. Combina el poder de Mixpanel con la simplicidad de Plausible.
+
+            ## Características
+
+            - **Análisis en tiempo real**: Seguimiento en tiempo real del comportamiento del usuario y eventos
+            - **Seguimiento de eventos**: Seguimiento y análisis de eventos personalizados
+            - **Análisis de usuarios**: Análisis de comportamiento de usuarios y análisis de embudo
+            - **Dashboard**: Hermoso dashboard de visualización de datos
+            - **Amigable con la privacidad**: Control completo sobre tus datos, compatible con GDPR
+            - **Código abierto**: Totalmente de código abierto y personalizable
+
+            ## Stack tecnológico
+
+            - **Next.js**: Frontend del dashboard
+            - **Fastify**: API de eventos
+            - **PostgreSQL**: Almacenamiento de información básica
+            - **ClickHouse**: Almacenamiento de datos de eventos
+            - **Redis**: Capa de caché, pub/sub y cola
+
+            ## Arquitectura
+
+            Esta plantilla despliega OpenPanel con los siguientes servicios:
+            - **Caddy**: Proxy inverso y punto de entrada para todo el tráfico
+            - **PostgreSQL**: Base de datos principal para configuración y datos de usuario
+            - **Redis**: Sistema de caché y cola
+            - **ClickHouse**: Base de datos de análisis para almacenamiento de eventos
+            - **API**: Servicio de API backend
+            - **Dashboard**: Dashboard frontend
+            - **Worker**: Procesador de tareas en segundo plano
+
+            ## Uso
+
+            1. Después del despliegue, vincula un dominio al servicio `Caddy` (este es el punto de entrada)
+            2. Visita tu dominio para acceder a OpenPanel
+            3. Crea tu primera cuenta de administrador usando el correo proporcionado
+            4. Comienza a rastrear tu sitio web o aplicación
+
+            ⚠️ **Importante**: Asegúrate de vincular tu dominio al servicio `Caddy`, ya que es el único punto de entrada que enruta el tráfico a los servicios apropiados.
+
+            ## Configuración del entorno
+
+            Todas las variables de entorno están preconfiguradas según los requisitos de OpenPanel, incluyendo conexiones de base de datos, endpoints de API y configuración del worker.
+
+            ### Configuración de OAuth Login (Opcional)
+
+            Si necesitas funcionalidad de login con Google o GitHub, puedes agregar las siguientes variables de entorno a tus servicios API y Dashboard:
+
+            ```
+            # GitHub OAuth
+            GITHUB_CLIENT_ID=
+            GITHUB_CLIENT_SECRET=
+            GITHUB_REDIRECT_URI=https://your-domain/api/oauth/github/callback
+
+            # Google OAuth
+            GOOGLE_CLIENT_ID=
+            GOOGLE_CLIENT_SECRET=
+            GOOGLE_REDIRECT_URI=https://your-domain/api/oauth/google/callback
+            ```
+
+            Asegúrate de reemplazar `your-domain` con el dominio real que vinculas al servicio Caddy.
+
+            ## Recursos oficiales
+
+            - Sitio web: https://openpanel.dev
+            - Documentación: https://openpanel.dev/docs
+            - GitHub: https://github.com/Openpanel-dev/openpanel
+
+            ## Soporte
+
+            Para ayuda, visita la comunidad de Discord de OpenPanel o GitHub Issues.
+    id-ID:
+        readme: |
+            ⚠️ **BATASAN PENTING**:
+            Template ini hanya mendukung domain root Anda sendiri (zone apex). Subdomain (mis. xxx.zeabur.app) TIDAK didukung. Anda harus menggunakan domain root Anda sendiri dan mengatur semua variabel lingkungan terkait (seperti OAuth redirect URI) ke domain ini. Jika Anda tidak memiliki domain root sendiri, jangan instal template ini.
+
+            **Setelah memperbarui variabel lingkungan, Anda harus me-restart semua layanan agar perubahan berlaku.**
+
+            # OpenPanel
+
+            OpenPanel adalah platform analitik yang kuat yang menangkap dan memvisualisasikan perilaku pengguna di situs web, aplikasi seluler, dan layanan backend. Ini menggabungkan kekuatan Mixpanel dengan kesederhanaan Plausible.
+
+            ## Fitur
+
+            - **Analitik Real-time**: Pelacakan real-time perilaku pengguna dan event
+            - **Pelacakan Event**: Pelacakan dan analisis event kustom
+            - **Analitik Pengguna**: Analisis perilaku pengguna dan analisis funnel
+            - **Dashboard**: Dashboard visualisasi data yang indah
+            - **Ramah Privasi**: Kontrol penuh atas data Anda, sesuai GDPR
+            - **Open Source**: Sepenuhnya open source dan dapat dikustomisasi
+
+            ## Tech Stack
+
+            - **Next.js**: Frontend dashboard
+            - **Fastify**: Event API
+            - **PostgreSQL**: Penyimpanan informasi dasar
+            - **ClickHouse**: Penyimpanan data event
+            - **Redis**: Layer cache, pub/sub dan queue
+
+            ## Arsitektur
+
+            Template ini mendeploy OpenPanel dengan layanan berikut:
+            - **Caddy**: Reverse proxy dan titik masuk untuk semua traffic
+            - **PostgreSQL**: Database utama untuk konfigurasi dan data pengguna
+            - **Redis**: Sistem cache dan queue
+            - **ClickHouse**: Database analitik untuk penyimpanan event
+            - **API**: Layanan API backend
+            - **Dashboard**: Dashboard frontend
+            - **Worker**: Pemroses tugas background
+
+            ## Penggunaan
+
+            1. Setelah deployment, bind domain ke layanan `Caddy` (ini adalah titik masuk)
+            2. Kunjungi domain Anda untuk mengakses OpenPanel
+            3. Buat akun admin pertama Anda menggunakan email yang disediakan
+            4. Mulai melacak situs web atau aplikasi Anda
+
+            ⚠️ **Penting**: Pastikan untuk bind domain Anda ke layanan `Caddy`, karena ini adalah titik masuk tunggal yang merutekan traffic ke layanan yang sesuai.
+
+            ## Konfigurasi Lingkungan
+
+            Semua variabel lingkungan sudah dikonfigurasi sebelumnya berdasarkan kebutuhan OpenPanel termasuk koneksi database, endpoint API, dan pengaturan worker.
+
+            ### Setup OAuth Login (Opsional)
+
+            Jika Anda memerlukan fungsi login Google atau GitHub, Anda dapat menambahkan variabel lingkungan berikut ke layanan API dan Dashboard Anda:
+
+            ```
+            # GitHub OAuth
+            GITHUB_CLIENT_ID=
+            GITHUB_CLIENT_SECRET=
+            GITHUB_REDIRECT_URI=https://your-domain/api/oauth/github/callback
+
+            # Google OAuth
+            GOOGLE_CLIENT_ID=
+            GOOGLE_CLIENT_SECRET=
+            GOOGLE_REDIRECT_URI=https://your-domain/api/oauth/google/callback
+            ```
+
+            Pastikan untuk mengganti `your-domain` dengan domain sebenarnya yang Anda bind ke layanan Caddy.
+
+            ## Sumber Daya Resmi
+
+            - Website: https://openpanel.dev
+            - Dokumentasi: https://openpanel.dev/docs
+            - GitHub: https://github.com/Openpanel-dev/openpanel
+
+            ## Dukungan
+
+            Untuk bantuan, silakan kunjungi komunitas Discord OpenPanel atau GitHub Issues.
