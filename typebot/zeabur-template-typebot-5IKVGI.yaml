@@ -1,0 +1,361 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: Typebot
+spec:
+  description: |
+    Typebot is a Fair Source chatbot builder that allows you to create advanced chatbots visually, embed them anywhere on your web/mobile apps, and collect results in real-time.
+  icon: https://raw.githubusercontent.com/baptisteArno/typebot.io/main/.github/images/icon.png
+  coverImage: https://raw.githubusercontent.com/baptisteArno/typebot.io/main/.github/images/banner.png
+  tags:
+    - Chatbot
+    - AI
+    - Form Builder
+    - No-Code
+  variables:
+    - key: PUBLIC_DOMAIN
+      type: DOMAIN
+      name: Builder Domain
+      description: The domain for the Typebot builder interface
+    - key: VIEWER_DOMAIN
+      type: DOMAIN
+      name: Viewer Domain
+      description: The domain for the Typebot viewer (where bots are served)
+    - key: ADMIN_EMAIL
+      type: STRING
+      name: Admin Email
+      description: Your email address to get unlimited plan access (leave empty to skip)
+    - key: SMTP_HOST
+      type: STRING
+      name: SMTP Host
+      description: "SMTP server host (e.g., smtp.gmail.com, smtp.sendgrid.net)"
+    - key: SMTP_PORT
+      type: STRING
+      name: SMTP Port
+      description: "SMTP port (587 for TLS, 465 for SSL, 25 for plain)"
+    - key: SMTP_USERNAME
+      type: STRING
+      name: SMTP Username
+      description: SMTP authentication username
+    - key: SMTP_PASSWORD
+      type: STRING
+      name: SMTP Password
+      description: SMTP authentication password
+    - key: SMTP_FROM
+      type: STRING
+      name: SMTP From Email
+      description: "Sender email address (e.g., noreply@yourdomain.com)"
+  readme: |
+    # Typebot
+
+    Typebot is a Fair Source chatbot builder. It allows you to create advanced chatbots visually, embed them anywhere on your web/mobile apps, and collect results in real-time.
+
+    ## Features
+
+    - **Chat builder** with 34+ building blocks: Text, Image, Video, Buttons, Date picker, Payment (Stripe), File upload, and more
+    - **Logic blocks**: Conditional branching, URL redirections, JavaScript scripting, A/B testing
+    - **Integrations**: Webhook, OpenAI, Google Sheets, Google Analytics, Meta Pixel, Zapier, Make.com, Chatwoot
+    - **Theme customization**: Fonts, backgrounds, colors, roundness, shadows, and custom CSS
+    - **Share anywhere**: Custom domain, embed as container/popup/chat bubble
+    - **Analytics**: Drop-off rates, completion rates, export to CSV
+
+    ## Default Credentials
+
+    - **Admin Email**: The email you set in `ADMIN_EMAIL` will have unlimited access
+    - **Database**: PostgreSQL with auto-generated password
+
+    ## Email Authentication Setup (Required)
+
+    You need to configure SMTP for email authentication. Common providers:
+
+    **Gmail:**
+    - Host: `smtp.gmail.com`
+    - Port: `587`
+    - Username: Your Gmail address
+    - Password: [App Password](https://support.google.com/accounts/answer/185833)
+
+    **SendGrid:**
+    - Host: `smtp.sendgrid.net`
+    - Port: `587`
+    - Username: `apikey`
+    - Password: Your API key
+
+    ## Quick Start
+
+    1. After deployment, **wait for all services to be ready** (especially PostgreSQL)
+    2. If you see database errors, **restart the `typebot-builder` service** to re-run database migrations
+    3. Visit your **Builder Domain** to access the Typebot editor
+    4. Click "Sign up for free" and enter your email
+    5. Check your email for the magic link to sign in
+    6. Create your first chatbot using the visual builder
+    7. Publish and share via your **Viewer Domain**
+
+    ## Troubleshooting
+
+    **"The table 'public.User' does not exist" error:**
+    - This means database migrations haven't run yet
+    - Go to Zeabur Dashboard → `typebot-builder` service → Click **Restart**
+    - The migration will run automatically on restart
+
+    ## Environment Variables
+
+    - `SMTP_*`: SMTP configuration for email authentication (required)
+    - `ADMIN_EMAIL`: Set this to your email to get unlimited plan access
+    - `ENCRYPTION_SECRET`: Auto-generated 256-bit key for encrypting sensitive data
+    - `NEXTAUTH_URL`: Builder URL (auto-configured)
+    - `NEXT_PUBLIC_VIEWER_URL`: Viewer URL (auto-configured)
+
+    ## Custom Domain Setup
+
+    If you want to use custom domains, update the following environment variables:
+
+    | Domain Changed | Service | Variable to Update | Example |
+    |----------------|---------|-------------------|---------|
+    | Builder Domain | `typebot-builder` | `NEXTAUTH_URL` | `https://builder.yourdomain.com` |
+    | Viewer Domain | `typebot-viewer` | `NEXT_PUBLIC_VIEWER_URL` | `https://bot.yourdomain.com` |
+
+    > **Note:** URLs must NOT have a trailing slash. Use `https://example.com` not `https://example.com/`
+
+    ## Documentation
+
+    - [Official Documentation](https://docs.typebot.io/)
+    - [Self-hosting Guide](https://docs.typebot.io/self-hosting/get-started)
+    - [API Reference](https://docs.typebot.io/api-reference)
+
+  services:
+    # PostgreSQL Database
+    - name: postgresql
+      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+      template: PREBUILT_V2
+      spec:
+        source:
+          image: postgres:16-alpine
+        ports:
+          - id: database
+            port: 5432
+            type: TCP
+        volumes:
+          - id: data
+            dir: /var/lib/postgresql/data
+        env:
+          POSTGRES_USER:
+            default: postgres
+            expose: true
+          POSTGRES_PASSWORD:
+            default: ${PASSWORD}
+            expose: true
+          POSTGRES_DB:
+            default: typebot
+            expose: true
+          POSTGRES_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+            readonly: true
+          POSTGRES_PORT:
+            default: ${DATABASE_PORT}
+            expose: true
+            readonly: true
+          POSTGRES_CONNECTION_STRING:
+            default: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+            expose: true
+            readonly: true
+
+    # Redis (Optional - for rate limiting and WhatsApp media)
+    - name: redis
+      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/redis.svg
+      template: PREBUILT_V2
+      spec:
+        source:
+          image: redis:7-alpine
+          command:
+            - redis-server
+            - --save
+            - "60"
+            - "1"
+            - --loglevel
+            - warning
+        ports:
+          - id: database
+            port: 6379
+            type: TCP
+        volumes:
+          - id: data
+            dir: /data
+        env:
+          REDIS_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+            readonly: true
+          REDIS_PORT:
+            default: ${DATABASE_PORT}
+            expose: true
+            readonly: true
+          REDIS_URL:
+            default: redis://${REDIS_HOST}:${REDIS_PORT}
+            expose: true
+            readonly: true
+
+    # MinIO for S3 Storage (Optional - for media uploads)
+    - name: minio
+      icon: https://cdn.zeabur.com/marketplace/minio.svg
+      template: PREBUILT_V2
+      spec:
+        source:
+          image: quay.io/minio/minio:latest
+          command:
+            - /bin/sh
+          args:
+            - -c
+            - |
+              minio server /data --console-address :9090 &
+              MINIO_PID=$!
+              while ! curl -s http://localhost:9000/minio/health/live; do
+                echo 'Waiting for MinIO to start...'
+                sleep 1
+              done
+              sleep 5
+              mc alias set myminio http://localhost:9000 $MINIO_USERNAME $MINIO_PASSWORD
+              echo "Creating bucket '$MINIO_DEFAULT_BUCKET'"
+              mc mb myminio/$MINIO_DEFAULT_BUCKET
+              wait $MINIO_PID
+        ports:
+          - id: web
+            port: 9000
+            type: HTTP
+          - id: console
+            port: 9090
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /data
+        env:
+          MINIO_BROWSER_REDIRECT:
+            default: "false"
+          MINIO_CONSOLE_URL:
+            default: ${ZEABUR_CONSOLE_URL}
+            expose: true
+          MINIO_DEFAULT_BUCKET:
+            default: typebot
+            expose: true
+          MINIO_PASSWORD:
+            default: ${MINIO_ROOT_PASSWORD}
+            expose: true
+          MINIO_ROOT_PASSWORD:
+            default: ${PASSWORD}
+          MINIO_ROOT_USER:
+            default: minio
+          MINIO_USERNAME:
+            default: ${MINIO_ROOT_USER}
+            expose: true
+          MINIO_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+            readonly: true
+          MINIO_PORT:
+            default: ${WEB_PORT}
+            expose: true
+            readonly: true
+
+    # Typebot Builder
+    - name: typebot-builder
+      icon: https://raw.githubusercontent.com/baptisteArno/typebot.io/main/.github/images/icon.png
+      template: PREBUILT_V2
+      domainKey: PUBLIC_DOMAIN
+      dependencies:
+        - postgresql
+        - redis
+        - minio
+      spec:
+        source:
+          image: baptistearno/typebot-builder:3.14.1
+        ports:
+          - id: web
+            port: 3000
+            type: HTTP
+        env:
+          # Required: Database
+          DATABASE_URL:
+            default: ${POSTGRES_CONNECTION_STRING}
+          # Required: 32-character encryption key (Zeabur PASSWORD is 16 chars, so we use it twice)
+          ENCRYPTION_SECRET:
+            default: ${POSTGRES_PASSWORD}
+            expose: true
+          # Required: Builder URL (use DOMAIN to avoid trailing slash)
+          NEXTAUTH_URL:
+            default: https://${ZEABUR_WEB_DOMAIN}
+            expose: true
+          # Optional: S3 Storage for media uploads
+          S3_ACCESS_KEY:
+            default: ${MINIO_USERNAME}
+          S3_SECRET_KEY:
+            default: ${MINIO_PASSWORD}
+          S3_BUCKET:
+            default: ${MINIO_DEFAULT_BUCKET}
+          S3_ENDPOINT:
+            default: ${MINIO_HOST}
+          S3_PORT:
+            default: ${MINIO_PORT}
+          S3_SSL:
+            default: "false"
+          S3_REGION:
+            default: us-east-1
+          # Optional: Admin settings (user input from variables)
+          ADMIN_EMAIL:
+            default: ${ADMIN_EMAIL}
+          DEFAULT_WORKSPACE_PLAN:
+            default: FREE
+          DISABLE_SIGNUP:
+            default: "false"
+          # Email Auth (SMTP) - Required for authentication
+          SMTP_HOST:
+            default: ${SMTP_HOST}
+          SMTP_PORT:
+            default: ${SMTP_PORT}
+          SMTP_USERNAME:
+            default: ${SMTP_USERNAME}
+          SMTP_PASSWORD:
+            default: ${SMTP_PASSWORD}
+          NEXT_PUBLIC_SMTP_FROM:
+            default: ${SMTP_FROM}
+
+    # Typebot Viewer
+    - name: typebot-viewer
+      icon: https://raw.githubusercontent.com/baptisteArno/typebot.io/main/.github/images/icon.png
+      template: PREBUILT_V2
+      domainKey: VIEWER_DOMAIN
+      dependencies:
+        - postgresql
+        - redis
+        - minio
+        - typebot-builder
+      spec:
+        source:
+          image: baptistearno/typebot-viewer:3.14.1
+        ports:
+          - id: web
+            port: 3000
+            type: HTTP
+        env:
+          # Required: Database
+          DATABASE_URL:
+            default: ${POSTGRES_CONNECTION_STRING}
+          # Required: Viewer URL (use DOMAIN to avoid trailing slash)
+          NEXT_PUBLIC_VIEWER_URL:
+            default: https://${ZEABUR_WEB_DOMAIN}
+            expose: true
+          # Optional: S3 Storage
+          S3_ACCESS_KEY:
+            default: ${MINIO_USERNAME}
+          S3_SECRET_KEY:
+            default: ${MINIO_PASSWORD}
+          S3_BUCKET:
+            default: ${MINIO_DEFAULT_BUCKET}
+          S3_ENDPOINT:
+            default: ${MINIO_HOST}
+          S3_PORT:
+            default: ${MINIO_PORT}
+          S3_SSL:
+            default: "false"
+          S3_REGION:
+            default: us-east-1

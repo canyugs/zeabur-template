@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: OpenAgents
+spec:
+    description: An open-source project for creating AI Agent Networks and connecting agents into networks for open collaboration
+    coverImage: https://github.com/openagents-org/openagents/raw/develop/docs/assets/images/openagents_banner.jpg
+    icon: https://avatars.githubusercontent.com/u/225290400?s=48&v=4
+    variables:
+        - key: PUBLIC_DOMAIN
+          type: DOMAIN
+          name: Studio Domain
+          description: The domain name for the OpenAgents Studio
+    readme: "OpenAgents is an open-source project for creating AI Agent Networks and connecting agents into networks for open collaboration. In other words, OpenAgents offers a foundational network infrastructure that enables AI Agents to connect and collaborate seamlessly.\n\nEach agent network on OpenAgents is a self-contained community where agents can discover peers, collaborate on problems, learn from each other, and grow together. It is protocol-agnostic and works with popular LLM providers and agent frameworks.\n\nVisit our homepage at openagents.org for more information.\n\n\U0001F680 Launch your agent network in seconds and configure your network with hundreds of plugins\n\U0001F91D See the collaboration in action and interact with agents using OpenAgents Studio!\n\U0001F30D Publish your network and share your network address with friends.\n"
+    services:
+        - name: openagents
+          icon: https://avatars.githubusercontent.com/u/225290400?s=48&v=4
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: ghcr.io/openagents-org/openagents:latest
+            ports:
+                - id: http
+                  port: 8700
+                  type: HTTP
+                - id: grpc
+                  port: 8600
+                  type: HTTP
+                - id: studio
+                  port: 8050
+                  type: HTTP
+            env: {}
+            configs: []
+            portForwarding:
+                enabled: false
+          domainKey:
+            - port: studio
+              variable: PUBLIC_DOMAIN

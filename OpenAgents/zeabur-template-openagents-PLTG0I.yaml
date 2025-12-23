@@ -1,0 +1,204 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: OpenAgents
+spec:
+  description: |
+    An open-source project for creating AI Agent Networks and connecting agents into networks for open collaboration
+  icon: https://avatars.githubusercontent.com/u/225290400?s=48&v=4
+  coverImage: https://github.com/openagents-org/openagents/raw/develop/docs/assets/images/openagents_banner.jpg
+  tags:
+    - AI
+    - Agent
+    - Collaboration
+  variables:
+    - key: PUBLIC_DOMAIN
+      type: DOMAIN
+      name: Studio Domain
+      description: The domain name for the OpenAgents Studio
+    - key: OPENAI_API_KEY
+      type: STRING
+      name: OpenAI API Key
+      description: Your OpenAI API Key (Optional)
+    - key: ANTHROPIC_API_KEY
+      type: STRING
+      name: Anthropic API Key
+      description: Your Anthropic API Key (Optional)
+  readme: |
+    # OpenAgents
+
+    OpenAgents is an open-source project for creating AI Agent Networks and connecting agents into networks for open collaboration. In other words, OpenAgents offers a foundational network infrastructure that enables AI Agents to connect and collaborate seamlessly.
+
+    Each agent network on OpenAgents is a self-contained community where agents can discover peers, collaborate on problems, learn from each other, and grow together. It is protocol-agnostic and works with popular LLM providers and agent frameworks.
+
+    Visit our homepage at openagents.org for more information.
+
+    🚀 Launch your agent network in seconds and configure your network with hundreds of plugins
+    🤝 See the collaboration in action and interact with agents using OpenAgents Studio!
+    🌍 Publish your network and share your network address with friends.
+  services:
+    - name: openagents
+      icon: https://avatars.githubusercontent.com/u/225290400?s=48&v=4
+      template: PREBUILT_V2
+      spec:
+        source:
+          image: ghcr.io/openagents-org/openagents:latest
+        ports:
+          - id: http
+            port: 8700
+            type: HTTP
+          - id: grpc
+            port: 8600
+            type: TCP
+        volumes:
+          - id: data
+            dir: /app/data
+        env:
+          PYTHONUNBUFFERED:
+            default: "1"
+          NODE_ENV:
+            default: "production"
+          OPENAI_API_KEY:
+            default: ${OPENAI_API_KEY}
+          ANTHROPIC_API_KEY:
+            default: ${ANTHROPIC_API_KEY}
+      domainKey:
+        - port: http
+          variable: PUBLIC_DOMAIN
+localization:
+  zh-TW:
+    description: 用於建立 AI 代理網絡並將代理連接成網絡以進行開放協作的開源專案。
+    variables:
+      - key: PUBLIC_DOMAIN
+        type: DOMAIN
+        name: Studio 網域
+        description: OpenAgents Studio 的網域名稱
+      - key: OPENAI_API_KEY
+        type: STRING
+        name: OpenAI API 金鑰
+        description: 您的 OpenAI API 金鑰（選填）
+      - key: ANTHROPIC_API_KEY
+        type: STRING
+        name: Anthropic API 金鑰
+        description: 您的 Anthropic API 金鑰（選填）
+    readme: |
+      # OpenAgents
+      
+      OpenAgents 是一個開源專案，用於建立 AI 代理網絡並將代理連接成網絡以進行開放協作。換句話說，OpenAgents 提供了基礎網絡基礎設施，使 AI 代理能夠無縫連接和協作。
+
+      OpenAgents 上的每個代理網絡都是一個自包含的社區，代理可以在其中發現同伴、協作解決問題、互相學習並共同成長。它與協議無關，並適用於流行的 LLM 提供商和代理框架。
+
+      訪問我們的首頁 openagents.org 獲取更多資訊。
+
+      🚀 在幾秒鐘內啟動您的代理網絡，並使用數百個插件配置您的網絡
+      🤝 觀看協作行動，並使用 OpenAgents Studio 與代理互動！
+      🌍 發布您的網絡並與朋友分享您的網絡地址。
+  zh-CN:
+    description: 用于构建 AI 代理网络并将代理连接成网络以进行开放协作的开源项目。
+    variables:
+      - key: PUBLIC_DOMAIN
+        type: DOMAIN
+        name: Studio 域名
+        description: OpenAgents Studio 的域名
+      - key: OPENAI_API_KEY
+        type: STRING
+        name: OpenAI API 密钥
+        description: 您的 OpenAI API 密钥（选填）
+      - key: ANTHROPIC_API_KEY
+        type: STRING
+        name: Anthropic API 密钥
+        description: 您的 Anthropic API 密钥（选填）
+    readme: |
+      # OpenAgents
+
+      OpenAgents 是一个开源项目，用于构建 AI 代理网络并将代理连接成网络以进行开放协作。换句话说，OpenAgents 提供了基础网络基础设施，使 AI 代理能够无缝连接和协作。
+
+      OpenAgents 上的每个代理网络都是一个自包含的社区，代理可以在其中发现同伴、协作解决问题、互相学习并共同成长。它与协议无关，并适用于流行的 LLM 提供商和代理框架。
+
+      访问我们的主页 openagents.org 获取更多信息。
+
+      🚀 在几秒钟内启动您的代理网络，并使用数百个插件配置您的网络
+      🤝 观看协作行动，并使用 OpenAgents Studio 与代理互动！
+      🌍 发布您的网络并与朋友分享您的网络地址。
+  ja-JP:
+    description: AIエージェントネットワークを作成し、エージェントをネットワークに接続してオープンなコラボレーションを実現するためのオープンソースプロジェクト。
+    variables:
+      - key: PUBLIC_DOMAIN
+        type: DOMAIN
+        name: Studio ドメイン
+        description: OpenAgents Studio のドメイン名
+      - key: OPENAI_API_KEY
+        type: STRING
+        name: OpenAI API キー
+        description: OpenAI API キー（任意）
+      - key: ANTHROPIC_API_KEY
+        type: STRING
+        name: Anthropic API キー
+        description: Anthropic API キー（任意）
+    readme: |
+      # OpenAgents
+
+      OpenAgentsは、AIエージェントネットワークを作成し、エージェントをネットワークに接続してオープンなコラボレーションを実現するためのオープンソースプロジェクトです。言い換えれば、OpenAgentsは、AIエージェントがシームレスに接続してコラボレーションできるようにする基本的なネットワークインフラストラクチャを提供します。
+
+      OpenAgents上の各エージェントネットワークは、エージェントがピアを発見し、問題で協力し、互いに学び、共に成長できる自己完結型のコミュニティです。プロトコルに依存せず、一般的なLLMプロバイダーやエージェントフレームワークで動作します。
+
+      詳細については、ホームページopenagents.orgをご覧ください。
+
+      🚀 数秒でエージェントネットワークを立ち上げ、数百のプラグインでネットワークを構成します
+      🤝 コラボレーションの様子を見て、OpenAgents Studioを使用してエージェントと対話しましょう！
+      🌍 ネットワークを公開し、ネットワークアドレスを友達と共有しましょう。
+  es-ES:
+    description: Un proyecto de código abierto para crear redes de agentes de IA y conectar agentes en redes para la colaboración abierta.
+    variables:
+      - key: PUBLIC_DOMAIN
+        type: DOMAIN
+        name: Dominio de Studio
+        description: El nombre de dominio para OpenAgents Studio
+      - key: OPENAI_API_KEY
+        type: STRING
+        name: Clave API de OpenAI
+        description: Su clave API de OpenAI (Opcional)
+      - key: ANTHROPIC_API_KEY
+        type: STRING
+        name: Clave API de Anthropic
+        description: Su clave API de Anthropic (Opcional)
+    readme: |
+      # OpenAgents
+
+      OpenAgents es un proyecto de código abierto para crear redes de agentes de IA y conectar agentes en redes para la colaboración abierta. En otras palabras, OpenAgents ofrece una infraestructura de red fundamental que permite a los agentes de IA conectarse y colaborar sin problemas.
+
+      Cada red de agentes en OpenAgents es una comunidad autónoma donde los agentes pueden descubrir pares, colaborar en problemas, aprender unos de otros y crecer juntos. Es agnóstico al protocolo y funciona con proveedores populares de LLM y marcos de agentes.
+
+      Visite nuestra página de inicio en openagents.org para obtener más información.
+
+      🚀 Inicie su red de agentes en segundos y configure su red con cientos de plugins
+      🤝 ¡Vea la colaboración en acción e interactúe con los agentes utilizando OpenAgents Studio!
+      🌍 Publique su red y comparta la dirección de su red con amigos.
+  id-ID:
+    description: Proyek sumber terbuka untuk membuat Jaringan Agen AI dan menghubungkan agen ke dalam jaringan untuk kolaborasi terbuka.
+    variables:
+      - key: PUBLIC_DOMAIN
+        type: DOMAIN
+        name: Domain Studio
+        description: Nama domain untuk OpenAgents Studio
+      - key: OPENAI_API_KEY
+        type: STRING
+        name: Kunci API OpenAI
+        description: Kunci API OpenAI Anda (Opsional)
+      - key: ANTHROPIC_API_KEY
+        type: STRING
+        name: Kunci API Anthropic
+        description: Kunci API Anthropic Anda (Opsional)
+    readme: |
+      # OpenAgents
+
+      OpenAgents adalah proyek sumber terbuka untuk membuat Jaringan Agen AI dan menghubungkan agen ke dalam jaringan untuk kolaborasi terbuka. Dengan kata lain, OpenAgents menawarkan infrastruktur jaringan dasar yang memungkinkan Agen AI untuk terhubung dan berkolaborasi dengan lancar.
+
+      Setiap jaringan agen di OpenAgents adalah komunitas mandiri di mana agen dapat menemukan rekan, berkolaborasi dalam masalah, belajar satu sama lain, dan tumbuh bersama. Ini agnostik protokol dan bekerja dengan penyedia LLM populer dan kerangka kerja agen.
+
+      Kunjungi beranda kami di openagents.org untuk informasi lebih lanjut.
+
+      🚀 Luncurkan jaringan agen Anda dalam hitungan detik dan konfigurasikan jaringan Anda dengan ratusan plugin
+      🤝 Lihat kolaborasi dalam tindakan dan berinteraksi dengan agen menggunakan OpenAgents Studio!
+      🌍 Publikasikan jaringan Anda dan bagikan alamat jaringan Anda dengan teman-teman.

@@ -167,7 +167,7 @@ spec:
       domainKey: PUBLIC_DOMAIN
       spec:
         source:
-          image: ghcr.io/canyugs/heyform:4757c2b
+          image: ghcr.io/canyugs/heyform:bbb5a13
         ports:
           - id: web
             port: 9157
