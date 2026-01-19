@@ -17,9 +17,15 @@ spec:
 
         Your ultimate social media scheduling tool: Features seamless integration with various social media platforms, advanced scheduling options, analytics, and more. Completely open-source for self-hosting.
 
+        **Version:** v2.11.3 (Stable, no Temporal dependency)
+
         **Recommended Resources:** 2C4G (2 vCPU, 4GB RAM)
 
         **Startup Check:** Check the **postiz** service logs for: `Backend is running on: http://localhost:3000`
+
+        ---
+
+        **Upgrade Notice:** Postiz v2.12+ introduces Temporal workflow engine which requires additional services (Temporal, Elasticsearch, separate PostgreSQL). If you need v2.12+ features, please use the **Postiz v2.12** template instead. Direct upgrade from this template to v2.12+ is not supported due to architecture changes.
     services:
         - name: redis
           icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/redis.svg
@@ -136,7 +142,7 @@ spec:
           template: PREBUILT_V2
           spec:
             source:
-                image: ghcr.io/gitroomhq/postiz-app:v2.8.3
+                image: ghcr.io/gitroomhq/postiz-app:v2.11.3
             ports:
                 - id: web
                   port: 5000

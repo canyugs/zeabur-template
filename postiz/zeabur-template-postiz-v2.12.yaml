@@ -1,0 +1,334 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: Postiz v2.12
+spec:
+    description: All-in-one open-source platform to schedule, publish, and manage content across 19+ social media platforms — with AI assistance, Temporal workflow engine, and full self-hosting control.
+    coverImage: https://cdn.zeabur.com/postiz-banner.jpg
+    icon: https://cdn.zeabur.com/postiz.png
+    variables:
+        - key: PUBLIC_DOMAIN
+          type: DOMAIN
+          name: Public Domain
+          description: The main public domain used to access your Postiz instance.
+    readme: |-
+        # Postiz v2.12
+
+        Your ultimate social media scheduling tool: Features seamless integration with various social media platforms, advanced scheduling options, analytics, and more. Completely open-source for self-hosting.
+
+        **This version includes Temporal workflow engine for improved reliability and scheduling.**
+
+        **Recommended Resources:** 4C8G (4 vCPU, 8GB RAM)
+
+        **Startup Check:** Check the **postiz** service logs for: `Backend is running on: http://localhost:3000`
+    services:
+        # ===================
+        # Postiz Core Services
+        # ===================
+        - name: redis
+          icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/redis.svg
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: redis:7.2
+                command:
+                    - redis-server
+                    - /usr/local/etc/redis/redis.conf
+            ports:
+                - id: database
+                  port: 6379
+                  type: TCP
+            volumes:
+                - id: data
+                  dir: /data
+                - id: config
+                  dir: /usr/local/etc/redis
+            env:
+                REDIS_PASSWORD:
+                    default: ${PASSWORD}
+                    expose: true
+                REDIS_URI:
+                    default: redis://:${REDIS_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}
+                    expose: true
+                REDIS_URI_INTERNAL:
+                    default: redis://:${REDIS_PASSWORD}@${CONTAINER_HOSTNAME}:6379
+                    expose: true
+            configs:
+                - path: /usr/local/etc/redis/redis.conf
+                  template: |
+                    port 6379
+                    daemonize no
+                    requirepass ${REDIS_PASSWORD}
+                    maxmemory 512mb
+                    maxmemory-policy noeviction
+                  permission: null
+                  envsubst: true
+            instructions:
+                - title: Redis connection string
+                  content: redis://:${REDIS_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}
+                - title: Redis password
+                  content: ${REDIS_PASSWORD}
+
+        - name: postgres
+          icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: postgres:17-alpine
+            ports:
+                - id: database
+                  port: 5432
+                  type: TCP
+            volumes:
+                - id: data
+                  dir: /var/lib/postgresql/data
+            env:
+                POSTGRES_CONNECTION_STRING:
+                    default: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DB}
+                    expose: true
+                POSTGRES_DB:
+                    default: postiz
+                POSTGRES_PASSWORD:
+                    default: ${PASSWORD}
+                POSTGRES_USER:
+                    default: postiz
+                POSTGRES_CONNECTION_STRING_INTERNAL:
+                    default: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${CONTAINER_HOSTNAME}:5432/${POSTGRES_DB}
+                    expose: true
+            configs:
+                - path: /etc/postgresql/postgresql.conf
+                  template: |
+                    # https://github.com/postgres/postgres/blob/master/src/backend/utils/misc/postgresql.conf.sample
+                    listen_addresses = '*'
+                    max_connections = 100
+                    shared_buffers = 128MB
+                    dynamic_shared_memory_type = posix
+                    max_wal_size = 1GB
+                    min_wal_size = 80MB
+                    log_timezone = 'Etc/UTC'
+                    datestyle = 'iso, mdy'
+                    timezone = 'Etc/UTC'
+                    lc_messages = 'en_US.utf8'
+                    lc_monetary = 'en_US.utf8'
+                    lc_numeric = 'en_US.utf8'
+                    lc_time = 'en_US.utf8'
+                    default_text_search_config = 'pg_catalog.english'
+                  permission: null
+                  envsubst: null
+            instructions:
+                - title: PostgreSQL connection string
+                  content: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DB}
+                - title: PostgreSQL username
+                  content: ${POSTGRES_USER}
+                - title: PostgreSQL password
+                  content: ${POSTGRES_PASSWORD}
+                - title: PostgreSQL database
+                  content: ${POSTGRES_DB}
+            healthCheck:
+                type: TCP
+                port: database
+
+        # ===================
+        # Temporal Stack
+        # ===================
+        - name: temporal-postgres
+          icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: postgres:16-alpine
+            ports:
+                - id: database
+                  port: 5432
+                  type: TCP
+            volumes:
+                - id: data
+                  dir: /var/lib/postgresql/data
+            env:
+                POSTGRES_DB:
+                    default: temporal
+                POSTGRES_PASSWORD:
+                    default: ${PASSWORD}
+                    expose: true
+                POSTGRES_USER:
+                    default: temporal
+                    expose: true
+            healthCheck:
+                type: TCP
+                port: database
+
+        - name: temporal-elasticsearch
+          icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/elasticsearch.svg
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: elasticsearch:7.17.27
+            ports:
+                - id: http
+                  port: 9200
+                  type: TCP
+            volumes:
+                - id: data
+                  dir: /usr/share/elasticsearch/data
+            env:
+                cluster.routing.allocation.disk.threshold_enabled:
+                    default: "true"
+                cluster.routing.allocation.disk.watermark.low:
+                    default: 512mb
+                cluster.routing.allocation.disk.watermark.high:
+                    default: 256mb
+                cluster.routing.allocation.disk.watermark.flood_stage:
+                    default: 128mb
+                discovery.type:
+                    default: single-node
+                ES_JAVA_OPTS:
+                    default: -Xms512m -Xmx512m
+                xpack.security.enabled:
+                    default: "false"
+            healthCheck:
+                type: TCP
+                port: http
+
+        - name: temporal
+          icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/temporal.svg
+          dependencies:
+            - temporal-postgres
+            - temporal-elasticsearch
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: temporalio/auto-setup:1.28.1
+            ports:
+                - id: grpc
+                  port: 7233
+                  type: TCP
+            volumes:
+                - id: config
+                  dir: /etc/temporal/config/dynamicconfig
+            env:
+                DB:
+                    default: postgres12
+                DB_PORT:
+                    default: "5432"
+                POSTGRES_USER:
+                    default: ${temporal-postgres.POSTGRES_USER}
+                POSTGRES_PWD:
+                    default: ${temporal-postgres.POSTGRES_PASSWORD}
+                POSTGRES_SEEDS:
+                    default: ${temporal-postgres.CONTAINER_HOSTNAME}
+                DYNAMIC_CONFIG_FILE_PATH:
+                    default: config/dynamicconfig/development-sql.yaml
+                ENABLE_ES:
+                    default: "true"
+                ES_SEEDS:
+                    default: ${temporal-elasticsearch.CONTAINER_HOSTNAME}
+                ES_VERSION:
+                    default: v7
+                TEMPORAL_NAMESPACE:
+                    default: default
+                TEMPORAL_ADDRESS_INTERNAL:
+                    default: ${CONTAINER_HOSTNAME}:7233
+                    expose: true
+            configs:
+                - path: /etc/temporal/config/dynamicconfig/development-sql.yaml
+                  template: |
+                    limit.maxIDLength:
+                      - value: 255
+                        constraints: {}
+                    system.forceSearchAttributesCacheRefreshOnRead:
+                      - value: true
+                        constraints: {}
+                  permission: null
+                  envsubst: null
+            healthCheck:
+                type: TCP
+                port: grpc
+
+        # ===================
+        # Main Application
+        # ===================
+        - name: postiz
+          icon: https://cdn.zeabur.com/postiz.png
+          dependencies:
+            - redis
+            - postgres
+            - temporal
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: ghcr.io/gitroomhq/postiz-app:v2.12.1
+            ports:
+                - id: web
+                  port: 5000
+                  type: HTTP
+            volumes:
+                - id: config
+                  dir: /config/
+                - id: uploads
+                  dir: /uploads/
+            env:
+                # === Required Settings ===
+                MAIN_URL:
+                    default: https://${ZEABUR_WEB_DOMAIN}
+                FRONTEND_URL:
+                    default: https://${ZEABUR_WEB_DOMAIN}
+                NEXT_PUBLIC_BACKEND_URL:
+                    default: https://${ZEABUR_WEB_DOMAIN}/api
+                JWT_SECRET:
+                    default: ${PASSWORD}
+                DATABASE_URL:
+                    default: ${POSTGRES_CONNECTION_STRING_INTERNAL}
+                REDIS_URL:
+                    default: ${REDIS_URI_INTERNAL}
+                BACKEND_INTERNAL_URL:
+                    default: http://localhost:3000
+                TEMPORAL_ADDRESS:
+                    default: ${temporal.TEMPORAL_ADDRESS_INTERNAL}
+                IS_GENERAL:
+                    default: "true"
+                DISABLE_REGISTRATION:
+                    default: "false"
+                NOT_SECURED:
+                    default: "true"
+                # === Storage Settings
+                STORAGE_PROVIDER:
+                    default: local
+                UPLOAD_DIRECTORY:
+                    default: /uploads
+                NEXT_PUBLIC_UPLOAD_DIRECTORY:
+                    default: /uploads
+            configs:
+                - path: /app/apps/backend/dist/libraries/helpers/src/subdomain/subdomain.management.js
+                  template: |
+                    "use strict";
+                    Object.defineProperty(exports, "__esModule", { value: true });
+                    exports.getCookieUrlFromDomain = getCookieUrlFromDomain;
+                    const tldts_1 = require("tldts");
+                    function getCookieUrlFromDomain(domain) {
+                        const url = (0, tldts_1.parse)(domain);
+                        return url.hostname;
+                    }
+                    //# sourceMappingURL=subdomain.management.js.map
+                  permission: null
+                  envsubst: null
+            healthCheck:
+                type: TCP
+                port: web
+          domainKey: PUBLIC_DOMAIN
+localization:
+    en-US:
+        description: All-in-one open-source platform to schedule, publish, and manage content across 19+ social media platforms — with AI assistance, Temporal workflow engine, and full self-hosting control.
+        readme: "# Postiz v2.12\n\nPostiz is your all-in-one open-source social media scheduling platform.\n\nSeamlessly schedule, publish, and manage content across over 19 platforms — including Threads, X (Twitter), Facebook, Instagram, Reddit, Telegram, and more.\n\n## What's New in v2.12\n\n- **Temporal Workflow Engine** - More reliable scheduling and task execution\n- **Improved Token Refresh** - Automatic token refresh before expiration\n- **Better Error Handling** - Enhanced retry mechanisms\n\n## Key Features\n\n- Built-in AI Assistant\n- Advanced Scheduling with visual calendar\n- Platform Integration (19+ platforms)\n- Basic Analytics\n- Fully Open-Source & Self-Hosted\n- Team Collaboration\n\n**Recommended Resources:** 4C8G (4 vCPU, 8GB RAM)\n\n**Startup Check:** Check the **postiz** service logs for: `Backend is running on: http://localhost:3000`\n\n→ Website: https://postiz.com  \n→ Source Code: https://github.com/gitroomhq/postiz-app"
+    zh-TW:
+        description: 開源的一站式平台，支援跨 19+ 社群平台智能排程、自動發布與內容管理，搭載 AI 助手、Temporal 工作流引擎並支援完全自架。
+        readme: "# Postiz v2.12\n\nPostiz 是一款完全開源、可自架設的社群媒體排程平台。\n\n支援 Threads、X（推特）、Facebook、Instagram、Reddit、Telegram 等 19+ 平台，一次排程、自動發佈。\n\n## v2.12 新功能\n\n- **Temporal 工作流引擎** - 更可靠的排程和任務執行\n- **改進的 Token 刷新** - 自動在過期前刷新 Token\n- **更好的錯誤處理** - 增強的重試機制\n\n## 主要特色\n\n- 內建 AI 助手\n- 進階排程功能（可視化日曆）\n- 多平台整合（19+ 平台）\n- 數據分析\n- 完全開源與自架設\n- 團隊協作\n\n**建議配置：** 4C8G（4 vCPU, 8GB RAM）\n\n**啟動確認：** 請在 **postiz** 服務日誌中確認出現 `Backend is running on: http://localhost:3000` 訊息。\n\n→ 官方網站：https://postiz.com  \n→ 原始碼：https://github.com/gitroomhq/postiz-app"
+    zh-CN:
+        description: 开源一体化平台，支持跨 19+ 社交平台智能排程、自动发布和内容管理，搭载 AI 助手、Temporal 工作流引擎，完全可自托管。
+        readme: "# Postiz v2.12\n\nPostiz 是一款开源的社交媒体排程工具，支持自托管部署。\n\n一次整合 Threads、X（推特）、Facebook、Instagram、Reddit、Telegram 等 19+ 平台，实现智能排程与自动发布。\n\n## v2.12 新功能\n\n- **Temporal 工作流引擎** - 更可靠的排程和任务执行\n- **改进的 Token 刷新** - 自动在过期前刷新 Token\n- **更好的错误处理** - 增强的重试机制\n\n## 核心功能\n\n- 内建 AI 助手\n- 高级排程系统（可视化日历）\n- 多平台整合（19+ 平台）\n- 贴文分析\n- 完全开源 + 自托管\n- 团队协作\n\n**推荐配置：** 4C8G（4 vCPU, 8GB RAM）\n\n**启动确认：** 请在 **postiz** 服务日志中确认出现 `Backend is running on: http://localhost:3000` 信息。\n\n→ 官网：https://postiz.com  \n→ 源码：https://github.com/gitroomhq/postiz-app"
+    ja-JP:
+        description: 19以上のSNSに対応した、AI搭載・Temporalワークフローエンジン搭載・セルフホスト可能なオールインワンのオープンソース投稿管理プラットフォーム。
+        readme: "# Postiz v2.12\n\nPostiz は、オープンソースで自分でホスティングできるソーシャルメディアスケジューリングツールです。\n\nThreads、X（旧Twitter）、Facebook、Instagram、Reddit、Telegram など、19以上のプラットフォームに対応。\n\n## v2.12 の新機能\n\n- **Temporal ワークフローエンジン** - より信頼性の高いスケジューリングとタスク実行\n- **トークン自動更新** - 有効期限前に自動でトークンを更新\n- **エラー処理の改善** - 強化されたリトライ機構\n\n## 主な機能\n\n- AI アシスタント内蔵\n- 高度なスケジューリング（ビジュアルカレンダー）\n- マルチプラットフォーム統合（19+ プラットフォーム）\n- 基本的な分析機能\n- 完全オープンソース & セルフホスティング\n- チームコラボレーション\n\n**推奨リソース:** 4C8G (4 vCPU, 8GB RAM)\n\n**起動確認:** **postiz** サービスのログで `Backend is running on: http://localhost:3000` が表示されていることを確認してください。\n\n→ Webサイト: https://postiz.com  \n→ ソースコード: https://github.com/gitroomhq/postiz-app"
+    es-ES:
+        description: Plataforma todo-en-uno y de código abierto para programar, publicar y gestionar contenido en más de 19 redes sociales — con IA integrada, motor de flujo de trabajo Temporal y control total de autoalojamiento.
+        readme: "# Postiz v2.12\n\nPostiz es una plataforma de programación de redes sociales todo-en-uno, completamente de código abierto y autoalojada.\n\nPrograma y gestiona contenido en más de 19 plataformas, incluyendo Threads, X (Twitter), Facebook, Instagram, Reddit, Telegram y más.\n\n## Novedades en v2.12\n\n- **Motor de flujo de trabajo Temporal** - Programación y ejecución de tareas más confiable\n- **Actualización de tokens mejorada** - Actualización automática de tokens antes de su expiración\n- **Mejor manejo de errores** - Mecanismos de reintento mejorados\n\n## Funcionalidades clave\n\n- Asistente de IA integrado\n- Programación avanzada (calendario visual)\n- Integración multiplataforma (19+ plataformas)\n- Análisis básico\n- Código abierto y autoalojado\n- Colaboración en equipo\n\n**Recursos recomendados:** 4C8G (4 vCPU, 8GB RAM)\n\n**Verificación de inicio:** Verifique en los logs del servicio **postiz**: `Backend is running on: http://localhost:3000`\n\n→ Sitio web: https://postiz.com  \n→ Código fuente: https://github.com/gitroomhq/postiz-app"
