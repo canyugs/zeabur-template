@@ -1,26 +1,14 @@
 #!/bin/bash
 
-# Postiz v2.12 (with Temporal) Zeabur 快速部署腳本
+# Postiz Zeabur 快速部署腳本
 
 set -e
 
-TEMPLATE_FILE="zeabur-template-postiz-v2.12-X2L3BE.yaml"
-PROJECT_NAME="${1:-postiz-v212-$(date +%Y%m%d%H%M%S)}"
+TEMPLATE_FILE="zeabur-template-postiz-v2.11.3-CWN6IC.yaml"
+PROJECT_NAME="${1:-postiz-$(date +%Y%m%d%H%M%S)}"
 REGION="${2:-hkg1}"
 
-echo "=================================================="
-echo "  Postiz v2.12 with Temporal Workflow Engine"
-echo "=================================================="
-echo ""
-echo "📦 服務列表 (6 個服務):"
-echo "   - redis"
-echo "   - postgres"
-echo "   - temporal-postgres"
-echo "   - temporal-elasticsearch"
-echo "   - temporal"
-echo "   - postiz"
-echo ""
-echo "⚠️  建議配置: postiz 服務需 2C4G (2 vCPU, 4GB RAM)"
+echo "📦 Postiz (Split Services): postiz-api + postiz-frontend"
 echo ""
 echo "🚀 開始部署..."
 echo "   模板: $TEMPLATE_FILE"
@@ -65,11 +53,6 @@ echo "📋 專案資訊:"
 echo "   Dashboard: https://zeabur.com/projects/$PROJECT_ID"
 echo ""
 echo "📝 驗證步驟:"
-echo "   1. 等待所有服務啟動 (Temporal stack 需要較長時間)"
-echo "   2. 檢查 temporal 服務日誌確認 Temporal 已啟動"
-echo "   3. 檢查 postiz 服務日誌: Backend is running on: http://localhost:3000"
-echo "   4. 訪問您設定的域名測試功能"
-echo ""
-echo "🔧 服務啟動順序:"
-echo "   redis, postgres → temporal-postgres, temporal-elasticsearch → temporal → postiz"
-echo ""
+echo "   1. 檢查 postiz-api 日誌: Backend is running on: http://localhost:3000"
+echo "   2. 檢查 postiz-frontend 日誌: ready started server"
+echo "   3. 訪問您設定的域名測試功能"
