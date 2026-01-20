@@ -2,7 +2,7 @@
 apiVersion: zeabur.com/v1
 kind: Template
 metadata:
-    name: Postiz v2.12
+    name: Postiz v2.12+
 spec:
     description: All-in-one open-source platform to schedule, publish, and manage content across 19+ social media platforms — with AI assistance, Temporal workflow engine, and full self-hosting control.
     coverImage: https://cdn.zeabur.com/postiz-banner.jpg
@@ -191,7 +191,7 @@ spec:
                 port: http
 
         - name: temporal
-          icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/temporal.svg
+          icon: https://avatars.githubusercontent.com/u/56493103
           dependencies:
             - temporal-postgres
             - temporal-elasticsearch
