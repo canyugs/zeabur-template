@@ -1,0 +1,515 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: Plane
+spec:
+    description: Plane is a project collaboration platform, including frontend, backend, PostgreSQL, Redis, and S3/MinIO storage.
+    coverImage: https://media.docs.plane.so/GitHub-readme/github-top.webp
+    icon: https://avatars.githubusercontent.com/u/115727700?v=4
+    variables:
+        - key: PUBLIC_DOMAIN
+          type: DOMAIN
+          name: Domain
+          description: What is the domain you want for your Plane?
+    tags:
+        - Project Management
+        - Collaboration
+        - PostgreSQL
+        - Redis
+        - S3
+        - MinIO
+    readme: |
+        Plane is an open source project collaboration platform (v1.2.1), including frontend, backend, PostgreSQL, Redis, RabbitMQ, and S3/MinIO storage.
+
+        ⚠️ Note:
+        1. Make sure to bind your domain to the `plane` service, as it is the single entry point for accessing your Plane platform.
+        2. During god-mode setup, your password must meet: min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character.
+
+        ## Services
+
+        This Plane instance includes the following services:
+        - **plane**: Caddy reverse proxy, routes all traffic to the correct service (entry point).
+        - **api**: Django backend with automatic database migrations on startup.
+        - **web**: Frontend served via nginx.
+        - **admin**: Admin dashboard (god-mode) for instance configuration.
+        - **space**: Public pages module.
+        - **live**: Real-time collaboration service.
+        - **worker**: Celery worker for background jobs.
+        - **beat-worker**: Celery beat for scheduled tasks.
+        - **postgresql**: Database for all project and user data.
+        - **redis**: Caching layer.
+        - **plane-mq**: RabbitMQ message broker for Celery.
+        - **plane-minio**: S3-compatible object storage for file uploads.
+
+        ## Custom Domain
+
+        The template automatically uses `PLANE_URL` (derived from the `plane` service's public URL). When you bind a custom domain to the `plane` service, all services will automatically use the correct URL - no manual changes needed.
+
+        ## Advanced
+
+        - [Plane documentation](https://docs.makeplane.com/)
+        - [Plane GitHub](https://github.com/makeplane/plane)
+        - [Plane Discord](https://discord.gg/makeplane)
+    services:
+        - name: postgresql
+          icon: https://cdn.zeabur.com/marketplace/postgresql.svg
+          template: PREBUILT
+          spec:
+            source:
+                image: postgres:15
+            ports:
+                - id: database
+                  port: 5432
+                  type: TCP
+            volumes:
+                - id: db-data
+                  dir: /var/lib/postgresql/data
+            instructions:
+                - title: Connection String
+                  content: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DB}
+                - title: PostgreSQL Connect Command
+                  content: psql "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DB}"
+                - title: PostgreSQL username
+                  content: ${POSTGRES_USER}
+                - title: PostgresSQL password
+                  content: ${POSTGRES_PASSWORD}
+                - title: PostgresSQL database
+                  content: ${POSTGRES_DB}
+                - title: PostgreSQL host
+                  content: ${PORT_FORWARDED_HOSTNAME}
+                - title: PostgreSQL port
+                  content: ${DATABASE_PORT_FORWARDED_PORT}
+            env:
+                POSTGRES_DB:
+                    default: plane
+                    expose: true
+                POSTGRES_PASSWORD:
+                    default: ${PASSWORD}
+                    expose: true
+                POSTGRES_USER:
+                    default: plane
+                    expose: true
+        - name: redis
+          icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/redis.svg
+          template: PREBUILT
+          spec:
+            source:
+                image: redis/redis-stack-server:7.4.0-v8
+            ports:
+                - id: database
+                  port: 6379
+                  type: TCP
+            volumes:
+                - id: data
+                  dir: /data
+            instructions:
+                - title: Command to connect to your Redis
+                  content: redis-cli -h ${PORT_FORWARDED_HOSTNAME} -p ${DATABASE_PORT_FORWARDED_PORT} -a ${REDIS_PASSWORD}
+                - title: Redis Connection String
+                  content: redis://:${REDIS_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}
+                - title: Redis password
+                  content: ${REDIS_PASSWORD}
+                - title: Redis host
+                  content: ${PORT_FORWARDED_HOSTNAME}
+                - title: Redis port
+                  content: ${DATABASE_PORT_FORWARDED_PORT}
+            env:
+                CONFFILE:
+                    default: /etc/redis-stack.conf
+                REDIS_ARGS:
+                    default: --requirepass ${REDIS_PASSWORD}
+                REDIS_PASSWORD:
+                    default: ${PASSWORD}
+                    expose: true
+                REDIS_URI:
+                    default: redis://:${REDIS_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}
+                    expose: true
+                REDIS_URI_INTERNAL:
+                    default: redis://:${REDIS_PASSWORD}@${CONTAINER_HOSTNAME}:6379
+                    expose: true
+            configs:
+                - path: /etc/redis-stack.conf
+                  template: |
+                    port 6379
+                    daemonize no
+                  permission: null
+                  envsubst: null
+        - name: plane-mq
+          icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/rabbitmq.svg
+          template: PREBUILT
+          spec:
+            source:
+                image: rabbitmq:3.13.6-management-alpine
+            ports:
+                - id: amqp
+                  port: 5672
+                  type: TCP
+                - id: management
+                  port: 15672
+                  type: HTTP
+            volumes:
+                - id: data
+                  dir: /var/lib/rabbitmq
+            env:
+                RABBITMQ_DEFAULT_USER:
+                    default: plane
+                    expose: true
+                RABBITMQ_DEFAULT_PASS:
+                    default: ${PASSWORD}
+                    expose: true
+                RABBITMQ_DEFAULT_VHOST:
+                    default: plane
+                    expose: true
+                AMQP_URL:
+                    default: amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${CONTAINER_HOSTNAME}:5672/${RABBITMQ_DEFAULT_VHOST}
+                    expose: true
+        - name: plane-minio
+          icon: https://cdn.zeabur.com/marketplace/minio.svg
+          template: PREBUILT
+          spec:
+            source:
+                image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
+                command:
+                    - /bin/sh
+                args:
+                    - -c
+                    - |
+                      minio server /data --console-address :9090 &
+                      MINIO_PID=$!
+                      while ! curl -s http://localhost:9000/minio/health/live; do
+                        echo 'Waiting for MinIO to start...'
+                        sleep 1
+                      done
+                      sleep 5
+                      mc alias set myminio http://localhost:9000 $MINIO_USERNAME $MINIO_PASSWORD
+                      echo "Creating bucket '$MINIO_DEFAULT_BUCKET'"
+                      mc mb myminio/$MINIO_DEFAULT_BUCKET
+                      wait $MINIO_PID
+            ports:
+                - id: web
+                  port: 9000
+                  type: HTTP
+                - id: console
+                  port: 9090
+                  type: HTTP
+            volumes:
+                - id: data
+                  dir: /data
+            env:
+                MINIO_BROWSER_REDIRECT:
+                    default: "false"
+                MINIO_BUCKET_NAME:
+                    default: ${MINIO_DEFAULT_BUCKET}
+                    expose: true
+                MINIO_CONSOLE_URL:
+                    default: ${ZEABUR_CONSOLE_URL}
+                    expose: true
+                MINIO_DEFAULT_BUCKET:
+                    default: uploads
+                MINIO_PASSWORD:
+                    default: ${MINIO_ROOT_PASSWORD}
+                    expose: true
+                MINIO_ROOT_PASSWORD:
+                    default: ${PASSWORD}
+                MINIO_ROOT_USER:
+                    default: minio
+                MINIO_USERNAME:
+                    default: ${MINIO_ROOT_USER}
+                    expose: true
+        - name: plane
+          icon: https://avatars.githubusercontent.com/u/115727700?v=4
+          dependencies:
+            - web
+            - api
+            - space
+            - admin
+            - live
+          template: PREBUILT
+          spec:
+            source:
+                image: makeplane/plane-proxy:v1.2.1
+            ports:
+                - id: web
+                  port: 8080
+                  type: HTTP
+            env:
+                BUCKET_NAME:
+                    default: ${MINIO_BUCKET_NAME}
+                FILE_SIZE_LIMIT:
+                    default: "5242880"
+                PLANE_URL:
+                    default: https://${ZEABUR_WEB_DOMAIN}
+                    expose: true
+                SITE_ADDRESS:
+                    default: ":8080"
+                TRUSTED_PROXIES:
+                    default: "0.0.0.0/0"
+          domainKey: PUBLIC_DOMAIN
+        - name: web
+          icon: https://avatars.githubusercontent.com/u/115727700?v=4
+          dependencies:
+            - api
+          template: PREBUILT
+          spec:
+            source:
+                image: makeplane/plane-frontend:v1.2.1
+            ports:
+                - id: web
+                  port: 3000
+                  type: HTTP
+            env:
+                WEB_URL:
+                    default: ${PLANE_URL}
+        - name: admin
+          icon: https://avatars.githubusercontent.com/u/115727700?v=4
+          dependencies:
+            - api
+            - redis
+            - plane-minio
+          template: PREBUILT
+          spec:
+            source:
+                image: makeplane/plane-admin:v1.2.1
+            ports:
+                - id: web
+                  port: 3000
+                  type: HTTP
+            env:
+                WEB_URL:
+                    default: ${PLANE_URL}
+        - name: space
+          icon: https://avatars.githubusercontent.com/u/115727700?v=4
+          dependencies:
+            - api
+            - redis
+          template: PREBUILT
+          spec:
+            source:
+                image: makeplane/plane-space:v1.2.1
+                command:
+                    - npx
+                    - react-router-serve
+                    - ./build/server/index.js
+            ports:
+                - id: web
+                  port: 3000
+                  type: HTTP
+            env:
+                PORT:
+                    default: "3000"
+                SECRET_KEY:
+                    default: ${SECRET_KEY}
+                WEB_URL:
+                    default: ${PLANE_URL}
+        - name: live
+          icon: https://avatars.githubusercontent.com/u/115727700?v=4
+          dependencies:
+            - api
+            - redis
+          template: PREBUILT
+          spec:
+            source:
+                image: makeplane/plane-live:v1.2.1
+            ports:
+                - id: web
+                  port: 3000
+                  type: HTTP
+            env:
+                API_BASE_URL:
+                    default: http://api.zeabur.internal:8000
+                LIVE_BASE_PATH:
+                    default: /live
+                LIVE_SERVER_SECRET_KEY:
+                    default: ${SECRET_KEY}
+                REDIS_URL:
+                    default: ${REDIS_URI_INTERNAL}
+        - name: worker
+          icon: https://avatars.githubusercontent.com/u/115727700?v=4
+          dependencies:
+            - api
+            - postgresql
+            - redis
+            - plane-mq
+          template: PREBUILT
+          spec:
+            source:
+                image: makeplane/plane-backend:v1.2.1
+                command:
+                    - ./bin/docker-entrypoint-worker.sh
+            ports:
+                - id: api
+                  port: 8000
+                  type: HTTP
+            env:
+                DATABASE_URL:
+                    default: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgresql:5432/${POSTGRES_DB}
+                RABBITMQ_HOST:
+                    default: plane-mq.zeabur.internal
+                RABBITMQ_PORT:
+                    default: "5672"
+                RABBITMQ_USER:
+                    default: ${RABBITMQ_DEFAULT_USER}
+                RABBITMQ_PASSWORD:
+                    default: ${RABBITMQ_DEFAULT_PASS}
+                RABBITMQ_VHOST:
+                    default: ${RABBITMQ_DEFAULT_VHOST}
+                REDIS_URL:
+                    default: ${REDIS_URI_INTERNAL}
+                SECRET_KEY:
+                    default: ${SECRET_KEY}
+        - name: beat-worker
+          icon: https://avatars.githubusercontent.com/u/115727700?v=4
+          dependencies:
+            - api
+            - postgresql
+            - redis
+            - plane-mq
+          template: PREBUILT
+          spec:
+            source:
+                image: makeplane/plane-backend:v1.2.1
+                command:
+                    - ./bin/docker-entrypoint-beat.sh
+            ports:
+                - id: api
+                  port: 8000
+                  type: HTTP
+            env:
+                DATABASE_URL:
+                    default: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgresql:5432/${POSTGRES_DB}
+                RABBITMQ_HOST:
+                    default: plane-mq.zeabur.internal
+                RABBITMQ_PORT:
+                    default: "5672"
+                RABBITMQ_USER:
+                    default: ${RABBITMQ_DEFAULT_USER}
+                RABBITMQ_PASSWORD:
+                    default: ${RABBITMQ_DEFAULT_PASS}
+                RABBITMQ_VHOST:
+                    default: ${RABBITMQ_DEFAULT_VHOST}
+                REDIS_URL:
+                    default: ${REDIS_URI_INTERNAL}
+                SECRET_KEY:
+                    default: ${SECRET_KEY}
+        - name: api
+          icon: https://avatars.githubusercontent.com/u/115727700?v=4
+          dependencies:
+            - plane-minio
+            - postgresql
+            - redis
+          template: PREBUILT
+          spec:
+            source:
+                image: makeplane/plane-backend:v1.2.1
+                command:
+                    - /bin/sh
+                    - -c
+                    - "python manage.py wait_for_db && python manage.py migrate && exec ./bin/docker-entrypoint-api.sh"
+            ports:
+                - id: api
+                  port: 8000
+                  type: HTTP
+            env:
+                AWS_ACCESS_KEY_ID:
+                    default: ${MINIO_USERNAME}
+                AWS_S3_BUCKET_NAME:
+                    default: ${MINIO_BUCKET_NAME}
+                AWS_S3_ENDPOINT_URL:
+                    default: http://plane-minio.zeabur.internal:9000
+                AWS_SECRET_ACCESS_KEY:
+                    default: ${MINIO_PASSWORD}
+                CORS_ALLOWED_ORIGINS:
+                    default: ${PLANE_URL}
+                DATABASE_URL:
+                    default: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgresql:5432/${POSTGRES_DB}
+                GUNICORN_WORKERS:
+                    default: "4"
+                REDIS_URL:
+                    default: ${REDIS_URI_INTERNAL}
+                SECRET_KEY:
+                    default: ${PASSWORD}
+                    expose: true
+                USE_MINIO:
+                    default: "1"
+                WEB_URL:
+                    default: ${PLANE_URL}
+localization:
+    zh-CN:
+        description: Plane 是一个项目协作平台，包含前端、后端、PostgreSQL、Redis 以及 S3/MinIO 存储。
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: DOMAIN
+              name: 域名
+              description: 您想为 Plane 绑定哪个域名？
+        readme: |
+            Plane 是一个开源的项目协作平台（v1.2.1），包含前端、后端、PostgreSQL、Redis、RabbitMQ 以及 S3/MinIO 存储。
+
+            ⚠️ 注意：
+            1. 请务必将您的域名绑定到 `plane` 服务，这是访问 Plane 平台的唯一入口。
+            2. 设置管理员密码时需满足：至少 8 字符、1 个大写字母、1 个小写字母、1 个数字、1 个特殊字符。
+
+            ## 服务
+
+            该 Plane 实例包含以下服务：
+            - **plane**：Caddy 反向代理，所有流量入口。
+            - **api**：Django 后端，启动时自动执行数据库迁移。
+            - **web**：前端，由 nginx 提供服务。
+            - **admin**：管理后台（god-mode），用于实例配置。
+            - **space**：公开页面模块。
+            - **live**：实时协作服务。
+            - **worker**：Celery worker，处理后台任务。
+            - **beat-worker**：Celery beat，处理定时任务。
+            - **postgresql**：数据库。
+            - **redis**：缓存。
+            - **plane-mq**：RabbitMQ 消息队列。
+            - **plane-minio**：S3 兼容对象存储。
+
+            ## 自定义域名
+
+            模板自动使用 `PLANE_URL`（来自 `plane` 服务的公开 URL）。绑定自定义域名后，所有服务会自动使用正确的 URL，无需手动修改。
+
+            ## 更多资源
+
+            - [Plane 官方文档](https://docs.makeplane.com/)
+            - [Plane GitHub](https://github.com/makeplane/plane)
+            - [Plane Discord](https://discord.gg/makeplane)
+    zh-TW:
+        description: Plane 是一個專案協作平台，包含前端、後端、PostgreSQL、Redis 以及 S3/MinIO 儲存。
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: DOMAIN
+              name: 網域
+              description: 您想為 Plane 綁定哪個網域？
+        readme: |
+            Plane 是一個開源的專案協作平台（v1.2.1），包含前端、後端、PostgreSQL、Redis、RabbitMQ 以及 S3/MinIO 儲存。
+
+            ⚠️ 注意：
+            1. 請務必將您的網域綁定到 `plane` 服務，這是存取 Plane 平台的唯一入口。
+            2. 設定管理員密碼時需滿足：至少 8 字元、1 個大寫字母、1 個小寫字母、1 個數字、1 個特殊字元。
+
+            ## 服務
+
+            此 Plane 實例包含以下服務：
+            - **plane**：Caddy 反向代理，所有流量入口。
+            - **api**：Django 後端，啟動時自動執行資料庫遷移。
+            - **web**：前端，由 nginx 提供服務。
+            - **admin**：管理後台（god-mode），用於實例設定。
+            - **space**：公開頁面模組。
+            - **live**：即時協作服務。
+            - **worker**：Celery worker，處理背景任務。
+            - **beat-worker**：Celery beat，處理排程任務。
+            - **postgresql**：資料庫。
+            - **redis**：快取。
+            - **plane-mq**：RabbitMQ 訊息佇列。
+            - **plane-minio**：S3 相容物件儲存。
+
+            ## 自訂網域
+
+            模板自動使用 `PLANE_URL`（來自 `plane` 服務的公開 URL）。綁定自訂網域後，所有服務會自動使用正確的 URL，無需手動修改。
+
+            ## 更多資源
+
+            - [Plane 官方文件](https://docs.makeplane.com/)
+            - [Plane GitHub](https://github.com/makeplane/plane)
+            - [Plane Discord](https://discord.gg/makeplane)
