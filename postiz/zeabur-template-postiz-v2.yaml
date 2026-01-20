@@ -25,7 +25,7 @@ spec:
 
         ---
 
-        **Upgrade Notice:** Postiz v2.12+ introduces Temporal workflow engine which requires additional services (Temporal, Elasticsearch, separate PostgreSQL). If you need v2.12+ features, please use the **Postiz v2.12** template instead. Direct upgrade from this template to v2.12+ is not supported due to architecture changes.
+        **Upgrade Notice:** Postiz v2.12+ introduces Temporal workflow engine which requires additional services (Temporal, Elasticsearch, separate PostgreSQL). Direct upgrade to v2.12+ is not supported due to architecture changes.
     services:
         - name: redis
           icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/redis.svg
