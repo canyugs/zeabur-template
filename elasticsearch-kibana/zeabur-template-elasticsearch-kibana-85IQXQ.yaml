@@ -1,0 +1,185 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: Elasticsearch Single Node with Kibana
+spec:
+  description: Production-ready single-node Elasticsearch with Kibana, using official images. Password and SSL enabled by default.
+  coverImage: https://static-www.elastic.co/v3/assets/bltefdd0b53724fa2ce/bltd2b695348ddc99f3/62fcf82cbcca746334bc3ddc/blog-thumb-release-platform.png
+  icon: https://cdn.worldvectorlogo.com/logos/elasticsearch.svg
+  variables:
+    - key: PUBLIC_DOMAIN
+      type: DOMAIN
+      name: Domain
+      description: The domain for your Elasticsearch & Kibana service.
+  tags:
+    - Search
+    - Analytics
+    - Elasticsearch
+    - Kibana
+    - Single Node
+  readme: |
+    # Elasticsearch Single Node with Kibana
+
+    This template deploys a secure, production-ready single-node Elasticsearch with Kibana, using official Elastic images. Password and SSL are enabled by default.
+
+    ## Features
+
+    - Single-node Elasticsearch with security enabled
+    - Kibana with secure connection to Elasticsearch
+    - Password and port auto-configured
+    - Suitable for production and development
+
+    ## Usage
+
+    1. Deploy the stack
+    2. Access Elasticsearch at `https://<your-domain>:9200`
+    3. Access Kibana at `http://<your-domain>:5601` (Web-based visualization interface)
+
+    ## Default Credentials
+
+    - **elastic** user: `${PASSWORD}`
+
+    Login to Kibana using the **elastic** username and the auto-generated password to start exploring, visualizing, and managing your Elasticsearch data through the intuitive web interface.
+
+    ## Official Docs
+
+    - [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html)
+    - [Kibana](https://www.elastic.co/guide/en/kibana/current/index.html)
+  services:
+    - name: elasticsearch
+      icon: https://cdn.worldvectorlogo.com/logos/elasticsearch.svg
+      template: PREBUILT
+      spec:
+        source:
+          image: docker.elastic.co/elasticsearch/elasticsearch:7.17.18
+        ports:
+          - id: http
+            port: 9200
+            type: HTTP
+        volumes:
+          - id: certs
+            dir: /usr/share/elasticsearch/config/certs
+          - id: esdata
+            dir: /usr/share/elasticsearch/data
+        env:
+          ELASTIC_PASSWORD:
+            default: ${PASSWORD}
+            expose: true
+          ES_PORT:
+            default: "9200"
+          MEM_LIMIT:
+            default: "1073741824"
+          bootstrap.memory_lock:
+            default: "true"
+          discovery.type:
+            default: single-node
+          node.name:
+            default: elasticsearch
+          xpack.license.self_generated.type:
+            default: basic
+          xpack.ml.use_auto_machine_memory_percent:
+            default: "true"
+          xpack.security.enabled:
+            default: "true"
+          xpack.security.http.ssl.enabled:
+            default: "false"
+    - name: kibana
+      icon: https://cdn.worldvectorlogo.com/logos/elasticsearch.svg
+      dependencies:
+        - elasticsearch
+      template: PREBUILT
+      spec:
+        source:
+          image: docker.elastic.co/kibana/kibana:7.17.18
+          command:
+            - /usr/local/bin/kibana-docker
+          args:
+            - --allow-root
+        ports:
+          - id: web
+            port: 5601
+            type: HTTP
+        volumes:
+          - id: certs
+            dir: /usr/share/kibana/config/certs
+          - id: kibanadata
+            dir: /usr/share/kibana/data
+        instructions:
+          - title: Elasticsearch Username
+            content: elastic
+          - title: Elasticsearch Password
+            content: ${ELASTIC_PASSWORD}
+        env:
+          ELASTICSEARCH_HOSTS:
+            default: http://elasticsearch:9200
+          ELASTICSEARCH_PASSWORD:
+            default: ${ELASTIC_PASSWORD}
+          ELASTICSEARCH_USERNAME:
+            default: elastic
+          KIBANA_PORT:
+            default: "5601"
+          MEM_LIMIT:
+            default: "1073741824"
+          SERVER_PUBLICBASEURL:
+            default: https://${ZEABUR_WEB_DOMAIN}
+          SERVERNAME:
+            default: kibana
+        domainKey: PUBLIC_DOMAIN
+  localization:
+    zh-CN:
+      readme: |
+        # Elasticsearch 单节点与 Kibana
+
+        本模板部署一个安全、单节点的 Elasticsearch，并附带 Kibana。默认启用密码与 SSL，适合生产与开发环境。
+
+        ## 特色
+
+        - 单节点集群，启用安全性
+        - Kibana 连接集群
+        - 密码、端口自动配置
+
+        ## 使用方法
+
+        1. 部署后即可使用
+        2. Elasticsearch: `https://<your-domain>:9200`
+        3. Kibana: `http://<your-domain>:5601`（网页可视化界面）
+
+        ## 默认账号
+
+        - **elastic**：`${PASSWORD}`
+
+        使用 **elastic** 账号与自动生成的密码登录 Kibana，即可通过直观的网页界面探索、可视化与管理您的 Elasticsearch 数据。
+
+        ## 官方文档
+
+        - [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html)
+        - [Kibana](https://www.elastic.co/guide/en/kibana/current/index.html)
+    zh-TW:
+      readme: |
+        # Elasticsearch 單節點與 Kibana
+
+        本模板部署一個安全、單節點的 Elasticsearch，並附帶 Kibana。預設啟用密碼與 SSL，適合生產與開發環境。
+
+        ## 特色
+
+        - 單節點叢集，啟用安全性
+        - Kibana 介接叢集
+        - 密碼、埠號自動設定
+
+        ## 使用方式
+
+        1. 部署後即可使用
+        2. Elasticsearch: `https://<your-domain>:9200`
+        3. Kibana: `http://<your-domain>:5601`（網頁視覺化介面）
+
+        ## 預設帳號
+
+        - **elastic**：`${PASSWORD}`
+
+        使用 **elastic** 帳號與自動產生的密碼登入 Kibana，即可透過直觀的網頁介面探索、視覺化與管理您的 Elasticsearch 資料。
+
+        ## 官方文件
+
+        - [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html)
+        - [Kibana](https://www.elastic.co/guide/en/kibana/current/index.html)
