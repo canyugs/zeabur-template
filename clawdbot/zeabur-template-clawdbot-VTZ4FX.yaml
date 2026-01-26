@@ -7,7 +7,7 @@ spec:
     description: |
       Clawdbot is a personal AI assistant that runs locally and connects to multiple messaging platforms (WhatsApp, Telegram, Slack, Discord, etc.) via a WebSocket-based Gateway architecture.
     icon: https://raw.githubusercontent.com/clawdbot/clawdbot/main/docs/assets/pixel-lobster.svg
-    coverImage: https://raw.githubusercontent.com/clawdbot/clawdbot/main/README-header.png
+    coverImage: https://raw.githubusercontent.com/clawdbot/clawdbot/main/docs/whatsapp-clawd.jpg
     variables:
       - key: PUBLIC_DOMAIN
         type: DOMAIN
