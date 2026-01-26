@@ -1,0 +1,500 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: "[Work in Progress] Clawdbot"
+spec:
+    description: |
+      Clawdbot is a personal AI assistant that runs locally and connects to multiple messaging platforms (WhatsApp, Telegram, Slack, Discord, etc.) via a WebSocket-based Gateway architecture.
+    icon: https://raw.githubusercontent.com/clawdbot/clawdbot/main/docs/assets/pixel-lobster.svg
+    coverImage: https://raw.githubusercontent.com/clawdbot/clawdbot/main/README-header.png
+    variables:
+      - key: PUBLIC_DOMAIN
+        type: DOMAIN
+        name: Domain
+        description: What domain do you want to bind Clawdbot to?
+      - key: ANTHROPIC_API_KEY
+        type: STRING
+        name: Anthropic API Key
+        description: Your Anthropic API key for Claude (recommended)
+      - key: OPENAI_API_KEY
+        type: STRING
+        name: OpenAI API Key
+        description: Your OpenAI API key (optional)
+    tags:
+      - AI
+      - Assistant
+      - Chatbot
+      - WhatsApp
+      - Telegram
+      - Slack
+      - Discord
+
+    readme: |
+      # Clawdbot
+      Clawdbot is a personal AI assistant that runs locally and connects to multiple messaging platforms via a WebSocket-based Gateway architecture.
+
+      ## ⚠️ Work in Progress
+      This template is under development. Current status:
+
+      ### ✅ Completed
+      - Gateway starts and accepts WebSocket connections
+      - Web UI loads via public domain
+      - Token-based authentication (no device pairing required)
+
+      ### 🔄 Testing
+      - [ ] AI provider authentication (Anthropic/OpenAI API key)
+      - [ ] Chat with AI assistant via Web UI
+      - [ ] WhatsApp connection (QR code login)
+      - [ ] Telegram bot connection
+      - [ ] Discord bot connection
+      - [ ] Slack integration
+      - [ ] Agent configuration persistence
+
+      ### 🎯 Expected Flow (When Complete)
+      1. Deploy and access Web UI
+      2. Chat with AI assistant directly in Web UI
+      3. Connect messaging platforms (WhatsApp, Telegram, etc.)
+      4. Chat with AI through any connected platform
+
+      ---
+
+      ## Supported Platforms
+      - WhatsApp
+      - Telegram
+      - Slack
+      - Discord
+      - And more messaging platforms
+
+      ## Usage
+      - Access the Web UI at `https://${PUBLIC_DOMAIN}`
+      - Configure your messaging platform connections through the Gateway
+      - Use the Gateway token for authentication: `${CLAWDBOT_GATEWAY_TOKEN}`
+
+      ## Configuration
+      - `ANTHROPIC_API_KEY`: Your Anthropic API key for Claude (recommended)
+      - `OPENAI_API_KEY`: Your OpenAI API key (optional)
+      - API keys are stored in `~/.clawdbot/.env` for daemon access
+
+      ## Data Persistence
+      All configuration, sessions, and agent data are stored in a persistent volume at `/home/node/.clawdbot`.
+
+      ## Documentation
+      - GitHub: https://github.com/clawdbot/clawdbot
+
+    services:
+      - name: clawdbot
+        icon: https://raw.githubusercontent.com/clawdbot/clawdbot/main/docs/assets/pixel-lobster.svg
+        template: PREBUILT
+        domainKey: PUBLIC_DOMAIN
+        spec:
+          source:
+            image: ghcr.io/clawdbot/clawdbot:main
+            command:
+              - /bin/sh
+              - -c
+              - |
+                # Setup clawdbot alias
+                WORKDIR="$(pwd)"
+                mkdir -p /home/node/bin
+                cat > /home/node/bin/clawdbot << SCRIPT
+                #!/bin/sh
+                exec node ${WORKDIR}/dist/index.js "\$@"
+                SCRIPT
+                chmod +x /home/node/bin/clawdbot
+                export PATH="/home/node/bin:$PATH"
+
+                # Create initial config if not exists
+                CONFIG_FILE="/home/node/.clawdbot/clawdbot.json"
+                if [ ! -f "$CONFIG_FILE" ]; then
+                  echo "Creating initial config..."
+                  mkdir -p /home/node/.clawdbot
+                  cat > "$CONFIG_FILE" << 'EOF'
+                {
+                  "gateway": {
+                    "trustedProxies": ["0.0.0.0/0"],
+                    "controlUi": {
+                      "allowInsecureAuth": true
+                    }
+                  }
+                }
+                EOF
+                fi
+
+                # Create .env file for API keys (daemon reads from here)
+                ENV_FILE="/home/node/.clawdbot/.env"
+                : > "$ENV_FILE"
+                [ -n "${ANTHROPIC_API_KEY:-}" ] && echo "ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}" >> "$ENV_FILE"
+                [ -n "${OPENAI_API_KEY:-}" ] && echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> "$ENV_FILE"
+
+                exec node dist/index.js gateway --allow-unconfigured --bind "${CLAWDBOT_GATEWAY_BIND}" --port "${CLAWDBOT_GATEWAY_PORT}" --token "${CLAWDBOT_GATEWAY_TOKEN}"
+          ports:
+          - id: web
+            port: 18789
+            type: HTTP
+          volumes:
+            - id: config
+              dir: /home/node/.clawdbot
+            - id: workspace
+              dir: /home/node/clawd
+          env:
+            HOME:
+              default: /home/node
+              readonly: true
+            PATH:
+              default: /home/node/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+              readonly: true
+            NODE_ENV:
+              default: production
+              readonly: true
+            CLAWDBOT_GATEWAY_PORT:
+              default: "18789"
+              readonly: true
+            CLAWDBOT_GATEWAY_BIND:
+              default: lan
+              readonly: true
+            CLAWDBOT_GATEWAY_TOKEN:
+              default: ${PASSWORD}
+            ANTHROPIC_API_KEY:
+              default: ${ANTHROPIC_API_KEY}
+            OPENAI_API_KEY:
+              default: ${OPENAI_API_KEY}
+          instructions:
+            - type: TEXT
+              title: Web UI (with token)
+              content: ${ZEABUR_WEB_URL}?token=${CLAWDBOT_GATEWAY_TOKEN}
+            - type: PASSWORD
+              title: Gateway Token
+              content: ${CLAWDBOT_GATEWAY_TOKEN}
+              category: Credentials
+
+    localization:
+      zh-TW:
+        name: "[開發中] Clawdbot"
+        description: |
+          Clawdbot 是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台（WhatsApp、Telegram、Slack、Discord 等）。
+        variables:
+          - key: PUBLIC_DOMAIN
+            name: 網域
+            description: 您想要綁定 Clawdbot 的網域是？
+          - key: ANTHROPIC_API_KEY
+            name: Anthropic API 金鑰
+            description: 您的 Anthropic Claude API 金鑰（推薦）
+          - key: OPENAI_API_KEY
+            name: OpenAI API 金鑰
+            description: 您的 OpenAI API 金鑰（選填）
+        readme: |
+          # Clawdbot
+          Clawdbot 是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台。
+
+          ## ⚠️ 開發中
+          此模板正在開發中。目前狀態：
+
+          ### ✅ 已完成
+          - Gateway 啟動並接受 WebSocket 連線
+          - Web UI 可透過公開網域載入
+          - Token 認證（無需裝置配對）
+
+          ### 🔄 測試中
+          - [ ] AI 供應商認證（Anthropic/OpenAI API 金鑰）
+          - [ ] 透過 Web UI 與 AI 助手對話
+          - [ ] WhatsApp 連接（QR code 登入）
+          - [ ] Telegram 機器人連接
+          - [ ] Discord 機器人連接
+          - [ ] Slack 整合
+          - [ ] Agent 設定持久化
+
+          ### 🎯 預期流程（完成後）
+          1. 部署並存取 Web UI
+          2. 直接在 Web UI 中與 AI 助手對話
+          3. 連接訊息平台（WhatsApp、Telegram 等）
+          4. 透過任何已連接的平台與 AI 對話
+
+          ---
+
+          ## 支援平台
+          - WhatsApp
+          - Telegram
+          - Slack
+          - Discord
+          - 更多訊息平台
+
+          ## 使用方式
+          - 在 `https://${PUBLIC_DOMAIN}` 存取 Web UI
+          - 透過 Gateway 設定您的訊息平台連接
+          - 使用 Gateway Token 進行身份驗證：`${CLAWDBOT_GATEWAY_TOKEN}`
+
+          ## 設定
+          - `ANTHROPIC_API_KEY`：您的 Anthropic Claude API 金鑰（推薦）
+          - `OPENAI_API_KEY`：您的 OpenAI API 金鑰（選填）
+          - API 金鑰儲存於 `~/.clawdbot/.env` 供 daemon 存取
+
+          ## 資料持久化
+          所有設定、會話和代理資料都儲存在 `/home/node/.clawdbot` 的持久化磁碟區中。
+
+          ## 文件
+          - GitHub：https://github.com/clawdbot/clawdbot
+
+      zh-CN:
+        name: "[开发中] Clawdbot"
+        description: |
+          Clawdbot 是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台（WhatsApp、Telegram、Slack、Discord 等）。
+        variables:
+          - key: PUBLIC_DOMAIN
+            name: 域名
+            description: 您想要绑定 Clawdbot 的域名是？
+          - key: ANTHROPIC_API_KEY
+            name: Anthropic API 密钥
+            description: 您的 Anthropic Claude API 密钥（推荐）
+          - key: OPENAI_API_KEY
+            name: OpenAI API 密钥
+            description: 您的 OpenAI API 密钥（可选）
+        readme: |
+          # Clawdbot
+          Clawdbot 是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台。
+
+          ## ⚠️ 开发中
+          此模板正在开发中。目前状态：
+
+          ### ✅ 已完成
+          - Gateway 启动并接受 WebSocket 连接
+          - Web UI 可通过公开域名加载
+          - Token 认证（无需设备配对）
+
+          ### 🔄 测试中
+          - [ ] AI 供应商认证（Anthropic/OpenAI API 密钥）
+          - [ ] 通过 Web UI 与 AI 助手对话
+          - [ ] WhatsApp 连接（QR code 登录）
+          - [ ] Telegram 机器人连接
+          - [ ] Discord 机器人连接
+          - [ ] Slack 集成
+          - [ ] Agent 配置持久化
+
+          ### 🎯 预期流程（完成后）
+          1. 部署并访问 Web UI
+          2. 直接在 Web UI 中与 AI 助手对话
+          3. 连接消息平台（WhatsApp、Telegram 等）
+          4. 通过任何已连接的平台与 AI 对话
+
+          ---
+
+          ## 支持平台
+          - WhatsApp
+          - Telegram
+          - Slack
+          - Discord
+          - 更多消息平台
+
+          ## 使用方式
+          - 在 `https://${PUBLIC_DOMAIN}` 访问 Web UI
+          - 通过 Gateway 配置您的消息平台连接
+          - 使用 Gateway Token 进行身份验证：`${CLAWDBOT_GATEWAY_TOKEN}`
+
+          ## 配置
+          - `ANTHROPIC_API_KEY`：您的 Anthropic Claude API 密钥（推荐）
+          - `OPENAI_API_KEY`：您的 OpenAI API 密钥（可选）
+          - API 密钥存储于 `~/.clawdbot/.env` 供 daemon 访问
+
+          ## 数据持久化
+          所有配置、会话和代理数据都存储在 `/home/node/.clawdbot` 的持久化卷中。
+
+          ## 文档
+          - GitHub：https://github.com/clawdbot/clawdbot
+
+      ja-JP:
+        name: "[開発中] Clawdbot"
+        description: |
+          Clawdbot は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォーム（WhatsApp、Telegram、Slack、Discord など）に接続する個人用 AI アシスタントです。
+        variables:
+          - key: PUBLIC_DOMAIN
+            name: ドメイン
+            description: Clawdbot にバインドするドメインは？
+          - key: ANTHROPIC_API_KEY
+            name: Anthropic API キー
+            description: Anthropic Claude の API キー（推奨）
+          - key: OPENAI_API_KEY
+            name: OpenAI API キー
+            description: OpenAI の API キー（オプション）
+        readme: |
+          # Clawdbot
+          Clawdbot は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォームに接続する個人用 AI アシスタントです。
+
+          ## ⚠️ 開発中
+          このテンプレートは開発中です。現在の状態：
+
+          ### ✅ 完了
+          - Gateway が起動し WebSocket 接続を受け入れ
+          - Web UI が公開ドメインで読み込み可能
+          - トークン認証（デバイスペアリング不要）
+
+          ### 🔄 テスト中
+          - [ ] AI プロバイダー認証（Anthropic/OpenAI API キー）
+          - [ ] Web UI で AI アシスタントとチャット
+          - [ ] WhatsApp 接続（QR コードログイン）
+          - [ ] Telegram ボット接続
+          - [ ] Discord ボット接続
+          - [ ] Slack 統合
+          - [ ] エージェント設定の永続化
+
+          ### 🎯 想定フロー（完了後）
+          1. デプロイして Web UI にアクセス
+          2. Web UI で直接 AI アシスタントとチャット
+          3. メッセージングプラットフォームを接続（WhatsApp、Telegram など）
+          4. 接続した任意のプラットフォームで AI とチャット
+
+          ---
+
+          ## 対応プラットフォーム
+          - WhatsApp
+          - Telegram
+          - Slack
+          - Discord
+          - その他のメッセージングプラットフォーム
+
+          ## 使用方法
+          - `https://${PUBLIC_DOMAIN}` で Web UI にアクセス
+          - Gateway を通じてメッセージングプラットフォームの接続を設定
+          - Gateway Token で認証：`${CLAWDBOT_GATEWAY_TOKEN}`
+
+          ## 設定
+          - `ANTHROPIC_API_KEY`：Anthropic Claude の API キー（推奨）
+          - `OPENAI_API_KEY`：OpenAI の API キー（オプション）
+          - API キーは daemon がアクセスできるよう `~/.clawdbot/.env` に保存されます
+
+          ## データ永続化
+          すべての設定、セッション、エージェントデータは `/home/node/.clawdbot` の永続ボリュームに保存されます。
+
+          ## ドキュメント
+          - GitHub：https://github.com/clawdbot/clawdbot
+
+      es-ES:
+        name: "[En Desarrollo] Clawdbot"
+        description: |
+          Clawdbot es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería (WhatsApp, Telegram, Slack, Discord, etc.) a través de una arquitectura Gateway basada en WebSocket.
+        variables:
+          - key: PUBLIC_DOMAIN
+            name: Dominio
+            description: ¿Qué dominio desea vincular a Clawdbot?
+          - key: ANTHROPIC_API_KEY
+            name: Clave API de Anthropic
+            description: Su clave API de Anthropic para Claude (recomendado)
+          - key: OPENAI_API_KEY
+            name: Clave API de OpenAI
+            description: Su clave API de OpenAI (opcional)
+        readme: |
+          # Clawdbot
+          Clawdbot es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería a través de una arquitectura Gateway basada en WebSocket.
+
+          ## ⚠️ En Desarrollo
+          Esta plantilla está en desarrollo. Estado actual:
+
+          ### ✅ Completado
+          - Gateway inicia y acepta conexiones WebSocket
+          - Web UI carga a través de dominio público
+          - Autenticación por token (sin emparejamiento de dispositivo)
+
+          ### 🔄 En Pruebas
+          - [ ] Autenticación de proveedor AI (clave API Anthropic/OpenAI)
+          - [ ] Chat con asistente AI vía Web UI
+          - [ ] Conexión WhatsApp (inicio con código QR)
+          - [ ] Conexión bot de Telegram
+          - [ ] Conexión bot de Discord
+          - [ ] Integración Slack
+          - [ ] Persistencia de configuración de agente
+
+          ### 🎯 Flujo Esperado (Al Completar)
+          1. Desplegar y acceder a Web UI
+          2. Chatear con asistente AI directamente en Web UI
+          3. Conectar plataformas de mensajería (WhatsApp, Telegram, etc.)
+          4. Chatear con AI a través de cualquier plataforma conectada
+
+          ---
+
+          ## Plataformas Compatibles
+          - WhatsApp
+          - Telegram
+          - Slack
+          - Discord
+          - Y más plataformas de mensajería
+
+          ## Uso
+          - Acceda a la Web UI en `https://${PUBLIC_DOMAIN}`
+          - Configure sus conexiones de plataformas de mensajería a través del Gateway
+          - Use el Gateway Token para autenticación: `${CLAWDBOT_GATEWAY_TOKEN}`
+
+          ## Configuración
+          - `ANTHROPIC_API_KEY`: Su clave API de Anthropic para Claude (recomendado)
+          - `OPENAI_API_KEY`: Su clave API de OpenAI (opcional)
+          - Las claves API se almacenan en `~/.clawdbot/.env` para acceso del daemon
+
+          ## Persistencia de Datos
+          Toda la configuración, sesiones y datos de agentes se almacenan en un volumen persistente en `/home/node/.clawdbot`.
+
+          ## Documentación
+          - GitHub: https://github.com/clawdbot/clawdbot
+
+      id-ID:
+        name: "[Dalam Pengembangan] Clawdbot"
+        description: |
+          Clawdbot adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan (WhatsApp, Telegram, Slack, Discord, dll.) melalui arsitektur Gateway berbasis WebSocket.
+        variables:
+          - key: PUBLIC_DOMAIN
+            name: Domain
+            description: Domain apa yang ingin Anda ikat ke Clawdbot?
+          - key: ANTHROPIC_API_KEY
+            name: Kunci API Anthropic
+            description: Kunci API Anthropic Anda untuk Claude (disarankan)
+          - key: OPENAI_API_KEY
+            name: Kunci API OpenAI
+            description: Kunci API OpenAI Anda (opsional)
+        readme: |
+          # Clawdbot
+          Clawdbot adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan melalui arsitektur Gateway berbasis WebSocket.
+
+          ## ⚠️ Dalam Pengembangan
+          Template ini sedang dalam pengembangan. Status saat ini:
+
+          ### ✅ Selesai
+          - Gateway berjalan dan menerima koneksi WebSocket
+          - Web UI dapat dimuat melalui domain publik
+          - Autentikasi token (tanpa pairing perangkat)
+
+          ### 🔄 Dalam Pengujian
+          - [ ] Autentikasi penyedia AI (kunci API Anthropic/OpenAI)
+          - [ ] Chat dengan asisten AI via Web UI
+          - [ ] Koneksi WhatsApp (login kode QR)
+          - [ ] Koneksi bot Telegram
+          - [ ] Koneksi bot Discord
+          - [ ] Integrasi Slack
+          - [ ] Persistensi konfigurasi agen
+
+          ### 🎯 Alur yang Diharapkan (Setelah Selesai)
+          1. Deploy dan akses Web UI
+          2. Chat dengan asisten AI langsung di Web UI
+          3. Hubungkan platform perpesanan (WhatsApp, Telegram, dll.)
+          4. Chat dengan AI melalui platform yang terhubung
+
+          ---
+
+          ## Platform yang Didukung
+          - WhatsApp
+          - Telegram
+          - Slack
+          - Discord
+          - Dan platform perpesanan lainnya
+
+          ## Penggunaan
+          - Akses Web UI di `https://${PUBLIC_DOMAIN}`
+          - Konfigurasikan koneksi platform perpesanan Anda melalui Gateway
+          - Gunakan Gateway Token untuk autentikasi: `${CLAWDBOT_GATEWAY_TOKEN}`
+
+          ## Konfigurasi
+          - `ANTHROPIC_API_KEY`: Kunci API Anthropic Anda untuk Claude (disarankan)
+          - `OPENAI_API_KEY`: Kunci API OpenAI Anda (opsional)
+          - Kunci API disimpan di `~/.clawdbot/.env` untuk akses daemon
+
+          ## Persistensi Data
+          Semua konfigurasi, sesi, dan data agen disimpan dalam volume persisten di `/home/node/.clawdbot`.
+
+          ## Dokumentasi
+          - GitHub: https://github.com/clawdbot/clawdbot
