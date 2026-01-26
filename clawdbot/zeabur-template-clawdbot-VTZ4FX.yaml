@@ -67,9 +67,9 @@ spec:
       - And more messaging platforms
 
       ## Usage
-      - Access the Web UI at `https://${PUBLIC_DOMAIN}`
-      - Configure your messaging platform connections through the Gateway
-      - Use the Gateway token for authentication: `${CLAWDBOT_GATEWAY_TOKEN}`
+      1. After deployment, find the pre-generated URL in the **Instructions** tab
+      2. Click the "Web UI (with token)" link to connect directly (token is included in URL)
+      3. Configure your messaging platform connections through the Gateway
 
       ## Configuration
       - `ANTHROPIC_API_KEY`: Your Anthropic API key for Claude (recommended)
@@ -220,9 +220,9 @@ spec:
           - 更多訊息平台
 
           ## 使用方式
-          - 在 `https://${PUBLIC_DOMAIN}` 存取 Web UI
-          - 透過 Gateway 設定您的訊息平台連接
-          - 使用 Gateway Token 進行身份驗證：`${CLAWDBOT_GATEWAY_TOKEN}`
+          1. 部署完成後，在 **Instructions** 頁籤找到預先產生的 URL
+          2. 點擊「Web UI (with token)」連結直接連線（Token 已包含在 URL 中）
+          3. 透過 Gateway 設定您的訊息平台連接
 
           ## 設定
           - `ANTHROPIC_API_KEY`：您的 Anthropic Claude API 金鑰（推薦）
@@ -286,9 +286,9 @@ spec:
           - 更多消息平台
 
           ## 使用方式
-          - 在 `https://${PUBLIC_DOMAIN}` 访问 Web UI
-          - 通过 Gateway 配置您的消息平台连接
-          - 使用 Gateway Token 进行身份验证：`${CLAWDBOT_GATEWAY_TOKEN}`
+          1. 部署完成后，在 **Instructions** 页签找到预先生成的 URL
+          2. 点击「Web UI (with token)」链接直接连接（Token 已包含在 URL 中）
+          3. 通过 Gateway 配置您的消息平台连接
 
           ## 配置
           - `ANTHROPIC_API_KEY`：您的 Anthropic Claude API 密钥（推荐）
@@ -352,9 +352,9 @@ spec:
           - その他のメッセージングプラットフォーム
 
           ## 使用方法
-          - `https://${PUBLIC_DOMAIN}` で Web UI にアクセス
-          - Gateway を通じてメッセージングプラットフォームの接続を設定
-          - Gateway Token で認証：`${CLAWDBOT_GATEWAY_TOKEN}`
+          1. デプロイ後、**Instructions** タブで事前生成された URL を確認
+          2. 「Web UI (with token)」リンクをクリックして直接接続（トークンは URL に含まれています）
+          3. Gateway を通じてメッセージングプラットフォームの接続を設定
 
           ## 設定
           - `ANTHROPIC_API_KEY`：Anthropic Claude の API キー（推奨）
@@ -418,9 +418,9 @@ spec:
           - Y más plataformas de mensajería
 
           ## Uso
-          - Acceda a la Web UI en `https://${PUBLIC_DOMAIN}`
-          - Configure sus conexiones de plataformas de mensajería a través del Gateway
-          - Use el Gateway Token para autenticación: `${CLAWDBOT_GATEWAY_TOKEN}`
+          1. Después del despliegue, encuentre la URL pre-generada en la pestaña **Instructions**
+          2. Haga clic en el enlace "Web UI (with token)" para conectar directamente (el token está incluido en la URL)
+          3. Configure sus conexiones de plataformas de mensajería a través del Gateway
 
           ## Configuración
           - `ANTHROPIC_API_KEY`: Su clave API de Anthropic para Claude (recomendado)
@@ -484,9 +484,9 @@ spec:
           - Dan platform perpesanan lainnya
 
           ## Penggunaan
-          - Akses Web UI di `https://${PUBLIC_DOMAIN}`
-          - Konfigurasikan koneksi platform perpesanan Anda melalui Gateway
-          - Gunakan Gateway Token untuk autentikasi: `${CLAWDBOT_GATEWAY_TOKEN}`
+          1. Setelah deploy, temukan URL yang sudah dibuat di tab **Instructions**
+          2. Klik tautan "Web UI (with token)" untuk terhubung langsung (token sudah termasuk dalam URL)
+          3. Konfigurasikan koneksi platform perpesanan Anda melalui Gateway
 
           ## Konfigurasi
           - `ANTHROPIC_API_KEY`: Kunci API Anthropic Anda untuk Claude (disarankan)
