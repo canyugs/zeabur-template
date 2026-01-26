@@ -73,9 +73,10 @@ spec:
       - And more messaging platforms
 
       ## Usage
-      1. After deployment, find the pre-generated URL in the **Instructions** tab
-      2. Click the "Web UI (with token)" link to connect directly (token is included in URL)
-      3. Configure your messaging platform connections through the Gateway
+      1. After deployment, a secure Gateway token is **automatically generated** for you
+      2. Find the pre-generated URL in the **Instructions** tab
+      3. Click the "Web UI (with token)" link to connect directly (token is included in URL)
+      4. Configure your messaging platform connections through the Gateway
 
       For more details, see the [official documentation](https://github.com/clawdbot/clawdbot).
 
@@ -151,6 +152,7 @@ spec:
                 # Create initial config (only if not exists)
                 CONFIG_FILE="/home/node/.clawdbot/clawdbot.json"
                 mkdir -p /home/node/.clawdbot
+                chmod 700 /home/node/.clawdbot
 
                 if [ ! -f "$CONFIG_FILE" ]; then
                   echo "Creating initial config..."
@@ -253,8 +255,11 @@ spec:
                     const config = JSON.parse(fs.readFileSync(0, 'utf8'));
                     console.log(JSON.stringify(config, null, 2));
                   " > "$CONFIG_FILE"
+                  chmod 600 "$CONFIG_FILE"
                 else
                   echo "Config exists, skipping initialization..."
+                  # Ensure secure permissions on existing config
+                  chmod 600 "$CONFIG_FILE" 2>/dev/null || true
                 fi
 
                 # Initialize workspace with memory files
@@ -368,9 +373,10 @@ localization:
       - 更多訊息平台
 
       ## 使用方式
-      1. 部署完成後，在**使用說明**頁籤找到預先產生的 URL
-      2. 點擊「Web UI (with token)」連結直接連線（Token 已包含在 URL 中）
-      3. 透過 Gateway 設定您的訊息平台連接
+      1. 部署完成後，系統會**自動產生**一組安全的 Gateway Token
+      2. 在**使用說明**頁籤找到預先產生的 URL
+      3. 點擊「Web UI (with token)」連結直接連線（Token 已包含在 URL 中）
+      4. 透過 Gateway 設定您的訊息平台連接
 
       更多詳情請參閱[官方文件](https://github.com/clawdbot/clawdbot)。
 
@@ -473,9 +479,10 @@ localization:
       - 更多消息平台
 
       ## 使用方式
-      1. 部署完成后，在**使用说明**页签找到预先生成的 URL
-      2. 点击「Web UI (with token)」链接直接连接（Token 已包含在 URL 中）
-      3. 通过 Gateway 配置您的消息平台连接
+      1. 部署完成后，系统会**自动生成**一组安全的 Gateway Token
+      2. 在**使用说明**页签找到预先生成的 URL
+      3. 点击「Web UI (with token)」链接直接连接（Token 已包含在 URL 中）
+      4. 通过 Gateway 配置您的消息平台连接
 
       更多详情请参阅[官方文档](https://github.com/clawdbot/clawdbot)。
 
@@ -578,9 +585,10 @@ localization:
       - その他のメッセージングプラットフォーム
 
       ## 使用方法
-      1. デプロイ後、**指示**タブで事前生成された URL を確認
-      2. 「Web UI (with token)」リンクをクリックして直接接続（トークンは URL に含まれています）
-      3. Gateway を通じてメッセージングプラットフォームの接続を設定
+      1. デプロイ後、安全な Gateway トークンが**自動生成**されます
+      2. **指示**タブで事前生成された URL を確認
+      3. 「Web UI (with token)」リンクをクリックして直接接続（トークンは URL に含まれています）
+      4. Gateway を通じてメッセージングプラットフォームの接続を設定
 
       詳細は[公式ドキュメント](https://github.com/clawdbot/clawdbot)をご覧ください。
 
@@ -683,9 +691,10 @@ localization:
       - Y más plataformas de mensajería
 
       ## Uso
-      1. Después del despliegue, encuentre la URL pre-generada en la pestaña **Instrucciones**
-      2. Haga clic en el enlace "Web UI (with token)" para conectar directamente (el token está incluido en la URL)
-      3. Configure sus conexiones de plataformas de mensajería a través del Gateway
+      1. Después del despliegue, se **genera automáticamente** un token de Gateway seguro
+      2. Encuentre la URL pre-generada en la pestaña **Instrucciones**
+      3. Haga clic en el enlace "Web UI (with token)" para conectar directamente (el token está incluido en la URL)
+      4. Configure sus conexiones de plataformas de mensajería a través del Gateway
 
       Para más detalles, consulte la [documentación oficial](https://github.com/clawdbot/clawdbot).
 
@@ -788,9 +797,10 @@ localization:
       - Dan platform perpesanan lainnya
 
       ## Penggunaan
-      1. Setelah deploy, temukan URL yang sudah dibuat di tab **Instruksi**
-      2. Klik tautan "Web UI (with token)" untuk terhubung langsung (token sudah termasuk dalam URL)
-      3. Konfigurasikan koneksi platform perpesanan Anda melalui Gateway
+      1. Setelah deploy, token Gateway yang aman akan **dibuat secara otomatis**
+      2. Temukan URL yang sudah dibuat di tab **Instruksi**
+      3. Klik tautan "Web UI (with token)" untuk terhubung langsung (token sudah termasuk dalam URL)
+      4. Konfigurasikan koneksi platform perpesanan Anda melalui Gateway
 
       Untuk detail lebih lanjut, lihat [dokumentasi resmi](https://github.com/clawdbot/clawdbot).
 
