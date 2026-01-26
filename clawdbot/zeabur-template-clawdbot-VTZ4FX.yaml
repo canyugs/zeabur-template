@@ -2,7 +2,7 @@
 apiVersion: zeabur.com/v1
 kind: Template
 metadata:
-    name: "[Work in Progress] Clawdbot"
+    name: Clawdbot
 spec:
     description: |
       Clawdbot is a personal AI assistant that runs locally and connects to multiple messaging platforms (WhatsApp, Telegram, Slack, Discord, etc.) via a WebSocket-based Gateway architecture.
@@ -13,14 +13,18 @@ spec:
         type: DOMAIN
         name: Domain
         description: What domain do you want to bind Clawdbot to?
+      - key: ZEABUR_AI_HUB_API_KEY
+        type: STRING
+        name: Zeabur AI Hub API Key (Recommended)
+        description: Your Zeabur AI Hub API key for using Gemini/GPT/Claude/DeepSeek via AI Hub
       - key: ANTHROPIC_API_KEY
         type: STRING
         name: Anthropic API Key
-        description: Your Anthropic API key for Claude (recommended)
+        description: Your Anthropic API key for Claude (optional, can be configured later)
       - key: OPENAI_API_KEY
         type: STRING
         name: OpenAI API Key
-        description: Your OpenAI API key (optional)
+        description: Your OpenAI API key (optional, can be configured later)
     tags:
       - AI
       - Assistant
@@ -29,35 +33,37 @@ spec:
       - Telegram
       - Slack
       - Discord
+    resourceUsage:
+      cpu: 2
+      memory: 2048
 
     readme: |
       # Clawdbot
       Clawdbot is a personal AI assistant that runs locally and connects to multiple messaging platforms via a WebSocket-based Gateway architecture.
 
       ## ⚠️ Work in Progress
-      This template is under development. Current status:
+      This template is under development. Clawdbot is in rapid development, so this template uses the `main` tag to get the latest version.
 
       ### ✅ Completed
       - Gateway starts and accepts WebSocket connections
       - Web UI loads via public domain
       - Token-based authentication (no device pairing required)
+      - AI provider authentication (Anthropic API key)
+      - Chat with AI assistant via Web UI
+      - Zeabur AI Hub integration
+      - Telegram bot connection
 
       ### 🔄 Testing
-      - [ ] AI provider authentication (Anthropic/OpenAI API key)
-      - [ ] Chat with AI assistant via Web UI
       - [ ] WhatsApp connection (QR code login)
-      - [ ] Telegram bot connection
       - [ ] Discord bot connection
       - [ ] Slack integration
-      - [ ] Agent configuration persistence
-
-      ### 🎯 Expected Flow (When Complete)
-      1. Deploy and access Web UI
-      2. Chat with AI assistant directly in Web UI
-      3. Connect messaging platforms (WhatsApp, Telegram, etc.)
-      4. Chat with AI through any connected platform
 
       ---
+
+      ## Recommended Resources
+      Resource requirements may vary depending on the tools and features you use.
+      - **Shared Cluster**: 2000 m (2 vCPU), 2048 Mi (2 GB)
+      - **Dedicated Server**: Recommended for better performance
 
       ## Supported Platforms
       - WhatsApp
@@ -71,13 +77,51 @@ spec:
       2. Click the "Web UI (with token)" link to connect directly (token is included in URL)
       3. Configure your messaging platform connections through the Gateway
 
+      For more details, see the [official documentation](https://github.com/clawdbot/clawdbot).
+
       ## Configuration
-      - `ANTHROPIC_API_KEY`: Your Anthropic API key for Claude (recommended)
-      - `OPENAI_API_KEY`: Your OpenAI API key (optional)
-      - API keys are stored in `~/.clawdbot/.env` for daemon access
+      - `ZEABUR_AI_HUB_API_KEY`: Your Zeabur AI Hub API key (Recommended, for using Gemini/GPT/DeepSeek via Zeabur AI Hub)
+      - `ANTHROPIC_API_KEY`: Your Anthropic API key for Claude
+      - `OPENAI_API_KEY`: Your OpenAI API key (optional, for OpenAI features like memory search, TTS)
+
+      ## Telegram Bot Setup
+      1. Get your bot token from [@BotFather](https://t.me/BotFather)
+      2. Go to your service's **Environment Variables** tab in Zeabur dashboard
+      3. Add `TELEGRAM_BOT_TOKEN` with your bot token
+      4. Restart the service
+
+      **Pairing your Telegram account:**
+      1. Send `/start` to your bot in Telegram
+      2. The bot will reply with a pairing code (e.g., `JN4MSY23`)
+      3. Open **Command** in Zeabur dashboard to access the container terminal
+      4. Run: `clawdbot pairing approve telegram <code>`
+      5. You'll see: `Approved telegram sender <user-id>.`
+      6. Now you can chat with the bot!
+
+      ## Additional Configuration
+      Beyond environment variables, you can configure Clawdbot using:
+
+      **Web UI**
+      1. Open the Clawdbot Web UI
+      2. Go to Settings to configure models, channels, and preferences
+
+      **Command Line**
+      1. Open **Command** in Zeabur dashboard
+      2. Use `clawdbot` commands to manage providers, models, and settings
+
+      ## Changing the Default Model
+      The default model is `zeabur-ai/gpt-5-mini`. To change it:
+
+      **Via Command Line:**
+      ```
+      clawdbot config set agents.defaults.model.primary zeabur-ai/claude-sonnet-4-5
+      ```
+
+      **Available models:** `gemini-3-pro-preview`, `gpt-5`, `claude-sonnet-4-5`, `gemini-3-flash-preview`, `gpt-5-mini`, `claude-haiku-4-5`, `gemini-2.5-flash`, `deepseek-v3.2`
 
       ## Data Persistence
-      All configuration, sessions, and agent data are stored in a persistent volume at `/home/node/.clawdbot`.
+      - `/home/node/.clawdbot` - Configuration, sessions, and credentials
+      - `/home/node/clawd` - Workspace and memory files
 
       ## Documentation
       - GitHub: https://github.com/clawdbot/clawdbot
@@ -104,34 +148,132 @@ spec:
                 chmod +x /home/node/bin/clawdbot
                 export PATH="/home/node/bin:$PATH"
 
-                # Create initial config if not exists
+                # Create initial config (only if not exists)
                 CONFIG_FILE="/home/node/.clawdbot/clawdbot.json"
+                mkdir -p /home/node/.clawdbot
+
                 if [ ! -f "$CONFIG_FILE" ]; then
                   echo "Creating initial config..."
-                  mkdir -p /home/node/.clawdbot
-                  cat > "$CONFIG_FILE" << 'EOF'
-                {
-                  "gateway": {
-                    "trustedProxies": ["0.0.0.0/0"],
-                    "controlUi": {
-                      "allowInsecureAuth": true
-                    }
-                  }
-                }
-                EOF
+
+                  # Build config JSON dynamically
+                  CONFIG_JSON='{"gateway":{"trustedProxies":["0.0.0.0/0"],"controlUi":{"allowInsecureAuth":true}}}'
+
+                  # Add Zeabur AI Hub if configured
+                  if [ -n "${ZEABUR_AI_HUB_API_KEY}" ]; then
+                    CONFIG_JSON=$(echo "$CONFIG_JSON" | node -e "
+                      const fs = require('fs');
+                      let config = JSON.parse(fs.readFileSync(0, 'utf8'));
+                      config.agents = { defaults: { model: { primary: 'zeabur-ai/gpt-5-mini' } } };
+                      config.models = { providers: { 'zeabur-ai': {
+                        baseUrl: 'https://hnd1.aihub.zeabur.ai/v1',
+                        apiKey: process.env.ZEABUR_AI_HUB_API_KEY,
+                        api: 'openai-completions',
+                        models: [
+                          {
+                            id: 'gemini-3-pro-preview',
+                            name: 'Gemini 3 Pro Preview (Zeabur AI Hub)',
+                            reasoning: false,
+                            input: ['text', 'image'],
+                            cost: { input: 2, output: 12, cacheRead: 0.2, cacheWrite: 0 },
+                            contextWindow: 1000000,
+                            maxTokens: 8192
+                          },
+                          {
+                            id: 'gpt-5',
+                            name: 'GPT-5 (Zeabur AI Hub)',
+                            reasoning: false,
+                            input: ['text', 'image'],
+                            cost: { input: 1.25, output: 10, cacheRead: 0.13, cacheWrite: 0 },
+                            contextWindow: 400000,
+                            maxTokens: 8192
+                          },
+                          {
+                            id: 'claude-sonnet-4-5',
+                            name: 'Claude Sonnet 4.5 (Zeabur AI Hub)',
+                            reasoning: false,
+                            input: ['text', 'image'],
+                            cost: { input: 3.3, output: 16.5, cacheRead: 0.33, cacheWrite: 0 },
+                            contextWindow: 1000000,
+                            maxTokens: 8192
+                          },
+                          {
+                            id: 'gemini-3-flash-preview',
+                            name: 'Gemini 3 Flash Preview (Zeabur AI Hub)',
+                            reasoning: false,
+                            input: ['text', 'image'],
+                            cost: { input: 0.5, output: 3, cacheRead: 0.05, cacheWrite: 0 },
+                            contextWindow: 1000000,
+                            maxTokens: 8192
+                          },
+                          {
+                            id: 'gpt-5-mini',
+                            name: 'GPT-5 Mini (Zeabur AI Hub)',
+                            reasoning: false,
+                            input: ['text', 'image'],
+                            cost: { input: 0.25, output: 2, cacheRead: 0.03, cacheWrite: 0 },
+                            contextWindow: 400000,
+                            maxTokens: 8192
+                          },
+                          {
+                            id: 'claude-haiku-4-5',
+                            name: 'Claude Haiku 4.5 (Zeabur AI Hub)',
+                            reasoning: false,
+                            input: ['text', 'image'],
+                            cost: { input: 1.1, output: 5.5, cacheRead: 0.11, cacheWrite: 0 },
+                            contextWindow: 1000000,
+                            maxTokens: 8192
+                          },
+                          {
+                            id: 'gemini-2.5-flash',
+                            name: 'Gemini 2.5 Flash (Zeabur AI Hub)',
+                            reasoning: false,
+                            input: ['text', 'image'],
+                            cost: { input: 0.3, output: 2.5, cacheRead: 0.03, cacheWrite: 0 },
+                            contextWindow: 1000000,
+                            maxTokens: 8192
+                          },
+                          {
+                            id: 'deepseek-v3.2',
+                            name: 'DeepSeek V3.2 (Zeabur AI Hub)',
+                            reasoning: false,
+                            input: ['text'],
+                            cost: { input: 0.27, output: 0.4, cacheRead: 0.216, cacheWrite: 0 },
+                            contextWindow: 164000,
+                            maxTokens: 8192
+                          }
+                        ]
+                      }}};
+                      console.log(JSON.stringify(config));
+                    ")
+                  fi
+
+                  # Write formatted config
+                  echo "$CONFIG_JSON" | node -e "
+                    const fs = require('fs');
+                    const config = JSON.parse(fs.readFileSync(0, 'utf8'));
+                    console.log(JSON.stringify(config, null, 2));
+                  " > "$CONFIG_FILE"
+                else
+                  echo "Config exists, skipping initialization..."
                 fi
 
-                # Create .env file for API keys (daemon reads from here)
-                ENV_FILE="/home/node/.clawdbot/.env"
-                : > "$ENV_FILE"
-                [ -n "${ANTHROPIC_API_KEY:-}" ] && echo "ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}" >> "$ENV_FILE"
-                [ -n "${OPENAI_API_KEY:-}" ] && echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> "$ENV_FILE"
+                # Initialize workspace with memory files
+                WORKSPACE_DIR="/home/node/clawd"
+                mkdir -p "$WORKSPACE_DIR/memory"
+                if [ ! -f "$WORKSPACE_DIR/MEMORY.md" ]; then
+                  echo "# Memory" > "$WORKSPACE_DIR/MEMORY.md"
+                  echo "" >> "$WORKSPACE_DIR/MEMORY.md"
+                  echo "This file stores long-term memories. The AI will write important information here." >> "$WORKSPACE_DIR/MEMORY.md"
+                fi
 
                 exec node dist/index.js gateway --allow-unconfigured --bind "${CLAWDBOT_GATEWAY_BIND}" --port "${CLAWDBOT_GATEWAY_PORT}" --token "${CLAWDBOT_GATEWAY_TOKEN}"
           ports:
           - id: web
             port: 18789
             type: HTTP
+          healthCheck:
+            type: TCP
+            port: web
           volumes:
             - id: config
               dir: /home/node/.clawdbot
@@ -147,6 +289,9 @@ spec:
             NODE_ENV:
               default: production
               readonly: true
+            NODE_OPTIONS:
+              default: --max-old-space-size=1024
+              readonly: true
             CLAWDBOT_GATEWAY_PORT:
               default: "18789"
               readonly: true
@@ -159,6 +304,8 @@ spec:
               default: ${ANTHROPIC_API_KEY}
             OPENAI_API_KEY:
               default: ${OPENAI_API_KEY}
+            ZEABUR_AI_HUB_API_KEY:
+              default: ${ZEABUR_AI_HUB_API_KEY}
           instructions:
             - type: TEXT
               title: Web UI (with token)
@@ -168,333 +315,528 @@ spec:
               content: ${CLAWDBOT_GATEWAY_TOKEN}
               category: Credentials
 
-    localization:
-      zh-TW:
-        name: "[開發中] Clawdbot"
-        description: |
-          Clawdbot 是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台（WhatsApp、Telegram、Slack、Discord 等）。
-        variables:
-          - key: PUBLIC_DOMAIN
-            name: 網域
-            description: 您想要綁定 Clawdbot 的網域是？
-          - key: ANTHROPIC_API_KEY
-            name: Anthropic API 金鑰
-            description: 您的 Anthropic Claude API 金鑰（推薦）
-          - key: OPENAI_API_KEY
-            name: OpenAI API 金鑰
-            description: 您的 OpenAI API 金鑰（選填）
-        readme: |
-          # Clawdbot
-          Clawdbot 是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台。
+localization:
+  zh-TW:
+    name: Clawdbot
+    description: Clawdbot 是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台（WhatsApp、Telegram、Slack、Discord 等）。
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: 網域
+        description: 您想要綁定 Clawdbot 的網域是？
+      - key: ZEABUR_AI_HUB_API_KEY
+        name: Zeabur AI Hub API 金鑰（推薦）
+        description: 您的 Zeabur AI Hub API 金鑰，透過 AI Hub 使用 Gemini/GPT/Claude/DeepSeek
+      - key: ANTHROPIC_API_KEY
+        name: Anthropic API 金鑰
+        description: 您的 Anthropic Claude API 金鑰（選填，可之後再設定）
+      - key: OPENAI_API_KEY
+        name: OpenAI API 金鑰
+        description: 您的 OpenAI API 金鑰（選填，可之後再設定）
+    readme: |
+      # Clawdbot
+      Clawdbot 是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台。
 
-          ## ⚠️ 開發中
-          此模板正在開發中。目前狀態：
+      ## ⚠️ 開發中
+      此模板正在開發中。由於 Clawdbot 正在快速開發，本模板使用 `main` tag 以取得最新版本。
 
-          ### ✅ 已完成
-          - Gateway 啟動並接受 WebSocket 連線
-          - Web UI 可透過公開網域載入
-          - Token 認證（無需裝置配對）
+      ### ✅ 已完成
+      - Gateway 啟動並接受 WebSocket 連線
+      - Web UI 可透過公開網域載入
+      - Token 認證（無需裝置配對）
+      - AI 供應商認證（Anthropic API 金鑰）
+      - 透過 Web UI 與 AI 助手對話
+      - Zeabur AI Hub 整合
+      - Telegram 機器人連接
 
-          ### 🔄 測試中
-          - [ ] AI 供應商認證（Anthropic/OpenAI API 金鑰）
-          - [ ] 透過 Web UI 與 AI 助手對話
-          - [ ] WhatsApp 連接（QR code 登入）
-          - [ ] Telegram 機器人連接
-          - [ ] Discord 機器人連接
-          - [ ] Slack 整合
-          - [ ] Agent 設定持久化
+      ### 🔄 測試中
+      - [ ] WhatsApp 連接（QR code 登入）
+      - [ ] Discord 機器人連接
+      - [ ] Slack 整合
 
-          ### 🎯 預期流程（完成後）
-          1. 部署並存取 Web UI
-          2. 直接在 Web UI 中與 AI 助手對話
-          3. 連接訊息平台（WhatsApp、Telegram 等）
-          4. 透過任何已連接的平台與 AI 對話
+      ---
 
-          ---
+      ## 建議資源配置
+      資源需求可能因使用的工具和功能而異。
+      - **共享叢集**：2000 m（2 vCPU）、2048 Mi（2 GB）
+      - **專用伺服器**：推薦使用以獲得更好的效能
 
-          ## 支援平台
-          - WhatsApp
-          - Telegram
-          - Slack
-          - Discord
-          - 更多訊息平台
+      ## 支援平台
+      - WhatsApp
+      - Telegram
+      - Slack
+      - Discord
+      - 更多訊息平台
 
-          ## 使用方式
-          1. 部署完成後，在 **Instructions** 頁籤找到預先產生的 URL
-          2. 點擊「Web UI (with token)」連結直接連線（Token 已包含在 URL 中）
-          3. 透過 Gateway 設定您的訊息平台連接
+      ## 使用方式
+      1. 部署完成後，在**使用說明**頁籤找到預先產生的 URL
+      2. 點擊「Web UI (with token)」連結直接連線（Token 已包含在 URL 中）
+      3. 透過 Gateway 設定您的訊息平台連接
 
-          ## 設定
-          - `ANTHROPIC_API_KEY`：您的 Anthropic Claude API 金鑰（推薦）
-          - `OPENAI_API_KEY`：您的 OpenAI API 金鑰（選填）
-          - API 金鑰儲存於 `~/.clawdbot/.env` 供 daemon 存取
+      更多詳情請參閱[官方文件](https://github.com/clawdbot/clawdbot)。
 
-          ## 資料持久化
-          所有設定、會話和代理資料都儲存在 `/home/node/.clawdbot` 的持久化磁碟區中。
+      ## 設定
+      - `ZEABUR_AI_HUB_API_KEY`：您的 Zeabur AI Hub API 金鑰（推薦，透過 Zeabur AI Hub 使用 Gemini/GPT/DeepSeek）
+      - `ANTHROPIC_API_KEY`：您的 Anthropic Claude API 金鑰
+      - `OPENAI_API_KEY`：您的 OpenAI API 金鑰（選填，用於 OpenAI 功能如記憶搜尋、TTS 等）
 
-          ## 文件
-          - GitHub：https://github.com/clawdbot/clawdbot
+      ## Telegram 機器人設定
+      1. 從 [@BotFather](https://t.me/BotFather) 取得機器人 Token
+      2. 前往 Zeabur 控制台的服務**環境變數**頁籤
+      3. 新增 `TELEGRAM_BOT_TOKEN` 並填入您的 Token
+      4. 重新啟動服務
 
-      zh-CN:
-        name: "[开发中] Clawdbot"
-        description: |
-          Clawdbot 是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台（WhatsApp、Telegram、Slack、Discord 等）。
-        variables:
-          - key: PUBLIC_DOMAIN
-            name: 域名
-            description: 您想要绑定 Clawdbot 的域名是？
-          - key: ANTHROPIC_API_KEY
-            name: Anthropic API 密钥
-            description: 您的 Anthropic Claude API 密钥（推荐）
-          - key: OPENAI_API_KEY
-            name: OpenAI API 密钥
-            description: 您的 OpenAI API 密钥（可选）
-        readme: |
-          # Clawdbot
-          Clawdbot 是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台。
+      **配對您的 Telegram 帳號：**
+      1. 在 Telegram 向您的機器人發送 `/start`
+      2. 機器人會回覆配對碼（例如 `JN4MSY23`）
+      3. 在 Zeabur 控制台開啟**指令**進入容器終端
+      4. 執行：`clawdbot pairing approve telegram <配對碼>`
+      5. 看到 `Approved telegram sender <user-id>.` 表示配對成功
+      6. 現在可以開始與機器人對話了！
 
-          ## ⚠️ 开发中
-          此模板正在开发中。目前状态：
+      ## 更多設定方式
+      除了環境變數外，您也可以透過以下方式設定 Clawdbot：
 
-          ### ✅ 已完成
-          - Gateway 启动并接受 WebSocket 连接
-          - Web UI 可通过公开域名加载
-          - Token 认证（无需设备配对）
+      **Web UI**
+      1. 開啟 Clawdbot Web UI
+      2. 前往 Settings 設定模型、頻道和偏好設定
 
-          ### 🔄 测试中
-          - [ ] AI 供应商认证（Anthropic/OpenAI API 密钥）
-          - [ ] 通过 Web UI 与 AI 助手对话
-          - [ ] WhatsApp 连接（QR code 登录）
-          - [ ] Telegram 机器人连接
-          - [ ] Discord 机器人连接
-          - [ ] Slack 集成
-          - [ ] Agent 配置持久化
+      **指令**
+      1. 在 Zeabur 控制台開啟**指令**
+      2. 使用 `clawdbot` 指令管理供應商、模型和設定
 
-          ### 🎯 预期流程（完成后）
-          1. 部署并访问 Web UI
-          2. 直接在 Web UI 中与 AI 助手对话
-          3. 连接消息平台（WhatsApp、Telegram 等）
-          4. 通过任何已连接的平台与 AI 对话
+      ## 修改預設模型
+      預設模型為 `zeabur-ai/gpt-5-mini`。修改方式：
 
-          ---
+      **透過指令：**
+      ```
+      clawdbot config set agents.defaults.model.primary zeabur-ai/claude-sonnet-4-5
+      ```
 
-          ## 支持平台
-          - WhatsApp
-          - Telegram
-          - Slack
-          - Discord
-          - 更多消息平台
+      **可用模型：** `gemini-3-pro-preview`, `gpt-5`, `claude-sonnet-4-5`, `gemini-3-flash-preview`, `gpt-5-mini`, `claude-haiku-4-5`, `gemini-2.5-flash`, `deepseek-v3.2`
 
-          ## 使用方式
-          1. 部署完成后，在 **Instructions** 页签找到预先生成的 URL
-          2. 点击「Web UI (with token)」链接直接连接（Token 已包含在 URL 中）
-          3. 通过 Gateway 配置您的消息平台连接
+      ## 資料持久化
+      - `/home/node/.clawdbot` - 設定、會話和憑證
+      - `/home/node/clawd` - 工作區和記憶檔案
 
-          ## 配置
-          - `ANTHROPIC_API_KEY`：您的 Anthropic Claude API 密钥（推荐）
-          - `OPENAI_API_KEY`：您的 OpenAI API 密钥（可选）
-          - API 密钥存储于 `~/.clawdbot/.env` 供 daemon 访问
+      ## 文件
+      - GitHub：https://github.com/clawdbot/clawdbot
 
-          ## 数据持久化
-          所有配置、会话和代理数据都存储在 `/home/node/.clawdbot` 的持久化卷中。
+  zh-CN:
+    name: Clawdbot
+    description: Clawdbot 是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台（WhatsApp、Telegram、Slack、Discord 等）。
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: 域名
+        description: 您想要绑定 Clawdbot 的域名是？
+      - key: ZEABUR_AI_HUB_API_KEY
+        name: Zeabur AI Hub API 密钥（推荐）
+        description: 您的 Zeabur AI Hub API 密钥，通过 AI Hub 使用 Gemini/GPT/Claude/DeepSeek
+      - key: ANTHROPIC_API_KEY
+        name: Anthropic API 密钥
+        description: 您的 Anthropic Claude API 密钥（选填，可之后再设定）
+      - key: OPENAI_API_KEY
+        name: OpenAI API 密钥
+        description: 您的 OpenAI API 密钥（选填，可之后再设定）
+    readme: |
+      # Clawdbot
+      Clawdbot 是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台。
 
-          ## 文档
-          - GitHub：https://github.com/clawdbot/clawdbot
+      ## ⚠️ 开发中
+      此模板正在开发中。由于 Clawdbot 正在快速开发，本模板使用 `main` tag 以获取最新版本。
 
-      ja-JP:
-        name: "[開発中] Clawdbot"
-        description: |
-          Clawdbot は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォーム（WhatsApp、Telegram、Slack、Discord など）に接続する個人用 AI アシスタントです。
-        variables:
-          - key: PUBLIC_DOMAIN
-            name: ドメイン
-            description: Clawdbot にバインドするドメインは？
-          - key: ANTHROPIC_API_KEY
-            name: Anthropic API キー
-            description: Anthropic Claude の API キー（推奨）
-          - key: OPENAI_API_KEY
-            name: OpenAI API キー
-            description: OpenAI の API キー（オプション）
-        readme: |
-          # Clawdbot
-          Clawdbot は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォームに接続する個人用 AI アシスタントです。
+      ### ✅ 已完成
+      - Gateway 启动并接受 WebSocket 连接
+      - Web UI 可通过公开域名加载
+      - Token 认证（无需设备配对）
+      - AI 供应商认证（Anthropic API 密钥）
+      - 通过 Web UI 与 AI 助手对话
+      - Zeabur AI Hub 集成
+      - Telegram 机器人连接
 
-          ## ⚠️ 開発中
-          このテンプレートは開発中です。現在の状態：
+      ### 🔄 测试中
+      - [ ] WhatsApp 连接（QR code 登录）
+      - [ ] Discord 机器人连接
+      - [ ] Slack 集成
 
-          ### ✅ 完了
-          - Gateway が起動し WebSocket 接続を受け入れ
-          - Web UI が公開ドメインで読み込み可能
-          - トークン認証（デバイスペアリング不要）
+      ---
 
-          ### 🔄 テスト中
-          - [ ] AI プロバイダー認証（Anthropic/OpenAI API キー）
-          - [ ] Web UI で AI アシスタントとチャット
-          - [ ] WhatsApp 接続（QR コードログイン）
-          - [ ] Telegram ボット接続
-          - [ ] Discord ボット接続
-          - [ ] Slack 統合
-          - [ ] エージェント設定の永続化
+      ## 建议资源配置
+      资源需求可能因使用的工具和功能而异。
+      - **共享集群**：2000 m（2 vCPU）、2048 Mi（2 GB）
+      - **专用服务器**：推荐使用以获得更好的性能
 
-          ### 🎯 想定フロー（完了後）
-          1. デプロイして Web UI にアクセス
-          2. Web UI で直接 AI アシスタントとチャット
-          3. メッセージングプラットフォームを接続（WhatsApp、Telegram など）
-          4. 接続した任意のプラットフォームで AI とチャット
+      ## 支持平台
+      - WhatsApp
+      - Telegram
+      - Slack
+      - Discord
+      - 更多消息平台
 
-          ---
+      ## 使用方式
+      1. 部署完成后，在**使用说明**页签找到预先生成的 URL
+      2. 点击「Web UI (with token)」链接直接连接（Token 已包含在 URL 中）
+      3. 通过 Gateway 配置您的消息平台连接
 
-          ## 対応プラットフォーム
-          - WhatsApp
-          - Telegram
-          - Slack
-          - Discord
-          - その他のメッセージングプラットフォーム
+      更多详情请参阅[官方文档](https://github.com/clawdbot/clawdbot)。
 
-          ## 使用方法
-          1. デプロイ後、**Instructions** タブで事前生成された URL を確認
-          2. 「Web UI (with token)」リンクをクリックして直接接続（トークンは URL に含まれています）
-          3. Gateway を通じてメッセージングプラットフォームの接続を設定
+      ## 配置
+      - `ZEABUR_AI_HUB_API_KEY`：您的 Zeabur AI Hub API 密钥（推荐，通过 Zeabur AI Hub 使用 Gemini/GPT/DeepSeek）
+      - `ANTHROPIC_API_KEY`：您的 Anthropic Claude API 密钥
+      - `OPENAI_API_KEY`：您的 OpenAI API 密钥（选填，用于 OpenAI 功能如记忆搜索、TTS 等）
 
-          ## 設定
-          - `ANTHROPIC_API_KEY`：Anthropic Claude の API キー（推奨）
-          - `OPENAI_API_KEY`：OpenAI の API キー（オプション）
-          - API キーは daemon がアクセスできるよう `~/.clawdbot/.env` に保存されます
+      ## Telegram 机器人设置
+      1. 从 [@BotFather](https://t.me/BotFather) 获取机器人 Token
+      2. 前往 Zeabur 控制台的服务**环境变量**页签
+      3. 添加 `TELEGRAM_BOT_TOKEN` 并填入您的 Token
+      4. 重新启动服务
 
-          ## データ永続化
-          すべての設定、セッション、エージェントデータは `/home/node/.clawdbot` の永続ボリュームに保存されます。
+      **配对您的 Telegram 账号：**
+      1. 在 Telegram 向您的机器人发送 `/start`
+      2. 机器人会回复配对码（例如 `JN4MSY23`）
+      3. 在 Zeabur 控制台打开**命令**进入容器终端
+      4. 执行：`clawdbot pairing approve telegram <配对码>`
+      5. 看到 `Approved telegram sender <user-id>.` 表示配对成功
+      6. 现在可以开始与机器人对话了！
 
-          ## ドキュメント
-          - GitHub：https://github.com/clawdbot/clawdbot
+      ## 更多配置方式
+      除了环境变量外，您也可以通过以下方式配置 Clawdbot：
 
-      es-ES:
-        name: "[En Desarrollo] Clawdbot"
-        description: |
-          Clawdbot es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería (WhatsApp, Telegram, Slack, Discord, etc.) a través de una arquitectura Gateway basada en WebSocket.
-        variables:
-          - key: PUBLIC_DOMAIN
-            name: Dominio
-            description: ¿Qué dominio desea vincular a Clawdbot?
-          - key: ANTHROPIC_API_KEY
-            name: Clave API de Anthropic
-            description: Su clave API de Anthropic para Claude (recomendado)
-          - key: OPENAI_API_KEY
-            name: Clave API de OpenAI
-            description: Su clave API de OpenAI (opcional)
-        readme: |
-          # Clawdbot
-          Clawdbot es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería a través de una arquitectura Gateway basada en WebSocket.
+      **Web UI**
+      1. 打开 Clawdbot Web UI
+      2. 前往 Settings 配置模型、频道和偏好设置
 
-          ## ⚠️ En Desarrollo
-          Esta plantilla está en desarrollo. Estado actual:
+      **命令行**
+      1. 在 Zeabur 控制台打开**命令**
+      2. 使用 `clawdbot` 命令管理供应商、模型和设置
 
-          ### ✅ Completado
-          - Gateway inicia y acepta conexiones WebSocket
-          - Web UI carga a través de dominio público
-          - Autenticación por token (sin emparejamiento de dispositivo)
+      ## 修改默认模型
+      默认模型为 `zeabur-ai/gpt-5-mini`。修改方式：
 
-          ### 🔄 En Pruebas
-          - [ ] Autenticación de proveedor AI (clave API Anthropic/OpenAI)
-          - [ ] Chat con asistente AI vía Web UI
-          - [ ] Conexión WhatsApp (inicio con código QR)
-          - [ ] Conexión bot de Telegram
-          - [ ] Conexión bot de Discord
-          - [ ] Integración Slack
-          - [ ] Persistencia de configuración de agente
+      **通过命令行：**
+      ```
+      clawdbot config set agents.defaults.model.primary zeabur-ai/claude-sonnet-4-5
+      ```
 
-          ### 🎯 Flujo Esperado (Al Completar)
-          1. Desplegar y acceder a Web UI
-          2. Chatear con asistente AI directamente en Web UI
-          3. Conectar plataformas de mensajería (WhatsApp, Telegram, etc.)
-          4. Chatear con AI a través de cualquier plataforma conectada
+      **可用模型：** `gemini-3-pro-preview`, `gpt-5`, `claude-sonnet-4-5`, `gemini-3-flash-preview`, `gpt-5-mini`, `claude-haiku-4-5`, `gemini-2.5-flash`, `deepseek-v3.2`
 
-          ---
+      ## 数据持久化
+      - `/home/node/.clawdbot` - 配置、会话和凭证
+      - `/home/node/clawd` - 工作区和记忆文件
 
-          ## Plataformas Compatibles
-          - WhatsApp
-          - Telegram
-          - Slack
-          - Discord
-          - Y más plataformas de mensajería
+      ## 文档
+      - GitHub：https://github.com/clawdbot/clawdbot
 
-          ## Uso
-          1. Después del despliegue, encuentre la URL pre-generada en la pestaña **Instructions**
-          2. Haga clic en el enlace "Web UI (with token)" para conectar directamente (el token está incluido en la URL)
-          3. Configure sus conexiones de plataformas de mensajería a través del Gateway
+  ja-JP:
+    name: Clawdbot
+    description: Clawdbot は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォーム（WhatsApp、Telegram、Slack、Discord など）に接続する個人用 AI アシスタントです。
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: ドメイン
+        description: Clawdbot にバインドするドメインは？
+      - key: ZEABUR_AI_HUB_API_KEY
+        name: Zeabur AI Hub API キー（推奨）
+        description: Zeabur AI Hub API キー、AI Hub 経由で Gemini/GPT/Claude/DeepSeek を使用
+      - key: ANTHROPIC_API_KEY
+        name: Anthropic API キー
+        description: Anthropic Claude の API キー（任意、後で設定可能）
+      - key: OPENAI_API_KEY
+        name: OpenAI API キー
+        description: OpenAI API キー（任意、後で設定可能）
+    readme: |
+      # Clawdbot
+      Clawdbot は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォームに接続する個人用 AI アシスタントです。
 
-          ## Configuración
-          - `ANTHROPIC_API_KEY`: Su clave API de Anthropic para Claude (recomendado)
-          - `OPENAI_API_KEY`: Su clave API de OpenAI (opcional)
-          - Las claves API se almacenan en `~/.clawdbot/.env` para acceso del daemon
+      ## ⚠️ 開発中
+      このテンプレートは開発中です。Clawdbot は急速に開発中のため、本テンプレートは `main` タグを使用して最新バージョンを取得します。
 
-          ## Persistencia de Datos
-          Toda la configuración, sesiones y datos de agentes se almacenan en un volumen persistente en `/home/node/.clawdbot`.
+      ### ✅ 完了
+      - Gateway が起動し WebSocket 接続を受け入れ
+      - Web UI が公開ドメインで読み込み可能
+      - トークン認証（デバイスペアリング不要）
+      - AI プロバイダー認証（Anthropic API キー）
+      - Web UI で AI アシスタントとチャット
+      - Zeabur AI Hub 統合
+      - Telegram ボット接続
 
-          ## Documentación
-          - GitHub: https://github.com/clawdbot/clawdbot
+      ### 🔄 テスト中
+      - [ ] WhatsApp 接続（QR コードログイン）
+      - [ ] Discord ボット接続
+      - [ ] Slack 統合
 
-      id-ID:
-        name: "[Dalam Pengembangan] Clawdbot"
-        description: |
-          Clawdbot adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan (WhatsApp, Telegram, Slack, Discord, dll.) melalui arsitektur Gateway berbasis WebSocket.
-        variables:
-          - key: PUBLIC_DOMAIN
-            name: Domain
-            description: Domain apa yang ingin Anda ikat ke Clawdbot?
-          - key: ANTHROPIC_API_KEY
-            name: Kunci API Anthropic
-            description: Kunci API Anthropic Anda untuk Claude (disarankan)
-          - key: OPENAI_API_KEY
-            name: Kunci API OpenAI
-            description: Kunci API OpenAI Anda (opsional)
-        readme: |
-          # Clawdbot
-          Clawdbot adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan melalui arsitektur Gateway berbasis WebSocket.
+      ---
 
-          ## ⚠️ Dalam Pengembangan
-          Template ini sedang dalam pengembangan. Status saat ini:
+      ## 推奨リソース
+      使用するツールや機能によってリソース要件が異なる場合があります。
+      - **共有クラスター**：2000 m（2 vCPU）、2048 Mi（2 GB）
+      - **専用サーバー**：より良いパフォーマンスのために推奨
 
-          ### ✅ Selesai
-          - Gateway berjalan dan menerima koneksi WebSocket
-          - Web UI dapat dimuat melalui domain publik
-          - Autentikasi token (tanpa pairing perangkat)
+      ## 対応プラットフォーム
+      - WhatsApp
+      - Telegram
+      - Slack
+      - Discord
+      - その他のメッセージングプラットフォーム
 
-          ### 🔄 Dalam Pengujian
-          - [ ] Autentikasi penyedia AI (kunci API Anthropic/OpenAI)
-          - [ ] Chat dengan asisten AI via Web UI
-          - [ ] Koneksi WhatsApp (login kode QR)
-          - [ ] Koneksi bot Telegram
-          - [ ] Koneksi bot Discord
-          - [ ] Integrasi Slack
-          - [ ] Persistensi konfigurasi agen
+      ## 使用方法
+      1. デプロイ後、**指示**タブで事前生成された URL を確認
+      2. 「Web UI (with token)」リンクをクリックして直接接続（トークンは URL に含まれています）
+      3. Gateway を通じてメッセージングプラットフォームの接続を設定
 
-          ### 🎯 Alur yang Diharapkan (Setelah Selesai)
-          1. Deploy dan akses Web UI
-          2. Chat dengan asisten AI langsung di Web UI
-          3. Hubungkan platform perpesanan (WhatsApp, Telegram, dll.)
-          4. Chat dengan AI melalui platform yang terhubung
+      詳細は[公式ドキュメント](https://github.com/clawdbot/clawdbot)をご覧ください。
 
-          ---
+      ## 設定
+      - `ZEABUR_AI_HUB_API_KEY`：Zeabur AI Hub API キー（推奨、Zeabur AI Hub 経由で Gemini/GPT/DeepSeek を使用）
+      - `ANTHROPIC_API_KEY`：Anthropic Claude の API キー
+      - `OPENAI_API_KEY`：OpenAI API キー（任意、メモリ検索・TTS など OpenAI 機能用）
 
-          ## Platform yang Didukung
-          - WhatsApp
-          - Telegram
-          - Slack
-          - Discord
-          - Dan platform perpesanan lainnya
+      ## Telegram ボット設定
+      1. [@BotFather](https://t.me/BotFather) からボットトークンを取得
+      2. Zeabur ダッシュボードのサービス**変数**タブに移動
+      3. `TELEGRAM_BOT_TOKEN` を追加してトークンを入力
+      4. サービスを再起動
 
-          ## Penggunaan
-          1. Setelah deploy, temukan URL yang sudah dibuat di tab **Instructions**
-          2. Klik tautan "Web UI (with token)" untuk terhubung langsung (token sudah termasuk dalam URL)
-          3. Konfigurasikan koneksi platform perpesanan Anda melalui Gateway
+      **Telegram アカウントのペアリング：**
+      1. Telegram でボットに `/start` を送信
+      2. ボットがペアリングコードを返信（例：`JN4MSY23`）
+      3. Zeabur ダッシュボードで**コマンド**を開いてコンテナターミナルにアクセス
+      4. 実行：`clawdbot pairing approve telegram <コード>`
+      5. `Approved telegram sender <user-id>.` と表示されればペアリング完了
+      6. ボットとチャットできるようになりました！
 
-          ## Konfigurasi
-          - `ANTHROPIC_API_KEY`: Kunci API Anthropic Anda untuk Claude (disarankan)
-          - `OPENAI_API_KEY`: Kunci API OpenAI Anda (opsional)
-          - Kunci API disimpan di `~/.clawdbot/.env` untuk akses daemon
+      ## その他の設定方法
+      環境変数以外にも、以下の方法で Clawdbot を設定できます：
 
-          ## Persistensi Data
-          Semua konfigurasi, sesi, dan data agen disimpan dalam volume persisten di `/home/node/.clawdbot`.
+      **Web UI**
+      1. Clawdbot Web UI を開く
+      2. Settings でモデル、チャンネル、設定を構成
 
-          ## Dokumentasi
-          - GitHub: https://github.com/clawdbot/clawdbot
+      **コマンドライン**
+      1. Zeabur ダッシュボードで**コマンド**を開く
+      2. `clawdbot` コマンドでプロバイダー、モデル、設定を管理
+
+      ## デフォルトモデルの変更
+      デフォルトモデルは `zeabur-ai/gpt-5-mini` です。変更方法：
+
+      **コマンドラインで：**
+      ```
+      clawdbot config set agents.defaults.model.primary zeabur-ai/claude-sonnet-4-5
+      ```
+
+      **利用可能なモデル：** `gemini-3-pro-preview`, `gpt-5`, `claude-sonnet-4-5`, `gemini-3-flash-preview`, `gpt-5-mini`, `claude-haiku-4-5`, `gemini-2.5-flash`, `deepseek-v3.2`
+
+      ## データ永続化
+      - `/home/node/.clawdbot` - 設定、セッション、認証情報
+      - `/home/node/clawd` - ワークスペースとメモリファイル
+
+      ## ドキュメント
+      - GitHub：https://github.com/clawdbot/clawdbot
+
+  es-ES:
+    name: Clawdbot
+    description: Clawdbot es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería (WhatsApp, Telegram, Slack, Discord, etc.) a través de una arquitectura Gateway basada en WebSocket.
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: Dominio
+        description: ¿Qué dominio desea vincular a Clawdbot?
+      - key: ZEABUR_AI_HUB_API_KEY
+        name: Clave API de Zeabur AI Hub (Recomendado)
+        description: Su clave API de Zeabur AI Hub para usar Gemini/GPT/Claude/DeepSeek a través de AI Hub
+      - key: ANTHROPIC_API_KEY
+        name: Clave API de Anthropic
+        description: Su clave API de Anthropic para Claude (opcional, puede configurarse después)
+      - key: OPENAI_API_KEY
+        name: Clave API de OpenAI
+        description: Su clave API de OpenAI (opcional, puede configurarse después)
+    readme: |
+      # Clawdbot
+      Clawdbot es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería a través de una arquitectura Gateway basada en WebSocket.
+
+      ## ⚠️ En Desarrollo
+      Esta plantilla está en desarrollo. Clawdbot está en desarrollo rápido, por lo que esta plantilla usa el tag `main` para obtener la última versión.
+
+      ### ✅ Completado
+      - Gateway inicia y acepta conexiones WebSocket
+      - Web UI carga a través de dominio público
+      - Autenticación por token (sin emparejamiento de dispositivo)
+      - Autenticación de proveedor AI (clave API Anthropic)
+      - Chat con asistente AI vía Web UI
+      - Integración Zeabur AI Hub
+      - Conexión bot de Telegram
+
+      ### 🔄 En Pruebas
+      - [ ] Conexión WhatsApp (inicio con código QR)
+      - [ ] Conexión bot de Discord
+      - [ ] Integración Slack
+
+      ---
+
+      ## Recursos Recomendados
+      Los requisitos de recursos pueden variar según las herramientas y funciones que utilice.
+      - **Clúster Compartido**: 2000 m (2 vCPU), 2048 Mi (2 GB)
+      - **Servidor Dedicado**: Recomendado para mejor rendimiento
+
+      ## Plataformas Compatibles
+      - WhatsApp
+      - Telegram
+      - Slack
+      - Discord
+      - Y más plataformas de mensajería
+
+      ## Uso
+      1. Después del despliegue, encuentre la URL pre-generada en la pestaña **Instrucciones**
+      2. Haga clic en el enlace "Web UI (with token)" para conectar directamente (el token está incluido en la URL)
+      3. Configure sus conexiones de plataformas de mensajería a través del Gateway
+
+      Para más detalles, consulte la [documentación oficial](https://github.com/clawdbot/clawdbot).
+
+      ## Configuración
+      - `ZEABUR_AI_HUB_API_KEY`: Su clave API de Zeabur AI Hub (Recomendado, para usar Gemini/GPT/DeepSeek a través de Zeabur AI Hub)
+      - `ANTHROPIC_API_KEY`: Su clave API de Anthropic para Claude
+      - `OPENAI_API_KEY`: Su clave API de OpenAI (opcional, para funciones de OpenAI como búsqueda de memoria, TTS)
+
+      ## Configuración de Bot de Telegram
+      1. Obtenga su token de bot de [@BotFather](https://t.me/BotFather)
+      2. Vaya a la pestaña **Variable** de su servicio en el panel de Zeabur
+      3. Agregue `TELEGRAM_BOT_TOKEN` con su token de bot
+      4. Reinicie el servicio
+
+      **Vincular su cuenta de Telegram:**
+      1. Envíe `/start` a su bot en Telegram
+      2. El bot responderá con un código de vinculación (ej: `JN4MSY23`)
+      3. Abra **Comando** en el panel de Zeabur para acceder a la terminal del contenedor
+      4. Ejecute: `clawdbot pairing approve telegram <código>`
+      5. Verá: `Approved telegram sender <user-id>.` indicando vinculación exitosa
+      6. ¡Ahora puede chatear con el bot!
+
+      ## Configuración Adicional
+      Además de las variables de entorno, puede configurar Clawdbot usando:
+
+      **Web UI**
+      1. Abra la Web UI de Clawdbot
+      2. Vaya a Settings para configurar modelos, canales y preferencias
+
+      **Línea de Comandos**
+      1. Abra **Comando** en el panel de Zeabur
+      2. Use comandos `clawdbot` para gestionar proveedores, modelos y configuraciones
+
+      ## Cambiar el Modelo Predeterminado
+      El modelo predeterminado es `zeabur-ai/gpt-5-mini`. Para cambiarlo:
+
+      **Vía Línea de Comandos:**
+      ```
+      clawdbot config set agents.defaults.model.primary zeabur-ai/claude-sonnet-4-5
+      ```
+
+      **Modelos disponibles:** `gemini-3-pro-preview`, `gpt-5`, `claude-sonnet-4-5`, `gemini-3-flash-preview`, `gpt-5-mini`, `claude-haiku-4-5`, `gemini-2.5-flash`, `deepseek-v3.2`
+
+      ## Persistencia de Datos
+      - `/home/node/.clawdbot` - Configuración, sesiones y credenciales
+      - `/home/node/clawd` - Espacio de trabajo y archivos de memoria
+
+      ## Documentación
+      - GitHub: https://github.com/clawdbot/clawdbot
+
+  id-ID:
+    name: Clawdbot
+    description: Clawdbot adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan (WhatsApp, Telegram, Slack, Discord, dll.) melalui arsitektur Gateway berbasis WebSocket.
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: Domain
+        description: Domain apa yang ingin Anda ikat ke Clawdbot?
+      - key: ZEABUR_AI_HUB_API_KEY
+        name: Kunci API Zeabur AI Hub (Direkomendasikan)
+        description: Kunci API Zeabur AI Hub Anda untuk menggunakan Gemini/GPT/Claude/DeepSeek melalui AI Hub
+      - key: ANTHROPIC_API_KEY
+        name: Kunci API Anthropic
+        description: Kunci API Anthropic Anda untuk Claude (opsional, dapat dikonfigurasi nanti)
+      - key: OPENAI_API_KEY
+        name: Kunci API OpenAI
+        description: Kunci API OpenAI Anda (opsional, dapat dikonfigurasi nanti)
+    readme: |
+      # Clawdbot
+      Clawdbot adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan melalui arsitektur Gateway berbasis WebSocket.
+
+      ## ⚠️ Dalam Pengembangan
+      Template ini sedang dalam pengembangan. Clawdbot sedang dalam pengembangan cepat, sehingga template ini menggunakan tag `main` untuk mendapatkan versi terbaru.
+
+      ### ✅ Selesai
+      - Gateway berjalan dan menerima koneksi WebSocket
+      - Web UI dapat dimuat melalui domain publik
+      - Autentikasi token (tanpa pairing perangkat)
+      - Autentikasi penyedia AI (kunci API Anthropic)
+      - Chat dengan asisten AI via Web UI
+      - Integrasi Zeabur AI Hub
+      - Koneksi bot Telegram
+
+      ### 🔄 Dalam Pengujian
+      - [ ] Koneksi WhatsApp (login kode QR)
+      - [ ] Koneksi bot Discord
+      - [ ] Integrasi Slack
+
+      ---
+
+      ## Sumber Daya yang Direkomendasikan
+      Kebutuhan sumber daya dapat bervariasi tergantung pada alat dan fitur yang Anda gunakan.
+      - **Kluster Bersama**: 2000 m (2 vCPU), 2048 Mi (2 GB)
+      - **Server Khusus**: Direkomendasikan untuk performa lebih baik
+
+      ## Platform yang Didukung
+      - WhatsApp
+      - Telegram
+      - Slack
+      - Discord
+      - Dan platform perpesanan lainnya
+
+      ## Penggunaan
+      1. Setelah deploy, temukan URL yang sudah dibuat di tab **Instruksi**
+      2. Klik tautan "Web UI (with token)" untuk terhubung langsung (token sudah termasuk dalam URL)
+      3. Konfigurasikan koneksi platform perpesanan Anda melalui Gateway
+
+      Untuk detail lebih lanjut, lihat [dokumentasi resmi](https://github.com/clawdbot/clawdbot).
+
+      ## Konfigurasi
+      - `ZEABUR_AI_HUB_API_KEY`: Kunci API Zeabur AI Hub Anda (Direkomendasikan, untuk menggunakan Gemini/GPT/DeepSeek melalui Zeabur AI Hub)
+      - `ANTHROPIC_API_KEY`: Kunci API Anthropic Anda untuk Claude
+      - `OPENAI_API_KEY`: Kunci API OpenAI Anda (opsional, untuk fitur OpenAI seperti pencarian memori, TTS)
+
+      ## Pengaturan Bot Telegram
+      1. Dapatkan token bot Anda dari [@BotFather](https://t.me/BotFather)
+      2. Buka tab **Variabel** layanan Anda di dashboard Zeabur
+      3. Tambahkan `TELEGRAM_BOT_TOKEN` dengan token bot Anda
+      4. Restart layanan
+
+      **Memasangkan akun Telegram Anda:**
+      1. Kirim `/start` ke bot Anda di Telegram
+      2. Bot akan membalas dengan kode pairing (contoh: `JN4MSY23`)
+      3. Buka **Command** di dashboard Zeabur untuk mengakses terminal container
+      4. Jalankan: `clawdbot pairing approve telegram <kode>`
+      5. Anda akan melihat: `Approved telegram sender <user-id>.` menandakan pairing berhasil
+      6. Sekarang Anda dapat mengobrol dengan bot!
+
+      ## Konfigurasi Tambahan
+      Selain variabel lingkungan, Anda juga dapat mengkonfigurasi Clawdbot menggunakan:
+
+      **Web UI**
+      1. Buka Clawdbot Web UI
+      2. Buka Settings untuk mengkonfigurasi model, channel, dan preferensi
+
+      **Baris Perintah**
+      1. Buka **Command** di dashboard Zeabur
+      2. Gunakan perintah `clawdbot` untuk mengelola provider, model, dan pengaturan
+
+      ## Mengubah Model Default
+      Model default adalah `zeabur-ai/gpt-5-mini`. Untuk mengubahnya:
+
+      **Melalui Baris Perintah:**
+      ```
+      clawdbot config set agents.defaults.model.primary zeabur-ai/claude-sonnet-4-5
+      ```
+
+      **Model tersedia:** `gemini-3-pro-preview`, `gpt-5`, `claude-sonnet-4-5`, `gemini-3-flash-preview`, `gpt-5-mini`, `claude-haiku-4-5`, `gemini-2.5-flash`, `deepseek-v3.2`
+
+      ## Persistensi Data
+      - `/home/node/.clawdbot` - Konfigurasi, sesi, dan kredensial
+      - `/home/node/clawd` - Ruang kerja dan file memori
+
+      ## Dokumentasi
+      - GitHub: https://github.com/clawdbot/clawdbot
