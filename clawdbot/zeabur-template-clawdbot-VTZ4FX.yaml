@@ -76,20 +76,27 @@ spec:
       1. After deployment, a secure Gateway token is **automatically generated** for you
       2. Find the pre-generated URL in the **Instructions** tab
       3. Click the "Web UI (with token)" link to connect directly (token is included in URL)
-      4. Configure your messaging platform connections through the Gateway
+      4. When you see the Clawdbot interface, deployment is complete
+      5. Go to the **Chat** page to test if your AI provider is working
 
       For more details, see the [official documentation](https://github.com/clawdbot/clawdbot).
 
       ## Configuration
-      - `ZEABUR_AI_HUB_API_KEY`: Your Zeabur AI Hub API key (Recommended, for using Gemini/GPT/DeepSeek via Zeabur AI Hub)
+      - `ZEABUR_AI_HUB_API_KEY`: Your Zeabur AI Hub API key (Recommended). [Get your API key here](https://zeabur.com/docs/ai-hub)
       - `ANTHROPIC_API_KEY`: Your Anthropic API key for Claude
       - `OPENAI_API_KEY`: Your OpenAI API key (optional, for OpenAI features like memory search, TTS)
 
       ## Telegram Bot Setup
-      1. Get your bot token from [@BotFather](https://t.me/BotFather)
-      2. Go to your service's **Environment Variables** tab in Zeabur dashboard
-      3. Add `TELEGRAM_BOT_TOKEN` with your bot token
-      4. Restart the service
+      **Getting your bot token from BotFather:**
+      1. Open Telegram and search for [@BotFather](https://t.me/BotFather)
+      2. Send `/newbot` to create a new bot
+      3. Follow the prompts to set a name and username for your bot
+      4. BotFather will send you a token (e.g., `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`)
+
+      **Adding the token to Zeabur:**
+      1. Go to your service's **Environment Variables** tab in Zeabur dashboard
+      2. Add `TELEGRAM_BOT_TOKEN` with your bot token
+      3. Restart the service
 
       **Pairing your Telegram account:**
       1. Send `/start` to your bot in Telegram
@@ -112,6 +119,10 @@ spec:
 
       ## Changing the Default Model
       The default model is `zeabur-ai/gpt-5-mini`. To change it:
+
+      **Via Web UI:**
+      1. Open Settings in Clawdbot Web UI
+      2. Select your preferred model from the list
 
       **Via Command Line:**
       ```
@@ -376,20 +387,27 @@ localization:
       1. 部署完成後，系統會**自動產生**一組安全的 Gateway Token
       2. 在**使用說明**頁籤找到預先產生的 URL
       3. 點擊「Web UI (with token)」連結直接連線（Token 已包含在 URL 中）
-      4. 透過 Gateway 設定您的訊息平台連接
+      4. 看到 Clawdbot 介面即表示部署完成
+      5. 前往 **Chat** 頁面測試 AI 供應商是否正常運作
 
       更多詳情請參閱[官方文件](https://github.com/clawdbot/clawdbot)。
 
       ## 設定
-      - `ZEABUR_AI_HUB_API_KEY`：您的 Zeabur AI Hub API 金鑰（推薦，透過 Zeabur AI Hub 使用 Gemini/GPT/DeepSeek）
+      - `ZEABUR_AI_HUB_API_KEY`：您的 Zeabur AI Hub API 金鑰（推薦）。[在此取得 API 金鑰](https://zeabur.com/docs/zh-TW/ai-hub)
       - `ANTHROPIC_API_KEY`：您的 Anthropic Claude API 金鑰
       - `OPENAI_API_KEY`：您的 OpenAI API 金鑰（選填，用於 OpenAI 功能如記憶搜尋、TTS 等）
 
       ## Telegram 機器人設定
-      1. 從 [@BotFather](https://t.me/BotFather) 取得機器人 Token
-      2. 前往 Zeabur 控制台的服務**環境變數**頁籤
-      3. 新增 `TELEGRAM_BOT_TOKEN` 並填入您的 Token
-      4. 重新啟動服務
+      **從 BotFather 取得 Token：**
+      1. 開啟 Telegram 並搜尋 [@BotFather](https://t.me/BotFather)
+      2. 發送 `/newbot` 建立新機器人
+      3. 依照提示設定機器人的名稱和使用者名稱
+      4. BotFather 會傳送 Token 給您（例如 `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`）
+
+      **將 Token 加入 Zeabur：**
+      1. 前往 Zeabur 控制台的服務**環境變數**頁籤
+      2. 新增 `TELEGRAM_BOT_TOKEN` 並填入您的 Token
+      3. 重新啟動服務
 
       **配對您的 Telegram 帳號：**
       1. 在 Telegram 向您的機器人發送 `/start`
@@ -412,6 +430,10 @@ localization:
 
       ## 修改預設模型
       預設模型為 `zeabur-ai/gpt-5-mini`。修改方式：
+
+      **透過 Web UI：**
+      1. 在 Clawdbot Web UI 開啟 Settings
+      2. 從列表中選擇您偏好的模型
 
       **透過指令：**
       ```
@@ -482,20 +504,27 @@ localization:
       1. 部署完成后，系统会**自动生成**一组安全的 Gateway Token
       2. 在**使用说明**页签找到预先生成的 URL
       3. 点击「Web UI (with token)」链接直接连接（Token 已包含在 URL 中）
-      4. 通过 Gateway 配置您的消息平台连接
+      4. 看到 Clawdbot 界面即表示部署完成
+      5. 前往 **Chat** 页面测试 AI 供应商是否正常运作
 
       更多详情请参阅[官方文档](https://github.com/clawdbot/clawdbot)。
 
       ## 配置
-      - `ZEABUR_AI_HUB_API_KEY`：您的 Zeabur AI Hub API 密钥（推荐，通过 Zeabur AI Hub 使用 Gemini/GPT/DeepSeek）
+      - `ZEABUR_AI_HUB_API_KEY`：您的 Zeabur AI Hub API 密钥（推荐）。[在此获取 API 密钥](https://zeabur.com/docs/zh-CN/ai-hub)
       - `ANTHROPIC_API_KEY`：您的 Anthropic Claude API 密钥
       - `OPENAI_API_KEY`：您的 OpenAI API 密钥（选填，用于 OpenAI 功能如记忆搜索、TTS 等）
 
       ## Telegram 机器人设置
-      1. 从 [@BotFather](https://t.me/BotFather) 获取机器人 Token
-      2. 前往 Zeabur 控制台的服务**环境变量**页签
-      3. 添加 `TELEGRAM_BOT_TOKEN` 并填入您的 Token
-      4. 重新启动服务
+      **从 BotFather 获取 Token：**
+      1. 打开 Telegram 并搜索 [@BotFather](https://t.me/BotFather)
+      2. 发送 `/newbot` 创建新机器人
+      3. 按照提示设置机器人的名称和用户名
+      4. BotFather 会发送 Token 给您（例如 `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`）
+
+      **将 Token 添加到 Zeabur：**
+      1. 前往 Zeabur 控制台的服务**环境变量**页签
+      2. 添加 `TELEGRAM_BOT_TOKEN` 并填入您的 Token
+      3. 重新启动服务
 
       **配对您的 Telegram 账号：**
       1. 在 Telegram 向您的机器人发送 `/start`
@@ -518,6 +547,10 @@ localization:
 
       ## 修改默认模型
       默认模型为 `zeabur-ai/gpt-5-mini`。修改方式：
+
+      **通过 Web UI：**
+      1. 在 Clawdbot Web UI 打开 Settings
+      2. 从列表中选择您偏好的模型
 
       **通过命令行：**
       ```
@@ -588,20 +621,27 @@ localization:
       1. デプロイ後、安全な Gateway トークンが**自動生成**されます
       2. **指示**タブで事前生成された URL を確認
       3. 「Web UI (with token)」リンクをクリックして直接接続（トークンは URL に含まれています）
-      4. Gateway を通じてメッセージングプラットフォームの接続を設定
+      4. Clawdbot のインターフェースが表示されたらデプロイ完了です
+      5. **Chat** ページで AI プロバイダーが正常に動作しているかテスト
 
       詳細は[公式ドキュメント](https://github.com/clawdbot/clawdbot)をご覧ください。
 
       ## 設定
-      - `ZEABUR_AI_HUB_API_KEY`：Zeabur AI Hub API キー（推奨、Zeabur AI Hub 経由で Gemini/GPT/DeepSeek を使用）
+      - `ZEABUR_AI_HUB_API_KEY`：Zeabur AI Hub API キー（推奨）。[API キーはこちらから取得](https://zeabur.com/docs/ja-JP/ai-hub)
       - `ANTHROPIC_API_KEY`：Anthropic Claude の API キー
       - `OPENAI_API_KEY`：OpenAI API キー（任意、メモリ検索・TTS など OpenAI 機能用）
 
       ## Telegram ボット設定
-      1. [@BotFather](https://t.me/BotFather) からボットトークンを取得
-      2. Zeabur ダッシュボードのサービス**変数**タブに移動
-      3. `TELEGRAM_BOT_TOKEN` を追加してトークンを入力
-      4. サービスを再起動
+      **BotFather からトークンを取得：**
+      1. Telegram を開いて [@BotFather](https://t.me/BotFather) を検索
+      2. `/newbot` を送信して新しいボットを作成
+      3. プロンプトに従ってボットの名前とユーザー名を設定
+      4. BotFather がトークンを送信します（例：`123456789:ABCdefGHIjklMNOpqrsTUVwxyz`）
+
+      **Zeabur にトークンを追加：**
+      1. Zeabur ダッシュボードのサービス**変数**タブに移動
+      2. `TELEGRAM_BOT_TOKEN` を追加してトークンを入力
+      3. サービスを再起動
 
       **Telegram アカウントのペアリング：**
       1. Telegram でボットに `/start` を送信
@@ -624,6 +664,10 @@ localization:
 
       ## デフォルトモデルの変更
       デフォルトモデルは `zeabur-ai/gpt-5-mini` です。変更方法：
+
+      **Web UI で：**
+      1. Clawdbot Web UI で Settings を開く
+      2. リストからお好みのモデルを選択
 
       **コマンドラインで：**
       ```
@@ -694,20 +738,27 @@ localization:
       1. Después del despliegue, se **genera automáticamente** un token de Gateway seguro
       2. Encuentre la URL pre-generada en la pestaña **Instrucciones**
       3. Haga clic en el enlace "Web UI (with token)" para conectar directamente (el token está incluido en la URL)
-      4. Configure sus conexiones de plataformas de mensajería a través del Gateway
+      4. Cuando vea la interfaz de Clawdbot, el despliegue está completo
+      5. Vaya a la página **Chat** para probar si su proveedor de AI funciona
 
       Para más detalles, consulte la [documentación oficial](https://github.com/clawdbot/clawdbot).
 
       ## Configuración
-      - `ZEABUR_AI_HUB_API_KEY`: Su clave API de Zeabur AI Hub (Recomendado, para usar Gemini/GPT/DeepSeek a través de Zeabur AI Hub)
+      - `ZEABUR_AI_HUB_API_KEY`: Su clave API de Zeabur AI Hub (Recomendado). [Obtenga su clave API aquí](https://zeabur.com/docs/es-ES/ai-hub)
       - `ANTHROPIC_API_KEY`: Su clave API de Anthropic para Claude
       - `OPENAI_API_KEY`: Su clave API de OpenAI (opcional, para funciones de OpenAI como búsqueda de memoria, TTS)
 
       ## Configuración de Bot de Telegram
-      1. Obtenga su token de bot de [@BotFather](https://t.me/BotFather)
-      2. Vaya a la pestaña **Variable** de su servicio en el panel de Zeabur
-      3. Agregue `TELEGRAM_BOT_TOKEN` con su token de bot
-      4. Reinicie el servicio
+      **Obtener el token de BotFather:**
+      1. Abra Telegram y busque [@BotFather](https://t.me/BotFather)
+      2. Envíe `/newbot` para crear un nuevo bot
+      3. Siga las instrucciones para configurar el nombre y nombre de usuario del bot
+      4. BotFather le enviará un token (ej: `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`)
+
+      **Agregar el token a Zeabur:**
+      1. Vaya a la pestaña **Variable** de su servicio en el panel de Zeabur
+      2. Agregue `TELEGRAM_BOT_TOKEN` con su token de bot
+      3. Reinicie el servicio
 
       **Vincular su cuenta de Telegram:**
       1. Envíe `/start` a su bot en Telegram
@@ -730,6 +781,10 @@ localization:
 
       ## Cambiar el Modelo Predeterminado
       El modelo predeterminado es `zeabur-ai/gpt-5-mini`. Para cambiarlo:
+
+      **Vía Web UI:**
+      1. Abra Settings en la Web UI de Clawdbot
+      2. Seleccione su modelo preferido de la lista
 
       **Vía Línea de Comandos:**
       ```
@@ -800,20 +855,27 @@ localization:
       1. Setelah deploy, token Gateway yang aman akan **dibuat secara otomatis**
       2. Temukan URL yang sudah dibuat di tab **Instruksi**
       3. Klik tautan "Web UI (with token)" untuk terhubung langsung (token sudah termasuk dalam URL)
-      4. Konfigurasikan koneksi platform perpesanan Anda melalui Gateway
+      4. Ketika Anda melihat antarmuka Clawdbot, deployment selesai
+      5. Buka halaman **Chat** untuk menguji apakah penyedia AI Anda berfungsi
 
       Untuk detail lebih lanjut, lihat [dokumentasi resmi](https://github.com/clawdbot/clawdbot).
 
       ## Konfigurasi
-      - `ZEABUR_AI_HUB_API_KEY`: Kunci API Zeabur AI Hub Anda (Direkomendasikan, untuk menggunakan Gemini/GPT/DeepSeek melalui Zeabur AI Hub)
+      - `ZEABUR_AI_HUB_API_KEY`: Kunci API Zeabur AI Hub Anda (Direkomendasikan). [Dapatkan kunci API di sini](https://zeabur.com/docs/ai-hub)
       - `ANTHROPIC_API_KEY`: Kunci API Anthropic Anda untuk Claude
       - `OPENAI_API_KEY`: Kunci API OpenAI Anda (opsional, untuk fitur OpenAI seperti pencarian memori, TTS)
 
       ## Pengaturan Bot Telegram
-      1. Dapatkan token bot Anda dari [@BotFather](https://t.me/BotFather)
-      2. Buka tab **Variabel** layanan Anda di dashboard Zeabur
-      3. Tambahkan `TELEGRAM_BOT_TOKEN` dengan token bot Anda
-      4. Restart layanan
+      **Mendapatkan token dari BotFather:**
+      1. Buka Telegram dan cari [@BotFather](https://t.me/BotFather)
+      2. Kirim `/newbot` untuk membuat bot baru
+      3. Ikuti petunjuk untuk mengatur nama dan username bot
+      4. BotFather akan mengirimkan token (contoh: `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`)
+
+      **Menambahkan token ke Zeabur:**
+      1. Buka tab **Variabel** layanan Anda di dashboard Zeabur
+      2. Tambahkan `TELEGRAM_BOT_TOKEN` dengan token bot Anda
+      3. Restart layanan
 
       **Memasangkan akun Telegram Anda:**
       1. Kirim `/start` ke bot Anda di Telegram
@@ -836,6 +898,10 @@ localization:
 
       ## Mengubah Model Default
       Model default adalah `zeabur-ai/gpt-5-mini`. Untuk mengubahnya:
+
+      **Melalui Web UI:**
+      1. Buka Settings di Clawdbot Web UI
+      2. Pilih model yang Anda inginkan dari daftar
 
       **Melalui Baris Perintah:**
       ```
