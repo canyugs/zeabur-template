@@ -42,7 +42,7 @@ spec:
       Clawdbot is a personal AI assistant that runs locally and connects to multiple messaging platforms via a WebSocket-based Gateway architecture.
 
       ## ⚠️ Work in Progress
-      This template is under development. Clawdbot is in rapid development, so this template uses the `main` tag to get the latest version.
+      Clawdbot is in rapid development, so this template uses the `main` tag to get the latest version. If you prefer stability, you can pin to a stable release tag (e.g., `v2026.1.25`) in the service settings.
 
       ### ✅ Completed
       - Gateway starts and accepts WebSocket connections
@@ -276,38 +276,44 @@ spec:
                     node -e "
                       const fs = require('fs');
                       const configPath = '$CONFIG_FILE';
-                      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
-                      // Check if zeabur-ai provider already exists
-                      if (!config.models?.providers?.['zeabur-ai']) {
-                        console.log('Adding Zeabur AI Hub provider...');
+                      try {
+                        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
-                        // Initialize models.providers if needed
-                        if (!config.models) config.models = {};
-                        if (!config.models.providers) config.models.providers = {};
+                        // Check if zeabur-ai provider already exists
+                        if (!config.models?.providers?.['zeabur-ai']) {
+                          console.log('Adding Zeabur AI Hub provider...');
 
-                        // Add zeabur-ai provider
-                        config.models.providers['zeabur-ai'] = {
-                          baseUrl: 'https://hnd1.aihub.zeabur.ai/v1',
-                          apiKey: process.env.ZEABUR_AI_HUB_API_KEY,
-                          api: 'openai-completions',
-                          models: [
-                            { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro Preview (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 2, output: 12, cacheRead: 0.2, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
-                            { id: 'gpt-5', name: 'GPT-5 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 1.25, output: 10, cacheRead: 0.13, cacheWrite: 0 }, contextWindow: 400000, maxTokens: 8192 },
-                            { id: 'claude-sonnet-4-5', name: 'Claude Sonnet 4.5 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 3.3, output: 16.5, cacheRead: 0.33, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
-                            { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.5, output: 3, cacheRead: 0.05, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
-                            { id: 'gpt-5-mini', name: 'GPT-5 Mini (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.25, output: 2, cacheRead: 0.03, cacheWrite: 0 }, contextWindow: 400000, maxTokens: 8192 },
-                            { id: 'claude-haiku-4-5', name: 'Claude Haiku 4.5 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 1.1, output: 5.5, cacheRead: 0.11, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
-                            { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.3, output: 2.5, cacheRead: 0.03, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
-                            { id: 'gemini-2.5-flash-image', name: 'Gemini 2.5 Flash Image (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.3, output: 2.5, cacheRead: 0.03, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
-                            { id: 'deepseek-v3.2', name: 'DeepSeek V3.2 (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.27, output: 0.4, cacheRead: 0.216, cacheWrite: 0 }, contextWindow: 164000, maxTokens: 8192 }
-                          ]
-                        };
+                          // Initialize models.providers if needed
+                          if (!config.models) config.models = {};
+                          if (!config.models.providers) config.models.providers = {};
 
-                        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-                        console.log('Zeabur AI Hub provider added successfully.');
-                      } else {
-                        console.log('Zeabur AI Hub provider already configured.');
+                          // Add zeabur-ai provider
+                          config.models.providers['zeabur-ai'] = {
+                            baseUrl: 'https://hnd1.aihub.zeabur.ai/v1',
+                            apiKey: process.env.ZEABUR_AI_HUB_API_KEY,
+                            api: 'openai-completions',
+                            models: [
+                              { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro Preview (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 2, output: 12, cacheRead: 0.2, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                              { id: 'gpt-5', name: 'GPT-5 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 1.25, output: 10, cacheRead: 0.13, cacheWrite: 0 }, contextWindow: 400000, maxTokens: 8192 },
+                              { id: 'claude-sonnet-4-5', name: 'Claude Sonnet 4.5 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 3.3, output: 16.5, cacheRead: 0.33, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                              { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.5, output: 3, cacheRead: 0.05, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                              { id: 'gpt-5-mini', name: 'GPT-5 Mini (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.25, output: 2, cacheRead: 0.03, cacheWrite: 0 }, contextWindow: 400000, maxTokens: 8192 },
+                              { id: 'claude-haiku-4-5', name: 'Claude Haiku 4.5 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 1.1, output: 5.5, cacheRead: 0.11, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                              { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.3, output: 2.5, cacheRead: 0.03, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                              { id: 'gemini-2.5-flash-image', name: 'Gemini 2.5 Flash Image (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.3, output: 2.5, cacheRead: 0.03, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                              { id: 'deepseek-v3.2', name: 'DeepSeek V3.2 (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.27, output: 0.4, cacheRead: 0.216, cacheWrite: 0 }, contextWindow: 164000, maxTokens: 8192 }
+                            ]
+                          };
+
+                          fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                          console.log('Zeabur AI Hub provider added successfully.');
+                        } else {
+                          console.log('Zeabur AI Hub provider already configured.');
+                        }
+                      } catch (err) {
+                        console.error('Warning: Failed to update config for Zeabur AI Hub:', err.message);
+                        console.error('You may need to configure the provider manually via Web UI.');
                       }
                     "
                   fi
@@ -395,7 +401,7 @@ localization:
       Clawdbot 是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台。
 
       ## ⚠️ 開發中
-      此模板正在開發中。由於 Clawdbot 正在快速開發，本模板使用 `main` tag 以取得最新版本。
+      由於 Clawdbot 正在快速開發，本模板使用 `main` tag 以取得最新版本。如果您希望穩定運行，可以在服務設定中固定到穩定版本 tag（例如 `v2026.1.25`）。
 
       ### ✅ 已完成
       - Gateway 啟動並接受 WebSocket 連線
@@ -505,7 +511,7 @@ localization:
       Clawdbot 是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台。
 
       ## ⚠️ 开发中
-      此模板正在开发中。由于 Clawdbot 正在快速开发，本模板使用 `main` tag 以获取最新版本。
+      由于 Clawdbot 正在快速开发，本模板使用 `main` tag 以获取最新版本。如果您希望稳定运行，可以在服务设置中固定到稳定版本 tag（例如 `v2026.1.25`）。
 
       ### ✅ 已完成
       - Gateway 启动并接受 WebSocket 连接
@@ -615,7 +621,7 @@ localization:
       Clawdbot は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォームに接続する個人用 AI アシスタントです。
 
       ## ⚠️ 開発中
-      このテンプレートは開発中です。Clawdbot は急速に開発中のため、本テンプレートは `main` タグを使用して最新バージョンを取得します。
+      Clawdbot は急速に開発中のため、本テンプレートは `main` タグを使用して最新バージョンを取得します。安定性を重視する場合は、サービス設定で安定版タグ（例：`v2026.1.25`）に固定できます。
 
       ### ✅ 完了
       - Gateway が起動し WebSocket 接続を受け入れ
@@ -725,7 +731,7 @@ localization:
       Clawdbot es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería a través de una arquitectura Gateway basada en WebSocket.
 
       ## ⚠️ En Desarrollo
-      Esta plantilla está en desarrollo. Clawdbot está en desarrollo rápido, por lo que esta plantilla usa el tag `main` para obtener la última versión.
+      Clawdbot está en desarrollo rápido, por lo que esta plantilla usa el tag `main` para obtener la última versión. Si prefiere estabilidad, puede fijar un tag de versión estable (ej: `v2026.1.25`) en la configuración del servicio.
 
       ### ✅ Completado
       - Gateway inicia y acepta conexiones WebSocket
@@ -835,7 +841,7 @@ localization:
       Clawdbot adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan melalui arsitektur Gateway berbasis WebSocket.
 
       ## ⚠️ Dalam Pengembangan
-      Template ini sedang dalam pengembangan. Clawdbot sedang dalam pengembangan cepat, sehingga template ini menggunakan tag `main` untuk mendapatkan versi terbaru.
+      Clawdbot sedang dalam pengembangan cepat, sehingga template ini menggunakan tag `main` untuk mendapatkan versi terbaru. Jika Anda menginginkan stabilitas, Anda dapat menetapkan tag versi stabil (contoh: `v2026.1.25`) di pengaturan layanan.
 
       ### ✅ Selesai
       - Gateway berjalan dan menerima koneksi WebSocket
