@@ -1,0 +1,405 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: Discourse
+spec:
+  description: A platform for community discussion. Free, open, simple.
+  coverImage: https://blog.discourse.org/content/images/size/w2000/2023/08/2023-08_FeaturedImage-3.1-v2-1.jpg
+  icon: https://avatars.githubusercontent.com/u/3220138
+  variables:
+    - key: PUBLIC_DOMAIN
+      type: DOMAIN
+      name: Discourse Domain
+      description: The domain name for your Discourse instance.
+  tags:
+    - Website
+  readme: |
+    # Discourse - The online home for your community
+
+    Discourse make your community easy to connect and collaborate anytime, anywhere. Discourse now powers over 20,000 online communities of all shapes and sizes, including GitLab, SailPoint, OpenAI, Elastic, Docker, Unreal Engine, and many more.
+
+    For more details about Discourse, see [their homepage](https://www.discourse.org).
+
+    ## Features
+
+    - **Features for every use case**: Discourse enables thoughtful discussion and meaningful connections with features for every use case, from tracking product feedback to sharing your latest creations, now with the added support of AI.
+    - **Endless ways to customize**: Keep your forum on brand, integrate with your tech stack, and optimize forum features for engagement.
+    - **Quick chats and thoughtful discussions**: An integrated experience for chat and long form discussions enables members to build relationships while your community builds knowledge.
+    - **Powerful moderation tools**: Keep the discussion healthy, on-track, and free from any inappropriate content with our best-in-class moderation tools and AI.
+    - **Fully open source**: The entire Discourse codebase is open and freely available to the public—forever.
+    - **Truly portable data**: No matter where your forum lives, you retain full ownership of your data. No lock-in, no hidden fees, no data sent to advertisers.
+    - **Unlimited conversation history**: Always have full access to your community's conversation history—no questions asked.
+
+    ## Usage
+
+    This Discourse is based on the Bitnami Discourse image. You can find more information about the image [here](https://hub.docker.com/r/bitnami/discourse).
+
+    The initialization may take about 5 minutes. Before the initialization is complete, you may see a 502 error.
+
+    You can see the username and password of your Discourse instance in the "Overview" > "Instructions" section.
+
+    ### Plugin Installation
+
+    Run the following command to install the plugin:
+
+    ```bash
+    cd /opt/bitnami/discourse && RAILS_ENV=production bundle exec rake plugin:install repo=<plugin Git repository URL>
+    ```
+
+    Replace `<plugin Git repository URL>` with the URL of the plugin's Git repository. For example, to install the `discourse-custom-header-links` plugin, run the following command:
+
+    ```bash
+    cd /opt/bitnami/discourse && RAILS_ENV=production bundle exec rake plugin:install repo=https://github.com/discourse/discourse-custom-header-links
+    ```
+
+    After the installation of your plugin, restart your Discourse to precompile the assets.
+
+    ### SMTP configuration
+
+    You will see some variables starting with `DISCOURSE_SMTP` in the "Environment Variables" section. You can set these variables to configure the SMTP settings for your Discourse instance.
+
+    After the configuration, restart your Discourse **and Sidekiq** to apply the changes.
+  services:
+    - name: postgresql
+      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+      template: PREBUILT
+      spec:
+        source:
+          image: pgvector/pgvector:pg17
+          command:
+            - docker-entrypoint.sh
+            - -c
+            - config_file=/etc/postgresql/postgresql.conf
+        ports:
+          - id: database
+            port: 5432
+            type: TCP
+        volumes:
+          - id: data
+            dir: /var/lib/postgresql/data
+        instructions:
+          - title: Connection String
+            content: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DATABASE}
+          - title: PostgreSQL Connect Command
+            content: psql "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DATABASE}"
+          - title: PostgreSQL username
+            content: ${POSTGRES_USERNAME}
+          - title: PostgresSQL password
+            content: ${POSTGRES_PASSWORD}
+          - title: PostgresSQL database
+            content: ${POSTGRES_DATABASE}
+          - title: PostgreSQL host
+            content: ${PORT_FORWARDED_HOSTNAME}
+          - title: PostgreSQL port
+            content: ${DATABASE_PORT_FORWARDED_PORT}
+        env:
+          PGDATA:
+            default: /var/lib/postgresql/data/pgdata
+          POSTGRES_CONNECTION_STRING:
+            default: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}
+            expose: true
+          POSTGRES_DATABASE:
+            default: ${POSTGRES_DB}
+            expose: true
+          POSTGRES_DB:
+            default: zeabur
+          POSTGRES_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+          POSTGRES_PASSWORD:
+            default: ${PASSWORD}
+            expose: true
+          POSTGRES_PORT:
+            default: ${DATABASE_PORT}
+            expose: true
+          POSTGRES_URI:
+            default: ${POSTGRES_CONNECTION_STRING}
+            expose: true
+          POSTGRES_USER:
+            default: root
+          POSTGRES_USERNAME:
+            default: ${POSTGRES_USER}
+            expose: true
+        configs:
+          - path: /etc/postgresql/postgresql.conf
+            template: |
+              # https://github.com/postgres/postgres/blob/master/src/backend/utils/misc/postgresql.conf.sample
+              listen_addresses = '*'
+              max_connections = 100
+              shared_buffers = 128MB
+              dynamic_shared_memory_type = posix
+              max_wal_size = 1GB
+              min_wal_size = 80MB
+              log_timezone = 'Etc/UTC'
+              datestyle = 'iso, mdy'
+              timezone = 'Etc/UTC'
+              lc_messages = 'en_US.utf8'
+              lc_monetary = 'en_US.utf8'
+              lc_numeric = 'en_US.utf8'
+              lc_time = 'en_US.utf8'
+              default_text_search_config = 'pg_catalog.english'
+
+              # https://github.com/discourse/discourse_docker/blob/main/templates/postgres.template.yml
+              synchronous_commit = off
+              shared_buffers = 256MB
+              work_mem = 40MB
+              logging_collector = off
+              log_min_duration_statement = 100
+            permission: null
+            envsubst: null
+    - name: redis
+      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/redis.svg
+      template: PREBUILT
+      spec:
+        source:
+          image: redis/redis-stack-server:latest
+        ports:
+          - id: database
+            port: 6379
+            type: TCP
+        volumes:
+          - id: data
+            dir: /data
+        instructions:
+          - title: Command to connect to your Redis
+            content: redis-cli -h ${PORT_FORWARDED_HOSTNAME} -p ${DATABASE_PORT_FORWARDED_PORT} -a ${REDIS_PASSWORD}
+          - title: Redis Connection String
+            content: redis://:${REDIS_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}
+          - title: Redis password
+            content: ${REDIS_PASSWORD}
+          - title: Redis host
+            content: ${PORT_FORWARDED_HOSTNAME}
+          - title: Redis port
+            content: ${DATABASE_PORT_FORWARDED_PORT}
+        env:
+          CONFFILE:
+            default: /etc/redis-stack.conf
+          REDIS_ARGS:
+            default: --requirepass ${REDIS_PASSWORD}
+          REDIS_CONNECTION_STRING:
+            default: redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
+            expose: true
+          REDIS_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+          REDIS_PASSWORD:
+            default: ${PASSWORD}
+            expose: true
+          REDIS_PORT:
+            default: ${DATABASE_PORT}
+            expose: true
+          REDIS_URI:
+            default: ${REDIS_CONNECTION_STRING}
+            expose: true
+        configs:
+          - path: /etc/redis-stack.conf
+            template: |
+              port 6379
+              daemonize no
+            permission: null
+            envsubst: null
+    - name: discourse
+      icon: https://avatars.githubusercontent.com/u/3220138
+      dependencies:
+        - postgresql
+        - redis
+      template: PREBUILT_V2
+      spec:
+        source:
+          image: zeabur/bitnami-discourse:3
+        ports:
+          - id: web
+            port: 3000
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /bitnami/discourse
+        instructions:
+          - title: Discourse username
+            content: ${DISCOURSE_USERNAME}
+          - title: Discourse password
+            content: ${DISCOURSE_PASSWORD}
+        env:
+          DISCOURSE_DATABASE_HOST:
+            default: ${POSTGRES_HOST}
+            expose: true
+          DISCOURSE_DATABASE_NAME:
+            default: ${POSTGRES_DATABASE}
+            expose: true
+          DISCOURSE_DATABASE_PASSWORD:
+            default: ${POSTGRES_PASSWORD}
+            expose: true
+          DISCOURSE_DATABASE_PORT_NUMBER:
+            default: ${POSTGRES_PORT}
+            expose: true
+          DISCOURSE_DATABASE_USER:
+            default: ${POSTGRES_USERNAME}
+            expose: true
+          DISCOURSE_EMAIL:
+            default: discourse@zeabur.com
+            expose: true
+          DISCOURSE_HOST:
+            default: ${ZEABUR_WEB_DOMAIN}
+            expose: true
+          DISCOURSE_PASSWORD:
+            default: ${PASSWORD}
+            expose: true
+          DISCOURSE_REDIS_HOST:
+            default: ${REDIS_HOST}
+            expose: true
+          DISCOURSE_REDIS_PASSWORD:
+            default: ${REDIS_PASSWORD}
+            expose: true
+          DISCOURSE_REDIS_PORT_NUMBER:
+            default: ${REDIS_PORT}
+            expose: true
+          DISCOURSE_REDIS_USE_SSL:
+            default: "false"
+            expose: true
+          DISCOURSE_SMTP_HOST:
+            default: ""
+            expose: true
+          DISCOURSE_SMTP_PASSWORD:
+            default: ""
+            expose: true
+          DISCOURSE_SMTP_PORT:
+            default: ""
+            expose: true
+          DISCOURSE_SMTP_PROTOCOL:
+            default: ""
+            expose: true
+          DISCOURSE_SMTP_USER:
+            default: ""
+            expose: true
+          DISCOURSE_USERNAME:
+            default: discourse
+            expose: true
+        domainKey: PUBLIC_DOMAIN
+    - name: sidekiq
+      icon: https://avatars.githubusercontent.com/u/3220138
+      dependencies:
+        - discourse
+      template: PREBUILT_V2
+      spec:
+        source:
+          image: zeabur/bitnami-discourse:3
+          command:
+            - /opt/bitnami/scripts/discourse-sidekiq/run.sh
+        ports:
+          - id: web
+            port: 3000
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /bitnami/discourse
+        env:
+          DATABASE_URL:
+            default: ${POSTGRES_CONNECTION_STRING}
+  localization:
+    zh-CN:
+      description: 一个社区讨论平台。免费、开放、简单。
+      variables:
+        - key: PUBLIC_DOMAIN
+          type: DOMAIN
+          name: Discourse 域名
+          description: 你的 Discourse 站点的域名地址。
+      readme: |
+        # Discourse - 您社区的线上家园
+
+        Discourse 让您的社区能随时随地轻松连接与协作。Discourse 目前为超过 20,000 个大大小小的线上社区提供服务，包括 GitLab、SailPoint、OpenAI、Elastic、Docker、Unreal Engine 等等。
+
+        欲了解更多关于 Discourse 的信息，请参考[官方网站](https://www.discourse.org)。
+
+        ## 特色功能
+
+        - **满足各种使用需求的功能**：Discourse 通过各种功能实现深度讨论与有意义的连接，从追踪产品反馈到分享您的最新作品，现在更加入 AI 支持。
+        - **无限定制化可能**：保持论坛品牌形象、整合您的技术架构，并优化论坛功能以提升参与度。
+        - **快速聊天与深度讨论**：整合聊天与长篇讨论的体验，让成员在建立社区知识的同时也能建立关系。
+        - **强大的管理工具**：通过一流的管理工具与 AI，维持讨论健康、切题，并避免任何不当内容。
+        - **完全开源**：整个 Discourse 程序代码永远对大众开放且免费。
+        - **真正可携的数据**：无论您的论坛在哪里，您都拥有数据的完整所有权。无绑定、无隐藏费用、不会将数据提供给广告商。
+        - **无限对话记录**：永远可完整访问您社区的对话记录，无需多问。
+
+        ## 使用方式
+
+        此 Discourse 版本使用的是 Bitnami Discourse 镜像。您可以在[这里](https://hub.docker.com/r/bitnami/discourse)找到更多关于镜像的信息。
+
+        初始化可能需要约 5 分钟。在初始化完成之前，您可能会看到 502 错误。
+
+        您可以在"概览">"使用说明"区块中查看您 Discourse 实例的用户名和密码。
+
+        ### 安装插件
+
+        在终端中运行以下命令来安装插件：
+
+        ```bash
+        cd /opt/bitnami/discourse && RAILS_ENV=production bundle exec rake plugin:install repo=<插件的 Git 仓库地址>
+        ```
+
+        将 `<插件的 Git 仓库地址>` 替换为你想安装的插件的 Git 仓库地址。比如，要安装 `discourse-custom-header-links` 插件，运行以下命令：
+
+        ```bash
+        cd /opt/bitnami/discourse && RAILS_ENV=production bundle exec rake plugin:install repo=https://github.com/discourse/discourse-custom-header-links
+        ```
+
+        安装插件后，需要重启 Discourse 来预编译资源文件。
+
+        ### SMTP 配置
+
+        在"环境变量"部分，你可以看到一些以 `DISCOURSE_SMTP` 开头的变量。你可以通过设置这些变量来配置你的 Discourse 实例的 SMTP 设置。
+
+        配置完成后，请重启 Discourse **和 Sidekiq** 以使更改生效。
+    zh-TW:
+      description: 一個社群討論平台。免費、開放、簡單。
+      variables:
+        - key: PUBLIC_DOMAIN
+          type: DOMAIN
+          name: Discourse 網域
+          description: 您 Discourse 實例的網域名稱。
+      readme: |
+        # Discourse - 您社群的線上家園
+
+        Discourse 讓您的社群能隨時隨地輕鬆連結與協作。Discourse 目前為超過 20,000 個大大小小的線上社群提供服務，包括 GitLab、SailPoint、OpenAI、Elastic、Docker、Unreal Engine 等等。
+
+        欲了解更多關於 Discourse 的資訊，請參考 [官方網站](https://www.discourse.org)。
+
+        ## 特色功能
+
+        - **滿足各種使用需求的功能**：Discourse 透過各種功能實現深度討論與有意義的連結，從追蹤產品回饋到分享您的最新作品，現在更加入 AI 支援。
+        - **無限客製化可能**：保持論壇品牌形象、整合您的技術架構，並優化論壇功能以提升參與度。
+        - **快速聊天與深度討論**：整合聊天與長篇討論的體驗，讓成員在建立社群知識的同時也能建立關係。
+        - **強大的管理工具**：透過一流的管理工具與 AI，維持討論健康、切題，並避免任何不當內容。
+        - **完全開源**：整個 Discourse 程式碼庫永遠對大眾開放且免費。
+        - **真正可攜的資料**：無論您的論壇在哪裡，您都擁有資料的完整所有權。無綁定、無隱藏費用、不會將資料提供給廣告商。
+        - **無限對話紀錄**：永遠可完整存取您社群的對話紀錄，無需多問。
+
+        ## 使用方式
+
+        此 Discourse 版本使用的是 Bitnami Discourse 映像檔。您可以在[這裡](https://hub.docker.com/r/bitnami/discourse)找到更多關於映像檔的資訊。
+
+        初始化可能需要約 5 分鐘。在初始化完成之前，您可能會看到 502 錯誤。
+
+        您可以在「概覽」>「使用說明」區塊中查看您 Discourse 實例的使用者名稱和密碼。
+
+        ### 安裝擴充套件
+
+        執行以下命令來安裝擴充套件：
+
+        ```bash
+        cd /opt/bitnami/discourse && RAILS_ENV=production bundle exec rake plugin:install repo=<擴充套件 Git 儲存庫 URL>
+        ```
+
+        將 `<擴充套件 Git 儲存庫 URL>` 替換為擴充套件的 Git 儲存庫 URL。例如，要安裝 `discourse-custom-header-links` 擴充套件，請執行以下命令：
+
+        ```bash
+        cd /opt/bitnami/discourse && RAILS_ENV=production bundle exec rake plugin:install repo=https://github.com/discourse/discourse-custom-header-links
+        ```
+
+        安裝擴充套件後，重新啟動您的 Discourse 來進行 assets 的預先編譯作業。
+
+        ### SMTP 設定
+
+        您可以在「環境變數」區塊中看到一些以 `DISCOURSE_SMTP` 開頭的變數。您可以設定這些變數來設定您 Discourse 實例的 SMTP 設定。
+
+        設定完成後，重新啟動您的 Discourse **和 Sidekiq** 以套用更動。
