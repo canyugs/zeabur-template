@@ -14,7 +14,7 @@ spec:
         name: Domain
         description: What domain do you want to bind moltbot to?
       - key: ZEABUR_AI_HUB_API_KEY
-        type: STRING
+        type: AI_HUB_KEY
         name: Zeabur AI Hub API Key (Recommended)
         description: Your Zeabur AI Hub API key for using Gemini/GPT/Claude/DeepSeek via AI Hub
       - key: ANTHROPIC_API_KEY
