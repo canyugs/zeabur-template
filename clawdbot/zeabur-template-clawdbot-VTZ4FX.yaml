@@ -115,7 +115,7 @@ spec:
 
       **Command Line**
       1. Open **Command** in Zeabur dashboard
-      2. Use `moltbot` commands to manage providers, models, and settings
+      2. Use `moltbot` (or `clawdbot`) commands to manage providers, models, and settings
 
       ## Changing the Default Model
       - When using **Zeabur AI Hub**, the default model is `zeabur-ai/gpt-5-mini`
@@ -135,7 +135,7 @@ spec:
       - GitHub: https://github.com/moltbot/moltbot
 
     services:
-      - name: clawdbot
+      - name: moltbot
         icon: https://raw.githubusercontent.com/moltbot/moltbot/main/docs/assets/pixel-lobster.svg
         template: PREBUILT
         domainKey: PUBLIC_DOMAIN
@@ -508,7 +508,7 @@ localization:
 
       **指令**
       1. 在 Zeabur 控制台開啟**指令**
-      2. 使用 `moltbot`指令管理供應商、模型和設定
+      2. 使用 `moltbot`（或 `clawdbot`）指令管理供應商、模型和設定
 
       ## 修改預設模型
       - 使用 **Zeabur AI Hub** 時，預設模型為 `zeabur-ai/gpt-5-mini`
@@ -621,7 +621,7 @@ localization:
 
       **命令行**
       1. 在 Zeabur 控制台打开**命令**
-      2. 使用 `moltbot`命令管理供应商、模型和设置
+      2. 使用 `moltbot`（或 `clawdbot`）命令管理供应商、模型和设置
 
       ## 修改默认模型
       - 使用 **Zeabur AI Hub** 时，默认模型为 `zeabur-ai/gpt-5-mini`
@@ -734,7 +734,7 @@ localization:
 
       **コマンドライン**
       1. Zeabur ダッシュボードで**コマンド**を開く
-      2. `moltbot`コマンドでプロバイダー、モデル、設定を管理
+      2. `moltbot`（または `clawdbot`）コマンドでプロバイダー、モデル、設定を管理
 
       ## デフォルトモデルの変更
       - **Zeabur AI Hub** を使用する場合、デフォルトモデルは `zeabur-ai/gpt-5-mini` です
@@ -847,7 +847,7 @@ localization:
 
       **Línea de Comandos**
       1. Abra **Comando** en el panel de Zeabur
-      2. Use comandos `moltbot` para gestionar proveedores, modelos y configuraciones
+      2. Use comandos `moltbot` (o `clawdbot`) para gestionar proveedores, modelos y configuraciones
 
       ## Cambiar el Modelo Predeterminado
       - Al usar **Zeabur AI Hub**, el modelo predeterminado es `zeabur-ai/gpt-5-mini`
@@ -960,7 +960,7 @@ localization:
 
       **Baris Perintah**
       1. Buka **Command** di dashboard Zeabur
-      2. Gunakan perintah `moltbot` untuk mengelola provider, model, dan pengaturan
+      2. Gunakan perintah `moltbot` (atau `clawdbot`) untuk mengelola provider, model, dan pengaturan
 
       ## Mengubah Model Default
       - Saat menggunakan **Zeabur AI Hub**, model default adalah `zeabur-ai/gpt-5-mini`
