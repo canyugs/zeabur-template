@@ -119,7 +119,7 @@ spec:
                   echo "Creating initial config with browser support..."
 
                   # Build config JSON with browser settings
-                  CONFIG_JSON='{"gateway":{"trustedProxies":["0.0.0.0/0"],"controlUi":{"allowInsecureAuth":true}},"browser":{"enabled":true,"cdpUrl":"http://moltbot-browser:9222","attachOnly":true,"headless":true}}'
+                  CONFIG_JSON='{"gateway":{"trustedProxies":["0.0.0.0/0"],"controlUi":{"allowInsecureAuth":true}},"browser":{"enabled":true,"attachOnly":true,"defaultProfile":"clawd","profiles":{"clawd":{"cdpUrl":"http://moltbot-sandbox-browser:9222","color":"#FF4500"}}}}'
 
                   # Add Zeabur AI Hub if configured
                   if [ -n "${ZEABUR_AI_HUB_API_KEY}" ]; then
@@ -184,9 +184,14 @@ spec:
                       if (!config.browser) {
                         config.browser = {
                           enabled: true,
-                          cdpUrl: 'http://moltbot-browser:9222',
                           attachOnly: true,
-                          headless: true
+                          defaultProfile: 'clawd',
+                          profiles: {
+                            clawd: {
+                              cdpUrl: 'http://moltbot-sandbox-browser:9222',
+                              color: '#FF4500'
+                            }
+                          }
                         };
                         updated = true;
                         console.log('Added browser configuration.');
@@ -279,12 +284,12 @@ spec:
               category: Credentials
 
       # Browser sandbox service
-      - name: moltbot-browser
-        icon: https://raw.githubusercontent.com/AlaSQL/alasql/develop/src/icon/icon.svg
+      - name: moltbot-sandbox-browser
+        icon: https://raw.githubusercontent.com/moltbot/moltbot/main/docs/assets/pixel-lobster.svg
         template: PREBUILT
         spec:
           source:
-            image: ghcr.io/zeabur/moltbot-sandbox-browser:main
+            image: ghcr.io/canyugs/moltbot-sandbox-browser:main
           ports:
           - id: cdp
             port: 9222
