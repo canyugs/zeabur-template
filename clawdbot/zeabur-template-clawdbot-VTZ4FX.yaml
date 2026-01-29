@@ -34,20 +34,22 @@ spec:
       - Slack
       - Discord
     resourceUsage:
-      cpu: 2
-      memory: 2048
+      cpu: 1
+      memory: 1024
 
     readme: |
       # moltbot
       moltbot is a personal AI assistant that runs locally and connects to multiple messaging platforms via a WebSocket-based Gateway architecture.
 
       ## ⚠️ Work in Progress
-      moltbot is in rapid development, so this template uses the `main` tag to get the latest version. If you prefer stability, you can pin to a stable release tag (e.g., `v2026.1.25`) in the service settings.
+      moltbot is in rapid development. There may be unstable areas or breaking changes. If you encounter issues, we recommend redeploying with the latest template.
+
+      This template uses the `main` tag to get the latest version. If you prefer stability, you can pin to a stable release tag (e.g., `v2026.1.25`) in the service settings.
 
       ### ✅ Completed
       - Gateway starts and accepts WebSocket connections
       - Web UI loads via public domain
-      - Token-based authentication (no device pairing required)
+      - Token authentication
       - AI provider authentication (Anthropic API key)
       - Chat with AI assistant via Web UI
       - Zeabur AI Hub integration
@@ -61,9 +63,9 @@ spec:
       ---
 
       ## Recommended Resources
-      Resource requirements may vary depending on the tools and features you use.
-      - **Shared Cluster**: 2000 m (2 vCPU), 2048 Mi (2 GB)
-      - **Dedicated Server**: Recommended for better performance
+      moltbot is CPU-intensive. Resource requirements may vary depending on the tools and features you use.
+      - **Shared Cluster**: 1000 m (1 vCPU), 1024 Mi (1 GB) - for testing/trial
+      - **Dedicated Server**: 2+ vCPU, 2+ GB - highly recommended for stable performance
 
       ## Supported Platforms
       - WhatsApp
@@ -121,15 +123,20 @@ spec:
       - When using **Zeabur AI Hub**, the default model is `zeabur-ai/gpt-5-mini`
       - When using **Anthropic API Key**, the default model is `anthropic/claude-opus-4-5`
 
-      To change it:
+      To change it via **Chat page** or **Telegram Bot**:
+      - `/models` - view available models
+      - `/model zeabur-ai/gpt-5-mini` - set the model
+
+      Or via **Settings page**:
       1. Open Settings in moltbot Web UI
       2. Select your preferred model from the list
 
       **Available models (Zeabur AI Hub):** `zeabur-ai/gemini-3-pro-image-preview`, `zeabur-ai/gemini-3-pro-preview`, `zeabur-ai/gpt-5`, `zeabur-ai/claude-sonnet-4-5`, `zeabur-ai/gemini-3-flash-preview`, `zeabur-ai/gpt-5-mini`, `zeabur-ai/claude-haiku-4-5`, `zeabur-ai/gemini-2.5-pro`, `zeabur-ai/gemini-2.5-flash`, `zeabur-ai/gemini-2.5-flash-lite`, `zeabur-ai/gemini-2.5-flash-image`, `zeabur-ai/deepseek-v3.2`, `zeabur-ai/gpt-4.1`, `zeabur-ai/gpt-4.1-mini`, `zeabur-ai/gpt-4o`, `zeabur-ai/gpt-4o-mini`, `zeabur-ai/gpt-oss-120b`, `zeabur-ai/grok-4-fast-non-reasoning`, `zeabur-ai/glm-4.6`, `zeabur-ai/llama-3.3-70b`, `zeabur-ai/qwen-3-32`, `zeabur-ai/qwen3-next`, `zeabur-ai/kimi-k2-thinking`
 
       ## Data Persistence
-      - `/home/node/.clawdbot` - Configuration, sessions, and credentials
-      - `/home/node/clawd` - Workspace and memory files
+      All data is stored under `/home/node`:
+      - `~/.clawdbot` - Configuration, sessions, devices, and credentials
+      - `~/clawd` - Workspace and memory files
 
       ## Documentation
       - GitHub: https://github.com/moltbot/moltbot
@@ -159,15 +166,17 @@ spec:
                 export PATH="/home/node/bin:$PATH"
 
                 # Create initial config (only if not exists)
-                CONFIG_FILE="/home/node/.clawdbot/clawdbot.json"
-                mkdir -p /home/node/.clawdbot
-                chmod 700 /home/node/.clawdbot
+                # moltbot reads from ~/.clawdbot/clawdbot.json
+                CONFIG_DIR="/home/node/.clawdbot"
+                CONFIG_FILE="$CONFIG_DIR/clawdbot.json"
+                mkdir -p "$CONFIG_DIR"
+                chmod 700 "$CONFIG_DIR"
 
                 if [ ! -f "$CONFIG_FILE" ]; then
                   echo "Creating initial config..."
 
                   # Build config JSON dynamically
-                  CONFIG_JSON='{"gateway":{"trustedProxies":["0.0.0.0/0"],"controlUi":{"allowInsecureAuth":true}}}'
+                  CONFIG_JSON='{"gateway":{"controlUi":{"allowInsecureAuth":true}}}'
 
                   # Add Zeabur AI Hub if configured
                   if [ -n "${ZEABUR_AI_HUB_API_KEY}" ]; then
@@ -451,10 +460,23 @@ spec:
                             ]
                           };
 
+                          // Also set default model to zeabur-ai/gpt-5-mini
+                          if (!config.agents) config.agents = {};
+                          if (!config.agents.defaults) config.agents.defaults = {};
+                          config.agents.defaults.model = { primary: 'zeabur-ai/gpt-5-mini' };
+
                           fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-                          console.log('Zeabur AI Hub provider added successfully.');
+                          console.log('Zeabur AI Hub provider added and default model set to zeabur-ai/gpt-5-mini.');
                         } else {
                           console.log('Zeabur AI Hub provider already configured.');
+                          // Still ensure default model is set if using Zeabur AI Hub
+                          if (!config.agents?.defaults?.model?.primary?.startsWith('zeabur-ai/')) {
+                            if (!config.agents) config.agents = {};
+                            if (!config.agents.defaults) config.agents.defaults = {};
+                            config.agents.defaults.model = { primary: 'zeabur-ai/gpt-5-mini' };
+                            fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                            console.log('Default model updated to zeabur-ai/gpt-5-mini.');
+                          }
                         }
                       } catch (err) {
                         console.error('Warning: Failed to update config for Zeabur AI Hub:', err.message);
@@ -467,7 +489,7 @@ spec:
                 fi
 
                 # Initialize workspace with memory files
-                WORKSPACE_DIR="/home/node/clawd"
+                WORKSPACE_DIR="${CLAWDBOT_WORKSPACE_DIR}"
                 mkdir -p "$WORKSPACE_DIR/memory"
                 if [ ! -f "$WORKSPACE_DIR/MEMORY.md" ]; then
                   echo "# Memory" > "$WORKSPACE_DIR/MEMORY.md"
@@ -484,10 +506,8 @@ spec:
             type: TCP
             port: web
           volumes:
-            - id: config
-              dir: /home/node/.clawdbot
-            - id: workspace
-              dir: /home/node/clawd
+            - id: data
+              dir: /home/node
           env:
             HOME:
               default: /home/node
@@ -501,11 +521,17 @@ spec:
             NODE_OPTIONS:
               default: --max-old-space-size=1024
               readonly: true
+            CLAWDBOT_WORKSPACE_DIR:
+              default: /home/node/clawd
+              readonly: true
             CLAWDBOT_GATEWAY_PORT:
               default: "18789"
               readonly: true
             CLAWDBOT_GATEWAY_BIND:
               default: lan
+              readonly: true
+            MOLTBOT_STATE_DIR:
+              default: /home/node/.clawdbot
               readonly: true
             CLAWDBOT_GATEWAY_TOKEN:
               default: ${PASSWORD}
@@ -546,12 +572,14 @@ localization:
       moltbot 是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台。
 
       ## ⚠️ 開發中
-      由於 moltbot 正在快速開發，本模板使用 `main` tag 以取得最新版本。如果您希望穩定運行，可以在服務設定中固定到穩定版本 tag（例如 `v2026.1.25`）。
+      由於 moltbot 正在快速開發中，可能會有不穩定的地方或重大變更。如果遇到問題，建議重新部署最新版本的模板。
+
+      本模板使用 `main` tag 以取得最新版本。如果您希望穩定運行，可以在服務設定中固定到穩定版本 tag（例如 `v2026.1.25`）。
 
       ### ✅ 已完成
       - Gateway 啟動並接受 WebSocket 連線
       - Web UI 可透過公開網域載入
-      - Token 認證（無需裝置配對）
+      - Token 認證
       - AI 供應商認證（Anthropic API 金鑰）
       - 透過 Web UI 與 AI 助手對話
       - Zeabur AI Hub 整合
@@ -565,9 +593,9 @@ localization:
       ---
 
       ## 建議資源配置
-      資源需求可能因使用的工具和功能而異。
-      - **共享叢集**：2000 m（2 vCPU）、2048 Mi（2 GB）
-      - **專用伺服器**：推薦使用以獲得更好的效能
+      moltbot 是 CPU 密集型應用。資源需求可能因使用的工具和功能而異。
+      - **共享叢集**：1000 m（1 vCPU）、1024 Mi（1 GB）- 適合測試試用
+      - **專用伺服器**：2+ vCPU、2+ GB - 強烈推薦，以獲得穩定效能
 
       ## 支援平台
       - WhatsApp
@@ -625,15 +653,20 @@ localization:
       - 使用 **Zeabur AI Hub** 時，預設模型為 `zeabur-ai/gpt-5-mini`
       - 使用 **Anthropic API Key** 時，預設模型為 `anthropic/claude-opus-4-5`
 
-      修改方式：
+      透過 **Chat 頁面**或 **Telegram Bot** 修改：
+      - `/models` - 查看可用模型
+      - `/model zeabur-ai/gpt-5-mini` - 設定模型
+
+      或透過 **Settings 頁面**：
       1. 在 moltbot Web UI 開啟 Settings
       2. 從列表中選擇您偏好的模型
 
       **可用模型（Zeabur AI Hub）：** `zeabur-ai/gemini-3-pro-image-preview`, `zeabur-ai/gemini-3-pro-preview`, `zeabur-ai/gpt-5`, `zeabur-ai/claude-sonnet-4-5`, `zeabur-ai/gemini-3-flash-preview`, `zeabur-ai/gpt-5-mini`, `zeabur-ai/claude-haiku-4-5`, `zeabur-ai/gemini-2.5-pro`, `zeabur-ai/gemini-2.5-flash`, `zeabur-ai/gemini-2.5-flash-lite`, `zeabur-ai/gemini-2.5-flash-image`, `zeabur-ai/deepseek-v3.2`, `zeabur-ai/gpt-4.1`, `zeabur-ai/gpt-4.1-mini`, `zeabur-ai/gpt-4o`, `zeabur-ai/gpt-4o-mini`, `zeabur-ai/gpt-oss-120b`, `zeabur-ai/grok-4-fast-non-reasoning`, `zeabur-ai/glm-4.6`, `zeabur-ai/llama-3.3-70b`, `zeabur-ai/qwen-3-32`, `zeabur-ai/qwen3-next`, `zeabur-ai/kimi-k2-thinking`
 
       ## 資料持久化
-      - `/home/node/.clawdbot` - 設定、會話和憑證
-      - `/home/node/clawd` - 工作區和記憶檔案
+      所有資料儲存在 `/home/node`：
+      - `~/.clawdbot` - 設定、會話、裝置和憑證
+      - `~/clawd` - 工作區和記憶檔案
 
       ## 文件
       - GitHub：https://github.com/moltbot/moltbot
@@ -660,12 +693,14 @@ localization:
       moltbot 是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台。
 
       ## ⚠️ 开发中
-      由于 moltbot 正在快速开发，本模板使用 `main` tag 以获取最新版本。如果您希望稳定运行，可以在服务设置中固定到稳定版本 tag（例如 `v2026.1.25`）。
+      由于 moltbot 正在快速开发中，可能会有不稳定的地方或重大变更。如果遇到问题，建议重新部署最新版本的模板。
+
+      本模板使用 `main` tag 以获取最新版本。如果您希望稳定运行，可以在服务设置中固定到稳定版本 tag（例如 `v2026.1.25`）。
 
       ### ✅ 已完成
       - Gateway 启动并接受 WebSocket 连接
       - Web UI 可通过公开域名加载
-      - Token 认证（无需设备配对）
+      - Token 认证
       - AI 供应商认证（Anthropic API 密钥）
       - 通过 Web UI 与 AI 助手对话
       - Zeabur AI Hub 集成
@@ -679,9 +714,9 @@ localization:
       ---
 
       ## 建议资源配置
-      资源需求可能因使用的工具和功能而异。
-      - **共享集群**：2000 m（2 vCPU）、2048 Mi（2 GB）
-      - **专用服务器**：推荐使用以获得更好的性能
+      moltbot 是 CPU 密集型应用。资源需求可能因使用的工具和功能而异。
+      - **共享集群**：1000 m（1 vCPU）、1024 Mi（1 GB）- 适合测试试用
+      - **专用服务器**：2+ vCPU、2+ GB - 强烈推荐，以获得稳定性能
 
       ## 支持平台
       - WhatsApp
@@ -739,15 +774,20 @@ localization:
       - 使用 **Zeabur AI Hub** 时，默认模型为 `zeabur-ai/gpt-5-mini`
       - 使用 **Anthropic API Key** 时，默认模型为 `anthropic/claude-opus-4-5`
 
-      修改方式：
+      通过 **Chat 页面**或 **Telegram Bot** 修改：
+      - `/models` - 查看可用模型
+      - `/model zeabur-ai/gpt-5-mini` - 设置模型
+
+      或通过 **Settings 页面**：
       1. 在 moltbot Web UI 打开 Settings
       2. 从列表中选择您偏好的模型
 
       **可用模型（Zeabur AI Hub）：** `zeabur-ai/gemini-3-pro-image-preview`, `zeabur-ai/gemini-3-pro-preview`, `zeabur-ai/gpt-5`, `zeabur-ai/claude-sonnet-4-5`, `zeabur-ai/gemini-3-flash-preview`, `zeabur-ai/gpt-5-mini`, `zeabur-ai/claude-haiku-4-5`, `zeabur-ai/gemini-2.5-pro`, `zeabur-ai/gemini-2.5-flash`, `zeabur-ai/gemini-2.5-flash-lite`, `zeabur-ai/gemini-2.5-flash-image`, `zeabur-ai/deepseek-v3.2`, `zeabur-ai/gpt-4.1`, `zeabur-ai/gpt-4.1-mini`, `zeabur-ai/gpt-4o`, `zeabur-ai/gpt-4o-mini`, `zeabur-ai/gpt-oss-120b`, `zeabur-ai/grok-4-fast-non-reasoning`, `zeabur-ai/glm-4.6`, `zeabur-ai/llama-3.3-70b`, `zeabur-ai/qwen-3-32`, `zeabur-ai/qwen3-next`, `zeabur-ai/kimi-k2-thinking`
 
       ## 数据持久化
-      - `/home/node/.clawdbot` - 配置、会话和凭证
-      - `/home/node/clawd` - 工作区和记忆文件
+      所有数据存储在 `/home/node`：
+      - `~/.clawdbot` - 配置、会话、设备和凭证
+      - `~/clawd` - 工作区和记忆文件
 
       ## 文档
       - GitHub：https://github.com/moltbot/moltbot
@@ -774,12 +814,14 @@ localization:
       moltbot は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォームに接続する個人用 AI アシスタントです。
 
       ## ⚠️ 開発中
-      moltbot は急速に開発中のため、本テンプレートは `main` タグを使用して最新バージョンを取得します。安定性を重視する場合は、サービス設定で安定版タグ（例：`v2026.1.25`）に固定できます。
+      moltbot は急速に開発中のため、不安定な部分や破壊的変更がある可能性があります。問題が発生した場合は、最新のテンプレートで再デプロイすることをお勧めします。
+
+      本テンプレートは `main` タグを使用して最新バージョンを取得します。安定性を重視する場合は、サービス設定で安定版タグ（例：`v2026.1.25`）に固定できます。
 
       ### ✅ 完了
       - Gateway が起動し WebSocket 接続を受け入れ
       - Web UI が公開ドメインで読み込み可能
-      - トークン認証（デバイスペアリング不要）
+      - トークン認証
       - AI プロバイダー認証（Anthropic API キー）
       - Web UI で AI アシスタントとチャット
       - Zeabur AI Hub 統合
@@ -793,9 +835,9 @@ localization:
       ---
 
       ## 推奨リソース
-      使用するツールや機能によってリソース要件が異なる場合があります。
-      - **共有クラスター**：2000 m（2 vCPU）、2048 Mi（2 GB）
-      - **専用サーバー**：より良いパフォーマンスのために推奨
+      moltbot は CPU 集約型アプリです。使用するツールや機能によってリソース要件が異なる場合があります。
+      - **共有クラスター**：1000 m（1 vCPU）、1024 Mi（1 GB）- テスト・お試し用
+      - **専用サーバー**：2+ vCPU、2+ GB - 安定したパフォーマンスのために強く推奨
 
       ## 対応プラットフォーム
       - WhatsApp
@@ -853,15 +895,20 @@ localization:
       - **Zeabur AI Hub** を使用する場合、デフォルトモデルは `zeabur-ai/gpt-5-mini` です
       - **Anthropic API Key** を使用する場合、デフォルトモデルは `anthropic/claude-opus-4-5` です
 
-      変更方法：
+      **Chat ページ**または **Telegram Bot** で変更：
+      - `/models` - 利用可能なモデルを表示
+      - `/model zeabur-ai/gpt-5-mini` - モデルを設定
+
+      または **Settings ページ**で：
       1. moltbot Web UI で Settings を開く
       2. リストからお好みのモデルを選択
 
       **利用可能なモデル（Zeabur AI Hub）：** `zeabur-ai/gemini-3-pro-image-preview`, `zeabur-ai/gemini-3-pro-preview`, `zeabur-ai/gpt-5`, `zeabur-ai/claude-sonnet-4-5`, `zeabur-ai/gemini-3-flash-preview`, `zeabur-ai/gpt-5-mini`, `zeabur-ai/claude-haiku-4-5`, `zeabur-ai/gemini-2.5-pro`, `zeabur-ai/gemini-2.5-flash`, `zeabur-ai/gemini-2.5-flash-lite`, `zeabur-ai/gemini-2.5-flash-image`, `zeabur-ai/deepseek-v3.2`, `zeabur-ai/gpt-4.1`, `zeabur-ai/gpt-4.1-mini`, `zeabur-ai/gpt-4o`, `zeabur-ai/gpt-4o-mini`, `zeabur-ai/gpt-oss-120b`, `zeabur-ai/grok-4-fast-non-reasoning`, `zeabur-ai/glm-4.6`, `zeabur-ai/llama-3.3-70b`, `zeabur-ai/qwen-3-32`, `zeabur-ai/qwen3-next`, `zeabur-ai/kimi-k2-thinking`
 
       ## データ永続化
-      - `/home/node/.clawdbot` - 設定、セッション、認証情報
-      - `/home/node/clawd` - ワークスペースとメモリファイル
+      すべてのデータは `/home/node` に保存：
+      - `~/.clawdbot` - 設定、セッション、デバイス、認証情報
+      - `~/clawd` - ワークスペースとメモリファイル
 
       ## ドキュメント
       - GitHub：https://github.com/moltbot/moltbot
@@ -888,12 +935,14 @@ localization:
       moltbot es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería a través de una arquitectura Gateway basada en WebSocket.
 
       ## ⚠️ En Desarrollo
-      moltbot está en desarrollo rápido, por lo que esta plantilla usa el tag `main` para obtener la última versión. Si prefiere estabilidad, puede fijar un tag de versión estable (ej: `v2026.1.25`) en la configuración del servicio.
+      moltbot está en desarrollo rápido. Puede haber áreas inestables o cambios importantes. Si encuentra problemas, recomendamos redesplegar con la última plantilla.
+
+      Esta plantilla usa el tag `main` para obtener la última versión. Si prefiere estabilidad, puede fijar un tag de versión estable (ej: `v2026.1.25`) en la configuración del servicio.
 
       ### ✅ Completado
       - Gateway inicia y acepta conexiones WebSocket
       - Web UI carga a través de dominio público
-      - Autenticación por token (sin emparejamiento de dispositivo)
+      - Autenticación por token
       - Autenticación de proveedor AI (clave API Anthropic)
       - Chat con asistente AI vía Web UI
       - Integración Zeabur AI Hub
@@ -907,9 +956,9 @@ localization:
       ---
 
       ## Recursos Recomendados
-      Los requisitos de recursos pueden variar según las herramientas y funciones que utilice.
-      - **Clúster Compartido**: 2000 m (2 vCPU), 2048 Mi (2 GB)
-      - **Servidor Dedicado**: Recomendado para mejor rendimiento
+      moltbot consume muchos recursos de CPU. Los requisitos pueden variar según las herramientas y funciones que utilice.
+      - **Clúster Compartido**: 1000 m (1 vCPU), 1024 Mi (1 GB) - para pruebas
+      - **Servidor Dedicado**: 2+ vCPU, 2+ GB - altamente recomendado para rendimiento estable
 
       ## Plataformas Compatibles
       - WhatsApp
@@ -967,15 +1016,20 @@ localization:
       - Al usar **Zeabur AI Hub**, el modelo predeterminado es `zeabur-ai/gpt-5-mini`
       - Al usar **Anthropic API Key**, el modelo predeterminado es `anthropic/claude-opus-4-5`
 
-      Para cambiarlo:
+      Cambiar vía **página Chat** o **Telegram Bot**:
+      - `/models` - ver modelos disponibles
+      - `/model zeabur-ai/gpt-5-mini` - establecer el modelo
+
+      O vía **página Settings**:
       1. Abra Settings en la Web UI de moltbot
       2. Seleccione su modelo preferido de la lista
 
       **Modelos disponibles (Zeabur AI Hub):** `zeabur-ai/gemini-3-pro-image-preview`, `zeabur-ai/gemini-3-pro-preview`, `zeabur-ai/gpt-5`, `zeabur-ai/claude-sonnet-4-5`, `zeabur-ai/gemini-3-flash-preview`, `zeabur-ai/gpt-5-mini`, `zeabur-ai/claude-haiku-4-5`, `zeabur-ai/gemini-2.5-pro`, `zeabur-ai/gemini-2.5-flash`, `zeabur-ai/gemini-2.5-flash-lite`, `zeabur-ai/gemini-2.5-flash-image`, `zeabur-ai/deepseek-v3.2`, `zeabur-ai/gpt-4.1`, `zeabur-ai/gpt-4.1-mini`, `zeabur-ai/gpt-4o`, `zeabur-ai/gpt-4o-mini`, `zeabur-ai/gpt-oss-120b`, `zeabur-ai/grok-4-fast-non-reasoning`, `zeabur-ai/glm-4.6`, `zeabur-ai/llama-3.3-70b`, `zeabur-ai/qwen-3-32`, `zeabur-ai/qwen3-next`, `zeabur-ai/kimi-k2-thinking`
 
       ## Persistencia de Datos
-      - `/home/node/.clawdbot` - Configuración, sesiones y credenciales
-      - `/home/node/clawd` - Espacio de trabajo y archivos de memoria
+      Todos los datos se almacenan en `/home/node`:
+      - `~/.clawdbot` - Configuración, sesiones, dispositivos y credenciales
+      - `~/clawd` - Espacio de trabajo y archivos de memoria
 
       ## Documentación
       - GitHub: https://github.com/moltbot/moltbot
@@ -1002,12 +1056,14 @@ localization:
       moltbot adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan melalui arsitektur Gateway berbasis WebSocket.
 
       ## ⚠️ Dalam Pengembangan
-      moltbot sedang dalam pengembangan cepat, sehingga template ini menggunakan tag `main` untuk mendapatkan versi terbaru. Jika Anda menginginkan stabilitas, Anda dapat menetapkan tag versi stabil (contoh: `v2026.1.25`) di pengaturan layanan.
+      moltbot sedang dalam pengembangan cepat. Mungkin ada area yang tidak stabil atau perubahan besar. Jika Anda mengalami masalah, kami sarankan untuk deploy ulang dengan template terbaru.
+
+      Template ini menggunakan tag `main` untuk mendapatkan versi terbaru. Jika Anda menginginkan stabilitas, Anda dapat menetapkan tag versi stabil (contoh: `v2026.1.25`) di pengaturan layanan.
 
       ### ✅ Selesai
       - Gateway berjalan dan menerima koneksi WebSocket
       - Web UI dapat dimuat melalui domain publik
-      - Autentikasi token (tanpa pairing perangkat)
+      - Autentikasi token
       - Autentikasi penyedia AI (kunci API Anthropic)
       - Chat dengan asisten AI via Web UI
       - Integrasi Zeabur AI Hub
@@ -1021,9 +1077,9 @@ localization:
       ---
 
       ## Sumber Daya yang Direkomendasikan
-      Kebutuhan sumber daya dapat bervariasi tergantung pada alat dan fitur yang Anda gunakan.
-      - **Kluster Bersama**: 2000 m (2 vCPU), 2048 Mi (2 GB)
-      - **Server Khusus**: Direkomendasikan untuk performa lebih baik
+      moltbot adalah aplikasi yang intensif CPU. Kebutuhan sumber daya dapat bervariasi tergantung pada alat dan fitur yang Anda gunakan.
+      - **Kluster Bersama**: 1000 m (1 vCPU), 1024 Mi (1 GB) - untuk pengujian
+      - **Server Khusus**: 2+ vCPU, 2+ GB - sangat direkomendasikan untuk performa stabil
 
       ## Platform yang Didukung
       - WhatsApp
@@ -1081,15 +1137,20 @@ localization:
       - Saat menggunakan **Zeabur AI Hub**, model default adalah `zeabur-ai/gpt-5-mini`
       - Saat menggunakan **Anthropic API Key**, model default adalah `anthropic/claude-opus-4-5`
 
-      Untuk mengubahnya:
+      Ubah melalui **halaman Chat** atau **Telegram Bot**:
+      - `/models` - lihat model yang tersedia
+      - `/model zeabur-ai/gpt-5-mini` - atur model
+
+      Atau melalui **halaman Settings**:
       1. Buka Settings di moltbot Web UI
       2. Pilih model yang Anda inginkan dari daftar
 
       **Model tersedia (Zeabur AI Hub):** `zeabur-ai/gemini-3-pro-image-preview`, `zeabur-ai/gemini-3-pro-preview`, `zeabur-ai/gpt-5`, `zeabur-ai/claude-sonnet-4-5`, `zeabur-ai/gemini-3-flash-preview`, `zeabur-ai/gpt-5-mini`, `zeabur-ai/claude-haiku-4-5`, `zeabur-ai/gemini-2.5-pro`, `zeabur-ai/gemini-2.5-flash`, `zeabur-ai/gemini-2.5-flash-lite`, `zeabur-ai/gemini-2.5-flash-image`, `zeabur-ai/deepseek-v3.2`, `zeabur-ai/gpt-4.1`, `zeabur-ai/gpt-4.1-mini`, `zeabur-ai/gpt-4o`, `zeabur-ai/gpt-4o-mini`, `zeabur-ai/gpt-oss-120b`, `zeabur-ai/grok-4-fast-non-reasoning`, `zeabur-ai/glm-4.6`, `zeabur-ai/llama-3.3-70b`, `zeabur-ai/qwen-3-32`, `zeabur-ai/qwen3-next`, `zeabur-ai/kimi-k2-thinking`
 
       ## Persistensi Data
-      - `/home/node/.clawdbot` - Konfigurasi, sesi, dan kredensial
-      - `/home/node/clawd` - Ruang kerja dan file memori
+      Semua data disimpan di `/home/node`:
+      - `~/.clawdbot` - Konfigurasi, sesi, perangkat, dan kredensial
+      - `~/clawd` - Ruang kerja dan file memori
 
       ## Dokumentasi
       - GitHub: https://github.com/moltbot/moltbot
