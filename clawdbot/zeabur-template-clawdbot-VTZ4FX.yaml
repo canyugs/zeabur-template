@@ -133,6 +133,7 @@ spec:
 
       ## Documentation
       - GitHub: https://github.com/moltbot/moltbot
+      - Browser Sandbox Template: https://zeabur.com/templates/H8L4G1
 
     services:
       - name: moltbot
@@ -636,6 +637,7 @@ localization:
 
       ## 文件
       - GitHub：https://github.com/moltbot/moltbot
+      - 瀏覽器沙盒模板：https://zeabur.com/templates/H8L4G1
 
   zh-CN:
     name: moltbot（原 Clawdbot）
@@ -749,6 +751,7 @@ localization:
 
       ## 文档
       - GitHub：https://github.com/moltbot/moltbot
+      - 浏览器沙盒模板：https://zeabur.com/templates/H8L4G1
 
   ja-JP:
     name: moltbot（旧 Clawdbot）
@@ -862,6 +865,7 @@ localization:
 
       ## ドキュメント
       - GitHub：https://github.com/moltbot/moltbot
+      - ブラウザサンドボックステンプレート：https://zeabur.com/templates/H8L4G1
 
   es-ES:
     name: moltbot (anteriormente Clawdbot)
@@ -975,6 +979,7 @@ localization:
 
       ## Documentación
       - GitHub: https://github.com/moltbot/moltbot
+      - Plantilla Browser Sandbox: https://zeabur.com/templates/H8L4G1
 
   id-ID:
     name: moltbot (sebelumnya Clawdbot)
@@ -1088,3 +1093,4 @@ localization:
 
       ## Dokumentasi
       - GitHub: https://github.com/moltbot/moltbot
+      - Template Browser Sandbox: https://zeabur.com/templates/H8L4G1
