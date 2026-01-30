@@ -2,63 +2,42 @@
 apiVersion: zeabur.com/v1
 kind: Template
 metadata:
-    name: moltbot (formerly Clawdbot)
+    name: moltbot
 spec:
     description: |
-      moltbot (formerly Clawdbot) is a personal AI assistant that runs locally and connects to multiple messaging platforms (WhatsApp, Telegram, Slack, Discord, etc.) via a WebSocket-based Gateway architecture.
-    icon: https://raw.githubusercontent.com/moltbot/moltbot/main/docs/assets/pixel-lobster.svg
+        moltbot (formerly Clawdbot) is a personal AI assistant that runs locally and connects to multiple messaging platforms (WhatsApp, Telegram, Slack, Discord, etc.) via a WebSocket-based Gateway architecture.
     coverImage: https://raw.githubusercontent.com/moltbot/moltbot/main/docs/whatsapp-clawd.jpg
+    icon: https://raw.githubusercontent.com/moltbot/moltbot/main/docs/assets/pixel-lobster.svg
     variables:
-      - key: PUBLIC_DOMAIN
-        type: DOMAIN
-        name: Domain
-        description: What domain do you want to bind moltbot to?
-      - key: ZEABUR_AI_HUB_API_KEY
-        type: AI_HUB_KEY
-        name: Zeabur AI Hub API Key (Recommended)
-        description: Your Zeabur AI Hub API key for using Gemini/GPT/Claude/DeepSeek via AI Hub
-      - key: ANTHROPIC_API_KEY
-        type: STRING
-        name: Anthropic API Key
-        description: Your Anthropic API key for Claude (optional, can be configured later)
-      - key: OPENAI_API_KEY
-        type: STRING
-        name: OpenAI API Key
-        description: Your OpenAI API key (optional, can be configured later)
+        - key: PUBLIC_DOMAIN
+          type: DOMAIN
+          name: Domain
+          description: What domain do you want to bind moltbot to?
+        - key: ZEABUR_AI_HUB_API_KEY
+          type: AI_HUB_KEY
+          name: Zeabur AI Hub API Key (Recommended)
+          description: Your Zeabur AI Hub API key for using Gemini/GPT/Claude/DeepSeek via AI Hub
+        - key: ANTHROPIC_API_KEY
+          type: STRING
+          name: Anthropic API Key
+          description: Your Anthropic API key for Claude (optional, can be configured later)
+        - key: OPENAI_API_KEY
+          type: STRING
+          name: OpenAI API Key
+          description: Your OpenAI API key (optional, can be configured later)
     tags:
-      - AI
-      - Assistant
-      - Chatbot
-      - WhatsApp
-      - Telegram
-      - Slack
-      - Discord
-    resourceUsage:
-      cpu: 1
-      memory: 1024
-
+        - AI
+        - Assistant
+        - Chatbot
+        - WhatsApp
+        - Telegram
+        - Slack
+        - Discord
     readme: |
       # moltbot
       moltbot is a personal AI assistant that runs locally and connects to multiple messaging platforms via a WebSocket-based Gateway architecture.
 
-      ## ⚠️ Work in Progress
-      moltbot is in rapid development. There may be unstable areas or breaking changes. If you encounter issues, we recommend redeploying with the latest template.
-
-      This template uses the `main` tag to get the latest version. If you prefer stability, you can pin to a stable release tag (e.g., `v2026.1.25`) in the service settings.
-
-      ### ✅ Completed
-      - Gateway starts and accepts WebSocket connections
-      - Web UI loads via public domain
-      - Token authentication
-      - AI provider authentication (Anthropic API key)
-      - Chat with AI assistant via Web UI
-      - Zeabur AI Hub integration
-      - Telegram bot connection
-
-      ### 🔄 Testing
-      - [ ] WhatsApp connection (QR code login)
-      - [ ] Discord bot connection
-      - [ ] Slack integration
+      This template uses the `main` tag (2026.1.25). Since moltbot is in rapid development, switching to other versions is not guaranteed to work properly. There may also be undiscovered bugs. If you encounter any issues, feel free to check the [GitHub issues](https://github.com/moltbot/moltbot/issues) for solutions or to report new ones. For Zeabur platform-related issues, please contact Zeabur support.
 
       ---
 
@@ -66,13 +45,6 @@ spec:
       moltbot is CPU-intensive. Resource requirements may vary depending on the tools and features you use.
       - **Shared Cluster**: 1000 m (1 vCPU), 1024 Mi (1 GB) - for testing/trial
       - **Dedicated Server**: 2+ vCPU, 2+ GB - highly recommended for stable performance
-
-      ## Supported Platforms
-      - WhatsApp
-      - Telegram
-      - Slack
-      - Discord
-      - And more messaging platforms
 
       ## Usage
       1. After deployment, a secure Gateway token is **automatically generated** for you
@@ -82,11 +54,6 @@ spec:
       5. Go to the **Chat** page to test if your AI provider is working
 
       For more details, see the [official documentation](https://github.com/moltbot/moltbot).
-
-      ## Configuration
-      - `ZEABUR_AI_HUB_API_KEY`: Your Zeabur AI Hub API key (Recommended). [Get your API key here](https://zeabur.com/docs/ai-hub)
-      - `ANTHROPIC_API_KEY`: Your Anthropic API key for Claude
-      - `OPENAI_API_KEY`: Your OpenAI API key (optional, for OpenAI features like memory search, TTS)
 
       ## Telegram Bot Setup
       **Getting your bot token from BotFather:**
@@ -108,1050 +75,856 @@ spec:
       5. You'll see: `Approved telegram sender <user-id>.`
       6. Now you can chat with the bot!
 
-      ## Additional Configuration
-      Beyond environment variables, you can configure moltbot using:
-
-      **Web UI**
-      1. Open the moltbot Web UI
-      2. Go to Settings to configure models, channels, and preferences
-
-      **Command Line**
-      1. Open **Command** in Zeabur dashboard
-      2. Use `moltbot` (or `clawdbot`) commands to manage providers, models, and settings
+      For other messaging platforms (WhatsApp, Discord, Slack, etc.), see the [Channels documentation](https://docs.molt.bot/channels).
 
       ## Changing the Default Model
-      - When using **Zeabur AI Hub**, the default model is `zeabur-ai/gpt-5-mini`
-      - When using **Anthropic API Key**, the default model is `anthropic/claude-opus-4-5`
+      The default model depends on your AI provider:
+      - **Zeabur AI Hub**: `zeabur-ai/gpt-5-mini`
+      - **Anthropic API Key**: `anthropic/claude-opus-4-5`
 
-      To change it via **Chat page** or **Telegram Bot**:
-      - `/models` - view available models
-      - `/model zeabur-ai/gpt-5-mini` - set the model
+      To change it:
+      - **Chat commands**: Use `/models` to view available models, `/model <model-id>` to switch (e.g., `/model zeabur-ai/gpt-5-mini`)
+      - **Web UI**: Go to Settings and select your preferred model
 
-      Or via **Settings page**:
-      1. Open Settings in moltbot Web UI
-      2. Select your preferred model from the list
+      ## Configure More Models
+      See the [Providers documentation](https://docs.molt.bot/providers) for adding more AI models.
 
-      **Available models (Zeabur AI Hub):** `zeabur-ai/gemini-3-pro-image-preview`, `zeabur-ai/gemini-3-pro-preview`, `zeabur-ai/gpt-5`, `zeabur-ai/claude-sonnet-4-5`, `zeabur-ai/gemini-3-flash-preview`, `zeabur-ai/gpt-5-mini`, `zeabur-ai/claude-haiku-4-5`, `zeabur-ai/gemini-2.5-pro`, `zeabur-ai/gemini-2.5-flash`, `zeabur-ai/gemini-2.5-flash-lite`, `zeabur-ai/gemini-2.5-flash-image`, `zeabur-ai/deepseek-v3.2`, `zeabur-ai/gpt-4.1`, `zeabur-ai/gpt-4.1-mini`, `zeabur-ai/gpt-4o`, `zeabur-ai/gpt-4o-mini`, `zeabur-ai/gpt-oss-120b`, `zeabur-ai/grok-4-fast-non-reasoning`, `zeabur-ai/glm-4.6`, `zeabur-ai/llama-3.3-70b`, `zeabur-ai/qwen-3-32`, `zeabur-ai/qwen3-next`, `zeabur-ai/kimi-k2-thinking`
+      ## Additional Configuration
+      Beyond environment variables, you can configure moltbot via Web UI Settings or CLI commands. See the [official documentation](https://docs.molt.bot) for more details.
 
       ## Data Persistence
       All data is stored under `/home/node`:
-      - `~/.clawdbot` - Configuration, sessions, devices, and credentials
-      - `~/clawd` - Workspace and memory files
+      - `/home/node/.clawdbot` - Configuration, sessions, devices, and credentials
+      - `/home/node/clawd` - Workspace and memory files
+
+      ## Browser Sandbox
+      If you need browser features (web browsing, screenshots, etc.), deploy the [Browser Sandbox Template](https://zeabur.com/templates/H8L4G1) alongside moltbot.
 
       ## Documentation
       - GitHub: https://github.com/moltbot/moltbot
-      - Browser Sandbox Template: https://zeabur.com/templates/H8L4G1
 
     services:
-      - name: moltbot
-        icon: https://raw.githubusercontent.com/moltbot/moltbot/main/docs/assets/pixel-lobster.svg
-        template: PREBUILT
-        domainKey: PUBLIC_DOMAIN
-        spec:
-          source:
-            image: ghcr.io/moltbot/clawdbot:main
-            command:
-              - /bin/sh
-              - -c
-              - |
-                # Setup moltbot command (clawdbot also works for backward compatibility)
-                WORKDIR="$(pwd)"
-                mkdir -p /home/node/bin
-                cat > /home/node/bin/moltbot << SCRIPT
-                #!/bin/sh
-                exec node ${WORKDIR}/dist/index.js "\$@"
-                SCRIPT
-                chmod +x /home/node/bin/moltbot
-                ln -sf /home/node/bin/moltbot /home/node/bin/clawdbot
-                export PATH="/home/node/bin:$PATH"
+        - name: moltbot
+          icon: https://raw.githubusercontent.com/moltbot/moltbot/main/docs/assets/pixel-lobster.svg
+          template: PREBUILT
+          spec:
+            source:
+                image: ghcr.io/moltbot/clawdbot:main
+                command:
+                    - /bin/sh
+                    - -c
+                    - |
+                      # Setup moltbot command (clawdbot also works for backward compatibility)
+                      WORKDIR="$(pwd)"
+                      mkdir -p /home/node/bin
+                      cat > /home/node/bin/moltbot << SCRIPT
+                      #!/bin/sh
+                      exec node ${WORKDIR}/dist/index.js "\$@"
+                      SCRIPT
+                      chmod +x /home/node/bin/moltbot
+                      ln -sf /home/node/bin/moltbot /home/node/bin/clawdbot
+                      export PATH="/home/node/bin:$PATH"
 
-                # Create initial config (only if not exists)
-                # moltbot reads from ~/.clawdbot/clawdbot.json
-                CONFIG_DIR="/home/node/.clawdbot"
-                CONFIG_FILE="$CONFIG_DIR/clawdbot.json"
-                mkdir -p "$CONFIG_DIR"
-                chmod 700 "$CONFIG_DIR"
+                      # Create initial config (only if not exists)
+                      CONFIG_FILE="/home/node/.clawdbot/clawdbot.json"
+                      mkdir -p /home/node/.clawdbot
+                      chmod 700 /home/node/.clawdbot
 
-                if [ ! -f "$CONFIG_FILE" ]; then
-                  echo "Creating initial config..."
+                      if [ ! -f "$CONFIG_FILE" ]; then
+                        echo "Creating initial config..."
 
-                  # Build config JSON dynamically
-                  CONFIG_JSON='{"gateway":{"controlUi":{"allowInsecureAuth":true}}}'
+                        # Build config JSON dynamically
+                        CONFIG_JSON='{"gateway":{"trustedProxies":["0.0.0.0/0"],"controlUi":{"allowInsecureAuth":true}}}'
 
-                  # Add Zeabur AI Hub if configured
-                  if [ -n "${ZEABUR_AI_HUB_API_KEY}" ]; then
-                    CONFIG_JSON=$(echo "$CONFIG_JSON" | node -e "
-                      const fs = require('fs');
-                      let config = JSON.parse(fs.readFileSync(0, 'utf8'));
-                      config.agents = { defaults: { model: { primary: 'zeabur-ai/gpt-5-mini' } } };
-                      config.models = { providers: { 'zeabur-ai': {
-                        baseUrl: 'https://hnd1.aihub.zeabur.ai/v1',
-                        apiKey: process.env.ZEABUR_AI_HUB_API_KEY,
-                        api: 'openai-completions',
-                        models: [
-                          {
-                            id: 'gemini-3-pro-image-preview',
-                            name: 'Gemini 3 Pro Image Preview (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text', 'image'],
-                            cost: { input: 2, output: 120, cacheRead: 0, cacheWrite: 0 },
-                            contextWindow: 1000000,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'gemini-3-pro-preview',
-                            name: 'Gemini 3 Pro Preview (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text', 'image'],
-                            cost: { input: 2, output: 12, cacheRead: 0.2, cacheWrite: 0 },
-                            contextWindow: 1000000,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'gpt-5',
-                            name: 'GPT-5 (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text', 'image'],
-                            cost: { input: 1.25, output: 10, cacheRead: 0.13, cacheWrite: 0 },
-                            contextWindow: 400000,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'claude-sonnet-4-5',
-                            name: 'Claude Sonnet 4.5 (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text', 'image'],
-                            cost: { input: 3.3, output: 16.5, cacheRead: 0.33, cacheWrite: 0 },
-                            contextWindow: 1000000,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'gemini-3-flash-preview',
-                            name: 'Gemini 3 Flash Preview (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text', 'image'],
-                            cost: { input: 0.5, output: 3, cacheRead: 0.05, cacheWrite: 0 },
-                            contextWindow: 1000000,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'gpt-5-mini',
-                            name: 'GPT-5 Mini (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text', 'image'],
-                            cost: { input: 0.25, output: 2, cacheRead: 0.03, cacheWrite: 0 },
-                            contextWindow: 400000,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'claude-haiku-4-5',
-                            name: 'Claude Haiku 4.5 (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text', 'image'],
-                            cost: { input: 1.1, output: 5.5, cacheRead: 0.11, cacheWrite: 0 },
-                            contextWindow: 1000000,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'gemini-2.5-pro',
-                            name: 'Gemini 2.5 Pro (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text', 'image'],
-                            cost: { input: 1.25, output: 10, cacheRead: 0.125, cacheWrite: 0 },
-                            contextWindow: 1000000,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'gemini-2.5-flash',
-                            name: 'Gemini 2.5 Flash (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text', 'image'],
-                            cost: { input: 0.3, output: 2.5, cacheRead: 0.03, cacheWrite: 0 },
-                            contextWindow: 1000000,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'gemini-2.5-flash-lite',
-                            name: 'Gemini 2.5 Flash Lite (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text', 'image'],
-                            cost: { input: 0.1, output: 0.4, cacheRead: 0.01, cacheWrite: 0 },
-                            contextWindow: 1000000,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'gemini-2.5-flash-image',
-                            name: 'Gemini 2.5 Flash Image (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text', 'image'],
-                            cost: { input: 0.3, output: 30, cacheRead: 0, cacheWrite: 0 },
-                            contextWindow: 1000000,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'deepseek-v3.2',
-                            name: 'DeepSeek V3.2 (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text'],
-                            cost: { input: 0.27, output: 0.4, cacheRead: 0.216, cacheWrite: 0 },
-                            contextWindow: 164000,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'gpt-4.1',
-                            name: 'GPT-4.1 (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text', 'image'],
-                            cost: { input: 2, output: 8, cacheRead: 0, cacheWrite: 0 },
-                            contextWindow: 1048576,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'gpt-4.1-mini',
-                            name: 'GPT-4.1 mini (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text', 'image'],
-                            cost: { input: 0.4, output: 1.6, cacheRead: 0.1, cacheWrite: 0 },
-                            contextWindow: 1048576,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'gpt-4o',
-                            name: 'GPT-4o (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text', 'image'],
-                            cost: { input: 2.5, output: 10, cacheRead: 1.25, cacheWrite: 0 },
-                            contextWindow: 128000,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'gpt-4o-mini',
-                            name: 'GPT-4o mini (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text', 'image'],
-                            cost: { input: 0.15, output: 0.6, cacheRead: 0.075, cacheWrite: 0 },
-                            contextWindow: 128000,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'gpt-oss-120b',
-                            name: 'GPT OSS 120B (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text'],
-                            cost: { input: 0.35, output: 0.75, cacheRead: 0, cacheWrite: 0 },
-                            contextWindow: 131072,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'grok-4-fast-non-reasoning',
-                            name: 'Grok 4 Fast (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text', 'image'],
-                            cost: { input: 0.2, output: 0.5, cacheRead: 0.05, cacheWrite: 0 },
-                            contextWindow: 2000000,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'glm-4.6',
-                            name: 'GLM-4.6 (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text', 'image'],
-                            cost: { input: 0.45, output: 1.9, cacheRead: 0.11, cacheWrite: 0 },
-                            contextWindow: 204800,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'llama-3.3-70b',
-                            name: 'Llama 3.3 70B (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text'],
-                            cost: { input: 0.85, output: 1.2, cacheRead: 0, cacheWrite: 0 },
-                            contextWindow: 65536,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'qwen-3-32',
-                            name: 'Qwen 3 32B (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text'],
-                            cost: { input: 0.4, output: 0.8, cacheRead: 0, cacheWrite: 0 },
-                            contextWindow: 32768,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'qwen3-next',
-                            name: 'Qwen 3 Next 80B (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text'],
-                            cost: { input: 0.14, output: 1.1, cacheRead: 0, cacheWrite: 0 },
-                            contextWindow: 32768,
-                            maxTokens: 8192
-                          },
-                          {
-                            id: 'kimi-k2-thinking',
-                            name: 'Kimi K2 Thinking (Zeabur AI Hub)',
-                            reasoning: false,
-                            input: ['text'],
-                            cost: { input: 0.55, output: 2.5, cacheRead: 0, cacheWrite: 0 },
-                            contextWindow: 131072,
-                            maxTokens: 8192
-                          }
-                        ]
-                      }}};
-                      console.log(JSON.stringify(config));
-                    ")
-                  fi
+                        # Add Zeabur AI Hub if configured
+                        if [ -n "${ZEABUR_AI_HUB_API_KEY}" ]; then
+                          CONFIG_JSON=$(echo "$CONFIG_JSON" | node -e "
+                            const fs = require('fs');
+                            let config = JSON.parse(fs.readFileSync(0, 'utf8'));
+                            config.agents = { defaults: { model: { primary: 'zeabur-ai/gpt-5-mini' } } };
+                            config.models = { providers: { 'zeabur-ai': {
+                              baseUrl: 'https://hnd1.aihub.zeabur.ai/v1',
+                              apiKey: process.env.ZEABUR_AI_HUB_API_KEY,
+                              api: 'openai-completions',
+                              models: [
+                                {
+                                  id: 'gemini-3-pro-image-preview',
+                                  name: 'Gemini 3 Pro Image Preview (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 2, output: 120, cacheRead: 0, cacheWrite: 0 },
+                                  contextWindow: 1000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gemini-3-pro-preview',
+                                  name: 'Gemini 3 Pro Preview (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 2, output: 12, cacheRead: 0.2, cacheWrite: 0 },
+                                  contextWindow: 1000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gpt-5',
+                                  name: 'GPT-5 (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 1.25, output: 10, cacheRead: 0.13, cacheWrite: 0 },
+                                  contextWindow: 400000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'claude-sonnet-4-5',
+                                  name: 'Claude Sonnet 4.5 (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 3.3, output: 16.5, cacheRead: 0.33, cacheWrite: 0 },
+                                  contextWindow: 1000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gemini-3-flash-preview',
+                                  name: 'Gemini 3 Flash Preview (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 0.5, output: 3, cacheRead: 0.05, cacheWrite: 0 },
+                                  contextWindow: 1000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gpt-5-mini',
+                                  name: 'GPT-5 Mini (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 0.25, output: 2, cacheRead: 0.03, cacheWrite: 0 },
+                                  contextWindow: 400000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'claude-haiku-4-5',
+                                  name: 'Claude Haiku 4.5 (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 1.1, output: 5.5, cacheRead: 0.11, cacheWrite: 0 },
+                                  contextWindow: 1000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gemini-2.5-pro',
+                                  name: 'Gemini 2.5 Pro (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 1.25, output: 10, cacheRead: 0.125, cacheWrite: 0 },
+                                  contextWindow: 1000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gemini-2.5-flash',
+                                  name: 'Gemini 2.5 Flash (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 0.3, output: 2.5, cacheRead: 0.03, cacheWrite: 0 },
+                                  contextWindow: 1000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gemini-2.5-flash-lite',
+                                  name: 'Gemini 2.5 Flash Lite (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 0.1, output: 0.4, cacheRead: 0.01, cacheWrite: 0 },
+                                  contextWindow: 1000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gemini-2.5-flash-image',
+                                  name: 'Gemini 2.5 Flash Image (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 0.3, output: 30, cacheRead: 0, cacheWrite: 0 },
+                                  contextWindow: 1000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'deepseek-v3.2',
+                                  name: 'DeepSeek V3.2 (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text'],
+                                  cost: { input: 0.27, output: 0.4, cacheRead: 0.216, cacheWrite: 0 },
+                                  contextWindow: 164000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gpt-4.1',
+                                  name: 'GPT-4.1 (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 2, output: 8, cacheRead: 0, cacheWrite: 0 },
+                                  contextWindow: 1048576,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gpt-4.1-mini',
+                                  name: 'GPT-4.1 mini (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 0.4, output: 1.6, cacheRead: 0.1, cacheWrite: 0 },
+                                  contextWindow: 1048576,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gpt-4o',
+                                  name: 'GPT-4o (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 2.5, output: 10, cacheRead: 1.25, cacheWrite: 0 },
+                                  contextWindow: 128000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gpt-4o-mini',
+                                  name: 'GPT-4o mini (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 0.15, output: 0.6, cacheRead: 0.075, cacheWrite: 0 },
+                                  contextWindow: 128000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gpt-oss-120b',
+                                  name: 'GPT OSS 120B (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text'],
+                                  cost: { input: 0.35, output: 0.75, cacheRead: 0, cacheWrite: 0 },
+                                  contextWindow: 131072,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'grok-4-fast-non-reasoning',
+                                  name: 'Grok 4 Fast (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 0.2, output: 0.5, cacheRead: 0.05, cacheWrite: 0 },
+                                  contextWindow: 2000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'glm-4.6',
+                                  name: 'GLM-4.6 (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 0.45, output: 1.9, cacheRead: 0.11, cacheWrite: 0 },
+                                  contextWindow: 204800,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'llama-3.3-70b',
+                                  name: 'Llama 3.3 70B (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text'],
+                                  cost: { input: 0.85, output: 1.2, cacheRead: 0, cacheWrite: 0 },
+                                  contextWindow: 65536,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'qwen-3-32',
+                                  name: 'Qwen 3 32B (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text'],
+                                  cost: { input: 0.4, output: 0.8, cacheRead: 0, cacheWrite: 0 },
+                                  contextWindow: 32768,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'qwen3-next',
+                                  name: 'Qwen 3 Next 80B (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text'],
+                                  cost: { input: 0.14, output: 1.1, cacheRead: 0, cacheWrite: 0 },
+                                  contextWindow: 32768,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'kimi-k2-thinking',
+                                  name: 'Kimi K2 Thinking (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text'],
+                                  cost: { input: 0.55, output: 2.5, cacheRead: 0, cacheWrite: 0 },
+                                  contextWindow: 131072,
+                                  maxTokens: 8192
+                                }
+                              ]
+                            }}};
+                            console.log(JSON.stringify(config));
+                          ")
+                        fi
 
-                  # Write formatted config
-                  echo "$CONFIG_JSON" | node -e "
-                    const fs = require('fs');
-                    const config = JSON.parse(fs.readFileSync(0, 'utf8'));
-                    console.log(JSON.stringify(config, null, 2));
-                  " > "$CONFIG_FILE"
-                  chmod 600 "$CONFIG_FILE"
-                else
-                  echo "Config exists, checking for updates..."
-                  # Add Zeabur AI Hub provider if API key is set but provider doesn't exist
-                  if [ -n "${ZEABUR_AI_HUB_API_KEY}" ]; then
-                    node -e "
-                      const fs = require('fs');
-                      const configPath = '$CONFIG_FILE';
+                        # Write formatted config
+                        echo "$CONFIG_JSON" | node -e "
+                          const fs = require('fs');
+                          const config = JSON.parse(fs.readFileSync(0, 'utf8'));
+                          console.log(JSON.stringify(config, null, 2));
+                        " > "$CONFIG_FILE"
+                        chmod 600 "$CONFIG_FILE"
+                      else
+                        echo "Config exists, checking for updates..."
+                        # Add Zeabur AI Hub provider if API key is set but provider doesn't exist
+                        if [ -n "${ZEABUR_AI_HUB_API_KEY}" ]; then
+                          node -e "
+                            const fs = require('fs');
+                            const configPath = '$CONFIG_FILE';
 
-                      try {
-                        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                            try {
+                              const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
-                        // Check if zeabur-ai provider already exists
-                        if (!config.models?.providers?.['zeabur-ai']) {
-                          console.log('Adding Zeabur AI Hub provider...');
+                              // Check if zeabur-ai provider already exists
+                              if (!config.models?.providers?.['zeabur-ai']) {
+                                console.log('Adding Zeabur AI Hub provider...');
 
-                          // Initialize models.providers if needed
-                          if (!config.models) config.models = {};
-                          if (!config.models.providers) config.models.providers = {};
+                                // Initialize models.providers if needed
+                                if (!config.models) config.models = {};
+                                if (!config.models.providers) config.models.providers = {};
 
-                          // Add zeabur-ai provider
-                          config.models.providers['zeabur-ai'] = {
-                            baseUrl: 'https://hnd1.aihub.zeabur.ai/v1',
-                            apiKey: process.env.ZEABUR_AI_HUB_API_KEY,
-                            api: 'openai-completions',
-                            models: [
-                              { id: 'gemini-3-pro-image-preview', name: 'Gemini 3 Pro Image Preview (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 2, output: 120, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
-                              { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro Preview (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 2, output: 12, cacheRead: 0.2, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
-                              { id: 'gpt-5', name: 'GPT-5 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 1.25, output: 10, cacheRead: 0.13, cacheWrite: 0 }, contextWindow: 400000, maxTokens: 8192 },
-                              { id: 'claude-sonnet-4-5', name: 'Claude Sonnet 4.5 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 3.3, output: 16.5, cacheRead: 0.33, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
-                              { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.5, output: 3, cacheRead: 0.05, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
-                              { id: 'gpt-5-mini', name: 'GPT-5 Mini (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.25, output: 2, cacheRead: 0.03, cacheWrite: 0 }, contextWindow: 400000, maxTokens: 8192 },
-                              { id: 'claude-haiku-4-5', name: 'Claude Haiku 4.5 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 1.1, output: 5.5, cacheRead: 0.11, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
-                              { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 1.25, output: 10, cacheRead: 0.125, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
-                              { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.3, output: 2.5, cacheRead: 0.03, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
-                              { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.1, output: 0.4, cacheRead: 0.01, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
-                              { id: 'gemini-2.5-flash-image', name: 'Gemini 2.5 Flash Image (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.3, output: 30, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
-                              { id: 'deepseek-v3.2', name: 'DeepSeek V3.2 (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.27, output: 0.4, cacheRead: 0.216, cacheWrite: 0 }, contextWindow: 164000, maxTokens: 8192 },
-                              { id: 'gpt-4.1', name: 'GPT-4.1 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 2, output: 8, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1048576, maxTokens: 8192 },
-                              { id: 'gpt-4.1-mini', name: 'GPT-4.1 mini (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.4, output: 1.6, cacheRead: 0.1, cacheWrite: 0 }, contextWindow: 1048576, maxTokens: 8192 },
-                              { id: 'gpt-4o', name: 'GPT-4o (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 2.5, output: 10, cacheRead: 1.25, cacheWrite: 0 }, contextWindow: 128000, maxTokens: 8192 },
-                              { id: 'gpt-4o-mini', name: 'GPT-4o mini (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.15, output: 0.6, cacheRead: 0.075, cacheWrite: 0 }, contextWindow: 128000, maxTokens: 8192 },
-                              { id: 'gpt-oss-120b', name: 'GPT OSS 120B (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.35, output: 0.75, cacheRead: 0, cacheWrite: 0 }, contextWindow: 131072, maxTokens: 8192 },
-                              { id: 'grok-4-fast-non-reasoning', name: 'Grok 4 Fast (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.2, output: 0.5, cacheRead: 0.05, cacheWrite: 0 }, contextWindow: 2000000, maxTokens: 8192 },
-                              { id: 'glm-4.6', name: 'GLM-4.6 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.45, output: 1.9, cacheRead: 0.11, cacheWrite: 0 }, contextWindow: 204800, maxTokens: 8192 },
-                              { id: 'llama-3.3-70b', name: 'Llama 3.3 70B (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.85, output: 1.2, cacheRead: 0, cacheWrite: 0 }, contextWindow: 65536, maxTokens: 8192 },
-                              { id: 'qwen-3-32', name: 'Qwen 3 32B (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.4, output: 0.8, cacheRead: 0, cacheWrite: 0 }, contextWindow: 32768, maxTokens: 8192 },
-                              { id: 'qwen3-next', name: 'Qwen 3 Next 80B (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.14, output: 1.1, cacheRead: 0, cacheWrite: 0 }, contextWindow: 32768, maxTokens: 8192 },
-                              { id: 'kimi-k2-thinking', name: 'Kimi K2 Thinking (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.55, output: 2.5, cacheRead: 0, cacheWrite: 0 }, contextWindow: 131072, maxTokens: 8192 }
-                            ]
-                          };
+                                // Add zeabur-ai provider
+                                config.models.providers['zeabur-ai'] = {
+                                  baseUrl: 'https://hnd1.aihub.zeabur.ai/v1',
+                                  apiKey: process.env.ZEABUR_AI_HUB_API_KEY,
+                                  api: 'openai-completions',
+                                  models: [
+                                    { id: 'gemini-3-pro-image-preview', name: 'Gemini 3 Pro Image Preview (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 2, output: 120, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                                    { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro Preview (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 2, output: 12, cacheRead: 0.2, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                                    { id: 'gpt-5', name: 'GPT-5 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 1.25, output: 10, cacheRead: 0.13, cacheWrite: 0 }, contextWindow: 400000, maxTokens: 8192 },
+                                    { id: 'claude-sonnet-4-5', name: 'Claude Sonnet 4.5 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 3.3, output: 16.5, cacheRead: 0.33, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                                    { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.5, output: 3, cacheRead: 0.05, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                                    { id: 'gpt-5-mini', name: 'GPT-5 Mini (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.25, output: 2, cacheRead: 0.03, cacheWrite: 0 }, contextWindow: 400000, maxTokens: 8192 },
+                                    { id: 'claude-haiku-4-5', name: 'Claude Haiku 4.5 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 1.1, output: 5.5, cacheRead: 0.11, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                                    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 1.25, output: 10, cacheRead: 0.125, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                                    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.3, output: 2.5, cacheRead: 0.03, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                                    { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.1, output: 0.4, cacheRead: 0.01, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                                    { id: 'gemini-2.5-flash-image', name: 'Gemini 2.5 Flash Image (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.3, output: 30, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                                    { id: 'deepseek-v3.2', name: 'DeepSeek V3.2 (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.27, output: 0.4, cacheRead: 0.216, cacheWrite: 0 }, contextWindow: 164000, maxTokens: 8192 },
+                                    { id: 'gpt-4.1', name: 'GPT-4.1 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 2, output: 8, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1048576, maxTokens: 8192 },
+                                    { id: 'gpt-4.1-mini', name: 'GPT-4.1 mini (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.4, output: 1.6, cacheRead: 0.1, cacheWrite: 0 }, contextWindow: 1048576, maxTokens: 8192 },
+                                    { id: 'gpt-4o', name: 'GPT-4o (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 2.5, output: 10, cacheRead: 1.25, cacheWrite: 0 }, contextWindow: 128000, maxTokens: 8192 },
+                                    { id: 'gpt-4o-mini', name: 'GPT-4o mini (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.15, output: 0.6, cacheRead: 0.075, cacheWrite: 0 }, contextWindow: 128000, maxTokens: 8192 },
+                                    { id: 'gpt-oss-120b', name: 'GPT OSS 120B (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.35, output: 0.75, cacheRead: 0, cacheWrite: 0 }, contextWindow: 131072, maxTokens: 8192 },
+                                    { id: 'grok-4-fast-non-reasoning', name: 'Grok 4 Fast (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.2, output: 0.5, cacheRead: 0.05, cacheWrite: 0 }, contextWindow: 2000000, maxTokens: 8192 },
+                                    { id: 'glm-4.6', name: 'GLM-4.6 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.45, output: 1.9, cacheRead: 0.11, cacheWrite: 0 }, contextWindow: 204800, maxTokens: 8192 },
+                                    { id: 'llama-3.3-70b', name: 'Llama 3.3 70B (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.85, output: 1.2, cacheRead: 0, cacheWrite: 0 }, contextWindow: 65536, maxTokens: 8192 },
+                                    { id: 'qwen-3-32', name: 'Qwen 3 32B (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.4, output: 0.8, cacheRead: 0, cacheWrite: 0 }, contextWindow: 32768, maxTokens: 8192 },
+                                    { id: 'qwen3-next', name: 'Qwen 3 Next 80B (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.14, output: 1.1, cacheRead: 0, cacheWrite: 0 }, contextWindow: 32768, maxTokens: 8192 },
+                                    { id: 'kimi-k2-thinking', name: 'Kimi K2 Thinking (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.55, output: 2.5, cacheRead: 0, cacheWrite: 0 }, contextWindow: 131072, maxTokens: 8192 }
+                                  ]
+                                };
 
-                          // Also set default model to zeabur-ai/gpt-5-mini
-                          if (!config.agents) config.agents = {};
-                          if (!config.agents.defaults) config.agents.defaults = {};
-                          config.agents.defaults.model = { primary: 'zeabur-ai/gpt-5-mini' };
+                                fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                                console.log('Zeabur AI Hub provider added successfully.');
+                              } else {
+                                console.log('Zeabur AI Hub provider already configured.');
+                              }
+                            } catch (err) {
+                              console.error('Warning: Failed to update config for Zeabur AI Hub:', err.message);
+                              console.error('You may need to configure the provider manually via Web UI.');
+                            }
+                          "
+                        fi
+                        # Ensure secure permissions on existing config
+                        chmod 600 "$CONFIG_FILE" 2>/dev/null || true
+                      fi
 
-                          fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-                          console.log('Zeabur AI Hub provider added and default model set to zeabur-ai/gpt-5-mini.');
-                        } else {
-                          console.log('Zeabur AI Hub provider already configured.');
-                          // Still ensure default model is set if using Zeabur AI Hub
-                          if (!config.agents?.defaults?.model?.primary?.startsWith('zeabur-ai/')) {
-                            if (!config.agents) config.agents = {};
-                            if (!config.agents.defaults) config.agents.defaults = {};
-                            config.agents.defaults.model = { primary: 'zeabur-ai/gpt-5-mini' };
-                            fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-                            console.log('Default model updated to zeabur-ai/gpt-5-mini.');
-                          }
-                        }
-                      } catch (err) {
-                        console.error('Warning: Failed to update config for Zeabur AI Hub:', err.message);
-                        console.error('You may need to configure the provider manually via Web UI.');
-                      }
-                    "
-                  fi
-                  # Ensure secure permissions on existing config
-                  chmod 600 "$CONFIG_FILE" 2>/dev/null || true
-                fi
+                      # Initialize workspace with memory files
+                      WORKSPACE_DIR="/home/node/clawd"
+                      mkdir -p "$WORKSPACE_DIR/memory"
+                      if [ ! -f "$WORKSPACE_DIR/MEMORY.md" ]; then
+                        echo "# Memory" > "$WORKSPACE_DIR/MEMORY.md"
+                        echo "" >> "$WORKSPACE_DIR/MEMORY.md"
+                        echo "This file stores long-term memories. The AI will write important information here." >> "$WORKSPACE_DIR/MEMORY.md"
+                      fi
 
-                # Initialize workspace with memory files
-                WORKSPACE_DIR="${CLAWDBOT_WORKSPACE_DIR}"
-                mkdir -p "$WORKSPACE_DIR/memory"
-                if [ ! -f "$WORKSPACE_DIR/MEMORY.md" ]; then
-                  echo "# Memory" > "$WORKSPACE_DIR/MEMORY.md"
-                  echo "" >> "$WORKSPACE_DIR/MEMORY.md"
-                  echo "This file stores long-term memories. The AI will write important information here." >> "$WORKSPACE_DIR/MEMORY.md"
-                fi
-
-                exec node dist/index.js gateway --allow-unconfigured --bind "${CLAWDBOT_GATEWAY_BIND}" --port "${CLAWDBOT_GATEWAY_PORT}" --token "${CLAWDBOT_GATEWAY_TOKEN}"
-          ports:
-          - id: web
-            port: 18789
-            type: HTTP
-          healthCheck:
-            type: TCP
-            port: web
-          volumes:
-            - id: data
-              dir: /home/node
-          env:
-            HOME:
-              default: /home/node
-              readonly: true
-            PATH:
-              default: /home/node/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-              readonly: true
-            NODE_ENV:
-              default: production
-              readonly: true
-            NODE_OPTIONS:
-              default: --max-old-space-size=1024
-              readonly: true
-            CLAWDBOT_WORKSPACE_DIR:
-              default: /home/node/clawd
-              readonly: true
-            CLAWDBOT_GATEWAY_PORT:
-              default: "18789"
-              readonly: true
-            CLAWDBOT_GATEWAY_BIND:
-              default: lan
-              readonly: true
-            MOLTBOT_STATE_DIR:
-              default: /home/node/.clawdbot
-              readonly: true
-            CLAWDBOT_GATEWAY_TOKEN:
-              default: ${PASSWORD}
-            ANTHROPIC_API_KEY:
-              default: ${ANTHROPIC_API_KEY}
-            OPENAI_API_KEY:
-              default: ${OPENAI_API_KEY}
-            ZEABUR_AI_HUB_API_KEY:
-              default: ${ZEABUR_AI_HUB_API_KEY}
-          instructions:
-            - type: TEXT
-              title: Web UI (with token)
-              content: ${ZEABUR_WEB_URL}?token=${CLAWDBOT_GATEWAY_TOKEN}
-            - type: PASSWORD
-              title: Gateway Token
-              content: ${CLAWDBOT_GATEWAY_TOKEN}
-              category: Credentials
-
+                      exec node dist/index.js gateway --allow-unconfigured --bind "${CLAWDBOT_GATEWAY_BIND}" --port "${CLAWDBOT_GATEWAY_PORT}" --token "${CLAWDBOT_GATEWAY_TOKEN}"
+            ports:
+                - id: web
+                  port: 18789
+                  type: HTTP
+            volumes:
+                - id: config
+                  dir: /home/node/.clawdbot
+                - id: workspace
+                  dir: /home/node/clawd
+            instructions:
+                - title: Web UI (with token)
+                  content: ${ZEABUR_WEB_URL}?token=${CLAWDBOT_GATEWAY_TOKEN}
+                - title: Gateway Token
+                  content: ${CLAWDBOT_GATEWAY_TOKEN}
+            env:
+                ANTHROPIC_API_KEY:
+                    default: ${ANTHROPIC_API_KEY}
+                CLAWDBOT_GATEWAY_BIND:
+                    default: lan
+                CLAWDBOT_GATEWAY_PORT:
+                    default: "18789"
+                CLAWDBOT_GATEWAY_TOKEN:
+                    default: ${PASSWORD}
+                HOME:
+                    default: /home/node
+                NODE_ENV:
+                    default: production
+                NODE_OPTIONS:
+                    default: --max-old-space-size=1024
+                OPENAI_API_KEY:
+                    default: ${OPENAI_API_KEY}
+                PATH:
+                    default: /home/node/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+                ZEABUR_AI_HUB_API_KEY:
+                    default: ${ZEABUR_AI_HUB_API_KEY}
+            healthCheck:
+                type: TCP
+                port: web
+          domainKey: PUBLIC_DOMAIN
 localization:
-  zh-TW:
-    name: moltbot（原 Clawdbot）
-    description: moltbot（原 Clawdbot）是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台（WhatsApp、Telegram、Slack、Discord 等）。
-    variables:
-      - key: PUBLIC_DOMAIN
-        name: 網域
-        description: 您想要綁定 moltbot 的網域是？
-      - key: ZEABUR_AI_HUB_API_KEY
-        name: Zeabur AI Hub API 金鑰（推薦）
-        description: 您的 Zeabur AI Hub API 金鑰，透過 AI Hub 使用 Gemini/GPT/Claude/DeepSeek
-      - key: ANTHROPIC_API_KEY
-        name: Anthropic API 金鑰
-        description: 您的 Anthropic Claude API 金鑰（選填，可之後再設定）
-      - key: OPENAI_API_KEY
-        name: OpenAI API 金鑰
-        description: 您的 OpenAI API 金鑰（選填，可之後再設定）
-    readme: |
-      # moltbot
-      moltbot 是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台。
-
-      ## ⚠️ 開發中
-      由於 moltbot 正在快速開發中，可能會有不穩定的地方或重大變更。如果遇到問題，建議重新部署最新版本的模板。
-
-      本模板使用 `main` tag 以取得最新版本。如果您希望穩定運行，可以在服務設定中固定到穩定版本 tag（例如 `v2026.1.25`）。
-
-      ### ✅ 已完成
-      - Gateway 啟動並接受 WebSocket 連線
-      - Web UI 可透過公開網域載入
-      - Token 認證
-      - AI 供應商認證（Anthropic API 金鑰）
-      - 透過 Web UI 與 AI 助手對話
-      - Zeabur AI Hub 整合
-      - Telegram 機器人連接
-
-      ### 🔄 測試中
-      - [ ] WhatsApp 連接（QR code 登入）
-      - [ ] Discord 機器人連接
-      - [ ] Slack 整合
-
-      ---
-
-      ## 建議資源配置
-      moltbot 是 CPU 密集型應用。資源需求可能因使用的工具和功能而異。
-      - **共享叢集**：1000 m（1 vCPU）、1024 Mi（1 GB）- 適合測試試用
-      - **專用伺服器**：2+ vCPU、2+ GB - 強烈推薦，以獲得穩定效能
-
-      ## 支援平台
-      - WhatsApp
-      - Telegram
-      - Slack
-      - Discord
-      - 更多訊息平台
-
-      ## 使用方式
-      1. 部署完成後，系統會**自動產生**一組安全的 Gateway Token
-      2. 在**使用說明**頁籤找到預先產生的 URL
-      3. 點擊「Web UI (with token)」連結直接連線（Token 已包含在 URL 中）
-      4. 看到 moltbot 介面即表示部署完成
-      5. 前往 **Chat** 頁面測試 AI 供應商是否正常運作
-
-      更多詳情請參閱[官方文件](https://github.com/moltbot/moltbot)。
-
-      ## 設定
-      - `ZEABUR_AI_HUB_API_KEY`：您的 Zeabur AI Hub API 金鑰（推薦）。[在此取得 API 金鑰](https://zeabur.com/docs/zh-TW/ai-hub)
-      - `ANTHROPIC_API_KEY`：您的 Anthropic Claude API 金鑰
-      - `OPENAI_API_KEY`：您的 OpenAI API 金鑰（選填，用於 OpenAI 功能如記憶搜尋、TTS 等）
-
-      ## Telegram 機器人設定
-      **從 BotFather 取得 Token：**
-      1. 開啟 Telegram 並搜尋 [@BotFather](https://t.me/BotFather)
-      2. 發送 `/newbot` 建立新機器人
-      3. 依照提示設定機器人的名稱和使用者名稱
-      4. BotFather 會傳送 Token 給您（例如 `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`）
-
-      **將 Token 加入 Zeabur：**
-      1. 前往 Zeabur 控制台的服務**環境變數**頁籤
-      2. 新增 `TELEGRAM_BOT_TOKEN` 並填入您的 Token
-      3. 重新啟動服務
-
-      **配對您的 Telegram 帳號：**
-      1. 在 Telegram 向您的機器人發送 `/start`
-      2. 機器人會回覆配對碼（例如 `JN4MSY23`）
-      3. 在 Zeabur 控制台開啟**指令**進入容器終端
-      4. 執行：`moltbot pairing approve telegram <配對碼>`
-      5. 看到 `Approved telegram sender <user-id>.` 表示配對成功
-      6. 現在可以開始與機器人對話了！
-
-      ## 更多設定方式
-      除了環境變數外，您也可以透過以下方式設定 moltbot：
-
-      **Web UI**
-      1. 開啟 moltbot Web UI
-      2. 前往 Settings 設定模型、頻道和偏好設定
-
-      **指令**
-      1. 在 Zeabur 控制台開啟**指令**
-      2. 使用 `moltbot`（或 `clawdbot`）指令管理供應商、模型和設定
-
-      ## 修改預設模型
-      - 使用 **Zeabur AI Hub** 時，預設模型為 `zeabur-ai/gpt-5-mini`
-      - 使用 **Anthropic API Key** 時，預設模型為 `anthropic/claude-opus-4-5`
-
-      透過 **Chat 頁面**或 **Telegram Bot** 修改：
-      - `/models` - 查看可用模型
-      - `/model zeabur-ai/gpt-5-mini` - 設定模型
-
-      或透過 **Settings 頁面**：
-      1. 在 moltbot Web UI 開啟 Settings
-      2. 從列表中選擇您偏好的模型
-
-      **可用模型（Zeabur AI Hub）：** `zeabur-ai/gemini-3-pro-image-preview`, `zeabur-ai/gemini-3-pro-preview`, `zeabur-ai/gpt-5`, `zeabur-ai/claude-sonnet-4-5`, `zeabur-ai/gemini-3-flash-preview`, `zeabur-ai/gpt-5-mini`, `zeabur-ai/claude-haiku-4-5`, `zeabur-ai/gemini-2.5-pro`, `zeabur-ai/gemini-2.5-flash`, `zeabur-ai/gemini-2.5-flash-lite`, `zeabur-ai/gemini-2.5-flash-image`, `zeabur-ai/deepseek-v3.2`, `zeabur-ai/gpt-4.1`, `zeabur-ai/gpt-4.1-mini`, `zeabur-ai/gpt-4o`, `zeabur-ai/gpt-4o-mini`, `zeabur-ai/gpt-oss-120b`, `zeabur-ai/grok-4-fast-non-reasoning`, `zeabur-ai/glm-4.6`, `zeabur-ai/llama-3.3-70b`, `zeabur-ai/qwen-3-32`, `zeabur-ai/qwen3-next`, `zeabur-ai/kimi-k2-thinking`
-
-      ## 資料持久化
-      所有資料儲存在 `/home/node`：
-      - `~/.clawdbot` - 設定、會話、裝置和憑證
-      - `~/clawd` - 工作區和記憶檔案
-
-      ## 文件
-      - GitHub：https://github.com/moltbot/moltbot
-      - 瀏覽器沙盒模板：https://zeabur.com/templates/H8L4G1
-
-  zh-CN:
-    name: moltbot（原 Clawdbot）
-    description: moltbot（原 Clawdbot）是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台（WhatsApp、Telegram、Slack、Discord 等）。
-    variables:
-      - key: PUBLIC_DOMAIN
-        name: 域名
-        description: 您想要绑定 moltbot 的域名是？
-      - key: ZEABUR_AI_HUB_API_KEY
-        name: Zeabur AI Hub API 密钥（推荐）
-        description: 您的 Zeabur AI Hub API 密钥，通过 AI Hub 使用 Gemini/GPT/Claude/DeepSeek
-      - key: ANTHROPIC_API_KEY
-        name: Anthropic API 密钥
-        description: 您的 Anthropic Claude API 密钥（选填，可之后再设定）
-      - key: OPENAI_API_KEY
-        name: OpenAI API 密钥
-        description: 您的 OpenAI API 密钥（选填，可之后再设定）
-    readme: |
-      # moltbot
-      moltbot 是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台。
-
-      ## ⚠️ 开发中
-      由于 moltbot 正在快速开发中，可能会有不稳定的地方或重大变更。如果遇到问题，建议重新部署最新版本的模板。
-
-      本模板使用 `main` tag 以获取最新版本。如果您希望稳定运行，可以在服务设置中固定到稳定版本 tag（例如 `v2026.1.25`）。
-
-      ### ✅ 已完成
-      - Gateway 启动并接受 WebSocket 连接
-      - Web UI 可通过公开域名加载
-      - Token 认证
-      - AI 供应商认证（Anthropic API 密钥）
-      - 通过 Web UI 与 AI 助手对话
-      - Zeabur AI Hub 集成
-      - Telegram 机器人连接
-
-      ### 🔄 测试中
-      - [ ] WhatsApp 连接（QR code 登录）
-      - [ ] Discord 机器人连接
-      - [ ] Slack 集成
-
-      ---
-
-      ## 建议资源配置
-      moltbot 是 CPU 密集型应用。资源需求可能因使用的工具和功能而异。
-      - **共享集群**：1000 m（1 vCPU）、1024 Mi（1 GB）- 适合测试试用
-      - **专用服务器**：2+ vCPU、2+ GB - 强烈推荐，以获得稳定性能
-
-      ## 支持平台
-      - WhatsApp
-      - Telegram
-      - Slack
-      - Discord
-      - 更多消息平台
-
-      ## 使用方式
-      1. 部署完成后，系统会**自动生成**一组安全的 Gateway Token
-      2. 在**使用说明**页签找到预先生成的 URL
-      3. 点击「Web UI (with token)」链接直接连接（Token 已包含在 URL 中）
-      4. 看到 moltbot 界面即表示部署完成
-      5. 前往 **Chat** 页面测试 AI 供应商是否正常运作
-
-      更多详情请参阅[官方文档](https://github.com/moltbot/moltbot)。
-
-      ## 配置
-      - `ZEABUR_AI_HUB_API_KEY`：您的 Zeabur AI Hub API 密钥（推荐）。[在此获取 API 密钥](https://zeabur.com/docs/zh-CN/ai-hub)
-      - `ANTHROPIC_API_KEY`：您的 Anthropic Claude API 密钥
-      - `OPENAI_API_KEY`：您的 OpenAI API 密钥（选填，用于 OpenAI 功能如记忆搜索、TTS 等）
-
-      ## Telegram 机器人设置
-      **从 BotFather 获取 Token：**
-      1. 打开 Telegram 并搜索 [@BotFather](https://t.me/BotFather)
-      2. 发送 `/newbot` 创建新机器人
-      3. 按照提示设置机器人的名称和用户名
-      4. BotFather 会发送 Token 给您（例如 `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`）
-
-      **将 Token 添加到 Zeabur：**
-      1. 前往 Zeabur 控制台的服务**环境变量**页签
-      2. 添加 `TELEGRAM_BOT_TOKEN` 并填入您的 Token
-      3. 重新启动服务
-
-      **配对您的 Telegram 账号：**
-      1. 在 Telegram 向您的机器人发送 `/start`
-      2. 机器人会回复配对码（例如 `JN4MSY23`）
-      3. 在 Zeabur 控制台打开**命令**进入容器终端
-      4. 执行：`moltbot pairing approve telegram <配对码>`
-      5. 看到 `Approved telegram sender <user-id>.` 表示配对成功
-      6. 现在可以开始与机器人对话了！
-
-      ## 更多配置方式
-      除了环境变量外，您也可以通过以下方式配置 moltbot：
-
-      **Web UI**
-      1. 打开 moltbot Web UI
-      2. 前往 Settings 配置模型、频道和偏好设置
-
-      **命令行**
-      1. 在 Zeabur 控制台打开**命令**
-      2. 使用 `moltbot`（或 `clawdbot`）命令管理供应商、模型和设置
-
-      ## 修改默认模型
-      - 使用 **Zeabur AI Hub** 时，默认模型为 `zeabur-ai/gpt-5-mini`
-      - 使用 **Anthropic API Key** 时，默认模型为 `anthropic/claude-opus-4-5`
-
-      通过 **Chat 页面**或 **Telegram Bot** 修改：
-      - `/models` - 查看可用模型
-      - `/model zeabur-ai/gpt-5-mini` - 设置模型
-
-      或通过 **Settings 页面**：
-      1. 在 moltbot Web UI 打开 Settings
-      2. 从列表中选择您偏好的模型
-
-      **可用模型（Zeabur AI Hub）：** `zeabur-ai/gemini-3-pro-image-preview`, `zeabur-ai/gemini-3-pro-preview`, `zeabur-ai/gpt-5`, `zeabur-ai/claude-sonnet-4-5`, `zeabur-ai/gemini-3-flash-preview`, `zeabur-ai/gpt-5-mini`, `zeabur-ai/claude-haiku-4-5`, `zeabur-ai/gemini-2.5-pro`, `zeabur-ai/gemini-2.5-flash`, `zeabur-ai/gemini-2.5-flash-lite`, `zeabur-ai/gemini-2.5-flash-image`, `zeabur-ai/deepseek-v3.2`, `zeabur-ai/gpt-4.1`, `zeabur-ai/gpt-4.1-mini`, `zeabur-ai/gpt-4o`, `zeabur-ai/gpt-4o-mini`, `zeabur-ai/gpt-oss-120b`, `zeabur-ai/grok-4-fast-non-reasoning`, `zeabur-ai/glm-4.6`, `zeabur-ai/llama-3.3-70b`, `zeabur-ai/qwen-3-32`, `zeabur-ai/qwen3-next`, `zeabur-ai/kimi-k2-thinking`
-
-      ## 数据持久化
-      所有数据存储在 `/home/node`：
-      - `~/.clawdbot` - 配置、会话、设备和凭证
-      - `~/clawd` - 工作区和记忆文件
-
-      ## 文档
-      - GitHub：https://github.com/moltbot/moltbot
-      - 浏览器沙盒模板：https://zeabur.com/templates/H8L4G1
-
-  ja-JP:
-    name: moltbot（旧 Clawdbot）
-    description: moltbot（旧 Clawdbot）は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォーム（WhatsApp、Telegram、Slack、Discord など）に接続する個人用 AI アシスタントです。
-    variables:
-      - key: PUBLIC_DOMAIN
-        name: ドメイン
-        description: moltbot にバインドするドメインは？
-      - key: ZEABUR_AI_HUB_API_KEY
-        name: Zeabur AI Hub API キー（推奨）
-        description: Zeabur AI Hub API キー、AI Hub 経由で Gemini/GPT/Claude/DeepSeek を使用
-      - key: ANTHROPIC_API_KEY
-        name: Anthropic API キー
-        description: Anthropic Claude の API キー（任意、後で設定可能）
-      - key: OPENAI_API_KEY
-        name: OpenAI API キー
-        description: OpenAI API キー（任意、後で設定可能）
-    readme: |
-      # moltbot
-      moltbot は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォームに接続する個人用 AI アシスタントです。
-
-      ## ⚠️ 開発中
-      moltbot は急速に開発中のため、不安定な部分や破壊的変更がある可能性があります。問題が発生した場合は、最新のテンプレートで再デプロイすることをお勧めします。
-
-      本テンプレートは `main` タグを使用して最新バージョンを取得します。安定性を重視する場合は、サービス設定で安定版タグ（例：`v2026.1.25`）に固定できます。
-
-      ### ✅ 完了
-      - Gateway が起動し WebSocket 接続を受け入れ
-      - Web UI が公開ドメインで読み込み可能
-      - トークン認証
-      - AI プロバイダー認証（Anthropic API キー）
-      - Web UI で AI アシスタントとチャット
-      - Zeabur AI Hub 統合
-      - Telegram ボット接続
-
-      ### 🔄 テスト中
-      - [ ] WhatsApp 接続（QR コードログイン）
-      - [ ] Discord ボット接続
-      - [ ] Slack 統合
-
-      ---
-
-      ## 推奨リソース
-      moltbot は CPU 集約型アプリです。使用するツールや機能によってリソース要件が異なる場合があります。
-      - **共有クラスター**：1000 m（1 vCPU）、1024 Mi（1 GB）- テスト・お試し用
-      - **専用サーバー**：2+ vCPU、2+ GB - 安定したパフォーマンスのために強く推奨
-
-      ## 対応プラットフォーム
-      - WhatsApp
-      - Telegram
-      - Slack
-      - Discord
-      - その他のメッセージングプラットフォーム
-
-      ## 使用方法
-      1. デプロイ後、安全な Gateway トークンが**自動生成**されます
-      2. **指示**タブで事前生成された URL を確認
-      3. 「Web UI (with token)」リンクをクリックして直接接続（トークンは URL に含まれています）
-      4. moltbot のインターフェースが表示されたらデプロイ完了です
-      5. **Chat** ページで AI プロバイダーが正常に動作しているかテスト
-
-      詳細は[公式ドキュメント](https://github.com/moltbot/moltbot)をご覧ください。
-
-      ## 設定
-      - `ZEABUR_AI_HUB_API_KEY`：Zeabur AI Hub API キー（推奨）。[API キーはこちらから取得](https://zeabur.com/docs/ja-JP/ai-hub)
-      - `ANTHROPIC_API_KEY`：Anthropic Claude の API キー
-      - `OPENAI_API_KEY`：OpenAI API キー（任意、メモリ検索・TTS など OpenAI 機能用）
-
-      ## Telegram ボット設定
-      **BotFather からトークンを取得：**
-      1. Telegram を開いて [@BotFather](https://t.me/BotFather) を検索
-      2. `/newbot` を送信して新しいボットを作成
-      3. プロンプトに従ってボットの名前とユーザー名を設定
-      4. BotFather がトークンを送信します（例：`123456789:ABCdefGHIjklMNOpqrsTUVwxyz`）
-
-      **Zeabur にトークンを追加：**
-      1. Zeabur ダッシュボードのサービス**変数**タブに移動
-      2. `TELEGRAM_BOT_TOKEN` を追加してトークンを入力
-      3. サービスを再起動
-
-      **Telegram アカウントのペアリング：**
-      1. Telegram でボットに `/start` を送信
-      2. ボットがペアリングコードを返信（例：`JN4MSY23`）
-      3. Zeabur ダッシュボードで**コマンド**を開いてコンテナターミナルにアクセス
-      4. 実行：`moltbot pairing approve telegram <コード>`
-      5. `Approved telegram sender <user-id>.` と表示されればペアリング完了
-      6. ボットとチャットできるようになりました！
-
-      ## その他の設定方法
-      環境変数以外にも、以下の方法で moltbot を設定できます：
-
-      **Web UI**
-      1. moltbot Web UI を開く
-      2. Settings でモデル、チャンネル、設定を構成
-
-      **コマンドライン**
-      1. Zeabur ダッシュボードで**コマンド**を開く
-      2. `moltbot`（または `clawdbot`）コマンドでプロバイダー、モデル、設定を管理
-
-      ## デフォルトモデルの変更
-      - **Zeabur AI Hub** を使用する場合、デフォルトモデルは `zeabur-ai/gpt-5-mini` です
-      - **Anthropic API Key** を使用する場合、デフォルトモデルは `anthropic/claude-opus-4-5` です
-
-      **Chat ページ**または **Telegram Bot** で変更：
-      - `/models` - 利用可能なモデルを表示
-      - `/model zeabur-ai/gpt-5-mini` - モデルを設定
-
-      または **Settings ページ**で：
-      1. moltbot Web UI で Settings を開く
-      2. リストからお好みのモデルを選択
-
-      **利用可能なモデル（Zeabur AI Hub）：** `zeabur-ai/gemini-3-pro-image-preview`, `zeabur-ai/gemini-3-pro-preview`, `zeabur-ai/gpt-5`, `zeabur-ai/claude-sonnet-4-5`, `zeabur-ai/gemini-3-flash-preview`, `zeabur-ai/gpt-5-mini`, `zeabur-ai/claude-haiku-4-5`, `zeabur-ai/gemini-2.5-pro`, `zeabur-ai/gemini-2.5-flash`, `zeabur-ai/gemini-2.5-flash-lite`, `zeabur-ai/gemini-2.5-flash-image`, `zeabur-ai/deepseek-v3.2`, `zeabur-ai/gpt-4.1`, `zeabur-ai/gpt-4.1-mini`, `zeabur-ai/gpt-4o`, `zeabur-ai/gpt-4o-mini`, `zeabur-ai/gpt-oss-120b`, `zeabur-ai/grok-4-fast-non-reasoning`, `zeabur-ai/glm-4.6`, `zeabur-ai/llama-3.3-70b`, `zeabur-ai/qwen-3-32`, `zeabur-ai/qwen3-next`, `zeabur-ai/kimi-k2-thinking`
-
-      ## データ永続化
-      すべてのデータは `/home/node` に保存：
-      - `~/.clawdbot` - 設定、セッション、デバイス、認証情報
-      - `~/clawd` - ワークスペースとメモリファイル
-
-      ## ドキュメント
-      - GitHub：https://github.com/moltbot/moltbot
-      - ブラウザサンドボックステンプレート：https://zeabur.com/templates/H8L4G1
-
-  es-ES:
-    name: moltbot (anteriormente Clawdbot)
-    description: moltbot (anteriormente Clawdbot) es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería (WhatsApp, Telegram, Slack, Discord, etc.) a través de una arquitectura Gateway basada en WebSocket.
-    variables:
-      - key: PUBLIC_DOMAIN
-        name: Dominio
-        description: ¿Qué dominio desea vincular a moltbot?
-      - key: ZEABUR_AI_HUB_API_KEY
-        name: Clave API de Zeabur AI Hub (Recomendado)
-        description: Su clave API de Zeabur AI Hub para usar Gemini/GPT/Claude/DeepSeek a través de AI Hub
-      - key: ANTHROPIC_API_KEY
-        name: Clave API de Anthropic
-        description: Su clave API de Anthropic para Claude (opcional, puede configurarse después)
-      - key: OPENAI_API_KEY
-        name: Clave API de OpenAI
-        description: Su clave API de OpenAI (opcional, puede configurarse después)
-    readme: |
-      # moltbot
-      moltbot es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería a través de una arquitectura Gateway basada en WebSocket.
-
-      ## ⚠️ En Desarrollo
-      moltbot está en desarrollo rápido. Puede haber áreas inestables o cambios importantes. Si encuentra problemas, recomendamos redesplegar con la última plantilla.
-
-      Esta plantilla usa el tag `main` para obtener la última versión. Si prefiere estabilidad, puede fijar un tag de versión estable (ej: `v2026.1.25`) en la configuración del servicio.
-
-      ### ✅ Completado
-      - Gateway inicia y acepta conexiones WebSocket
-      - Web UI carga a través de dominio público
-      - Autenticación por token
-      - Autenticación de proveedor AI (clave API Anthropic)
-      - Chat con asistente AI vía Web UI
-      - Integración Zeabur AI Hub
-      - Conexión bot de Telegram
-
-      ### 🔄 En Pruebas
-      - [ ] Conexión WhatsApp (inicio con código QR)
-      - [ ] Conexión bot de Discord
-      - [ ] Integración Slack
-
-      ---
-
-      ## Recursos Recomendados
-      moltbot consume muchos recursos de CPU. Los requisitos pueden variar según las herramientas y funciones que utilice.
-      - **Clúster Compartido**: 1000 m (1 vCPU), 1024 Mi (1 GB) - para pruebas
-      - **Servidor Dedicado**: 2+ vCPU, 2+ GB - altamente recomendado para rendimiento estable
-
-      ## Plataformas Compatibles
-      - WhatsApp
-      - Telegram
-      - Slack
-      - Discord
-      - Y más plataformas de mensajería
-
-      ## Uso
-      1. Después del despliegue, se **genera automáticamente** un token de Gateway seguro
-      2. Encuentre la URL pre-generada en la pestaña **Instrucciones**
-      3. Haga clic en el enlace "Web UI (with token)" para conectar directamente (el token está incluido en la URL)
-      4. Cuando vea la interfaz de moltbot, el despliegue está completo
-      5. Vaya a la página **Chat** para probar si su proveedor de AI funciona
-
-      Para más detalles, consulte la [documentación oficial](https://github.com/moltbot/moltbot).
-
-      ## Configuración
-      - `ZEABUR_AI_HUB_API_KEY`: Su clave API de Zeabur AI Hub (Recomendado). [Obtenga su clave API aquí](https://zeabur.com/docs/es-ES/ai-hub)
-      - `ANTHROPIC_API_KEY`: Su clave API de Anthropic para Claude
-      - `OPENAI_API_KEY`: Su clave API de OpenAI (opcional, para funciones de OpenAI como búsqueda de memoria, TTS)
-
-      ## Configuración de Bot de Telegram
-      **Obtener el token de BotFather:**
-      1. Abra Telegram y busque [@BotFather](https://t.me/BotFather)
-      2. Envíe `/newbot` para crear un nuevo bot
-      3. Siga las instrucciones para configurar el nombre y nombre de usuario del bot
-      4. BotFather le enviará un token (ej: `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`)
-
-      **Agregar el token a Zeabur:**
-      1. Vaya a la pestaña **Variable** de su servicio en el panel de Zeabur
-      2. Agregue `TELEGRAM_BOT_TOKEN` con su token de bot
-      3. Reinicie el servicio
-
-      **Vincular su cuenta de Telegram:**
-      1. Envíe `/start` a su bot en Telegram
-      2. El bot responderá con un código de vinculación (ej: `JN4MSY23`)
-      3. Abra **Comando** en el panel de Zeabur para acceder a la terminal del contenedor
-      4. Ejecute: `moltbot pairing approve telegram <código>`
-      5. Verá: `Approved telegram sender <user-id>.` indicando vinculación exitosa
-      6. ¡Ahora puede chatear con el bot!
-
-      ## Configuración Adicional
-      Además de las variables de entorno, puede configurar moltbot usando:
-
-      **Web UI**
-      1. Abra la Web UI de moltbot
-      2. Vaya a Settings para configurar modelos, canales y preferencias
-
-      **Línea de Comandos**
-      1. Abra **Comando** en el panel de Zeabur
-      2. Use comandos `moltbot` (o `clawdbot`) para gestionar proveedores, modelos y configuraciones
-
-      ## Cambiar el Modelo Predeterminado
-      - Al usar **Zeabur AI Hub**, el modelo predeterminado es `zeabur-ai/gpt-5-mini`
-      - Al usar **Anthropic API Key**, el modelo predeterminado es `anthropic/claude-opus-4-5`
-
-      Cambiar vía **página Chat** o **Telegram Bot**:
-      - `/models` - ver modelos disponibles
-      - `/model zeabur-ai/gpt-5-mini` - establecer el modelo
-
-      O vía **página Settings**:
-      1. Abra Settings en la Web UI de moltbot
-      2. Seleccione su modelo preferido de la lista
-
-      **Modelos disponibles (Zeabur AI Hub):** `zeabur-ai/gemini-3-pro-image-preview`, `zeabur-ai/gemini-3-pro-preview`, `zeabur-ai/gpt-5`, `zeabur-ai/claude-sonnet-4-5`, `zeabur-ai/gemini-3-flash-preview`, `zeabur-ai/gpt-5-mini`, `zeabur-ai/claude-haiku-4-5`, `zeabur-ai/gemini-2.5-pro`, `zeabur-ai/gemini-2.5-flash`, `zeabur-ai/gemini-2.5-flash-lite`, `zeabur-ai/gemini-2.5-flash-image`, `zeabur-ai/deepseek-v3.2`, `zeabur-ai/gpt-4.1`, `zeabur-ai/gpt-4.1-mini`, `zeabur-ai/gpt-4o`, `zeabur-ai/gpt-4o-mini`, `zeabur-ai/gpt-oss-120b`, `zeabur-ai/grok-4-fast-non-reasoning`, `zeabur-ai/glm-4.6`, `zeabur-ai/llama-3.3-70b`, `zeabur-ai/qwen-3-32`, `zeabur-ai/qwen3-next`, `zeabur-ai/kimi-k2-thinking`
-
-      ## Persistencia de Datos
-      Todos los datos se almacenan en `/home/node`:
-      - `~/.clawdbot` - Configuración, sesiones, dispositivos y credenciales
-      - `~/clawd` - Espacio de trabajo y archivos de memoria
-
-      ## Documentación
-      - GitHub: https://github.com/moltbot/moltbot
-      - Plantilla Browser Sandbox: https://zeabur.com/templates/H8L4G1
-
-  id-ID:
-    name: moltbot (sebelumnya Clawdbot)
-    description: moltbot (sebelumnya Clawdbot) adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan (WhatsApp, Telegram, Slack, Discord, dll.) melalui arsitektur Gateway berbasis WebSocket.
-    variables:
-      - key: PUBLIC_DOMAIN
-        name: Domain
-        description: Domain apa yang ingin Anda ikat ke moltbot?
-      - key: ZEABUR_AI_HUB_API_KEY
-        name: Kunci API Zeabur AI Hub (Direkomendasikan)
-        description: Kunci API Zeabur AI Hub Anda untuk menggunakan Gemini/GPT/Claude/DeepSeek melalui AI Hub
-      - key: ANTHROPIC_API_KEY
-        name: Kunci API Anthropic
-        description: Kunci API Anthropic Anda untuk Claude (opsional, dapat dikonfigurasi nanti)
-      - key: OPENAI_API_KEY
-        name: Kunci API OpenAI
-        description: Kunci API OpenAI Anda (opsional, dapat dikonfigurasi nanti)
-    readme: |
-      # moltbot
-      moltbot adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan melalui arsitektur Gateway berbasis WebSocket.
-
-      ## ⚠️ Dalam Pengembangan
-      moltbot sedang dalam pengembangan cepat. Mungkin ada area yang tidak stabil atau perubahan besar. Jika Anda mengalami masalah, kami sarankan untuk deploy ulang dengan template terbaru.
-
-      Template ini menggunakan tag `main` untuk mendapatkan versi terbaru. Jika Anda menginginkan stabilitas, Anda dapat menetapkan tag versi stabil (contoh: `v2026.1.25`) di pengaturan layanan.
-
-      ### ✅ Selesai
-      - Gateway berjalan dan menerima koneksi WebSocket
-      - Web UI dapat dimuat melalui domain publik
-      - Autentikasi token
-      - Autentikasi penyedia AI (kunci API Anthropic)
-      - Chat dengan asisten AI via Web UI
-      - Integrasi Zeabur AI Hub
-      - Koneksi bot Telegram
-
-      ### 🔄 Dalam Pengujian
-      - [ ] Koneksi WhatsApp (login kode QR)
-      - [ ] Koneksi bot Discord
-      - [ ] Integrasi Slack
-
-      ---
-
-      ## Sumber Daya yang Direkomendasikan
-      moltbot adalah aplikasi yang intensif CPU. Kebutuhan sumber daya dapat bervariasi tergantung pada alat dan fitur yang Anda gunakan.
-      - **Kluster Bersama**: 1000 m (1 vCPU), 1024 Mi (1 GB) - untuk pengujian
-      - **Server Khusus**: 2+ vCPU, 2+ GB - sangat direkomendasikan untuk performa stabil
-
-      ## Platform yang Didukung
-      - WhatsApp
-      - Telegram
-      - Slack
-      - Discord
-      - Dan platform perpesanan lainnya
-
-      ## Penggunaan
-      1. Setelah deploy, token Gateway yang aman akan **dibuat secara otomatis**
-      2. Temukan URL yang sudah dibuat di tab **Instruksi**
-      3. Klik tautan "Web UI (with token)" untuk terhubung langsung (token sudah termasuk dalam URL)
-      4. Ketika Anda melihat antarmuka moltbot, deployment selesai
-      5. Buka halaman **Chat** untuk menguji apakah penyedia AI Anda berfungsi
-
-      Untuk detail lebih lanjut, lihat [dokumentasi resmi](https://github.com/moltbot/moltbot).
-
-      ## Konfigurasi
-      - `ZEABUR_AI_HUB_API_KEY`: Kunci API Zeabur AI Hub Anda (Direkomendasikan). [Dapatkan kunci API di sini](https://zeabur.com/docs/ai-hub)
-      - `ANTHROPIC_API_KEY`: Kunci API Anthropic Anda untuk Claude
-      - `OPENAI_API_KEY`: Kunci API OpenAI Anda (opsional, untuk fitur OpenAI seperti pencarian memori, TTS)
-
-      ## Pengaturan Bot Telegram
-      **Mendapatkan token dari BotFather:**
-      1. Buka Telegram dan cari [@BotFather](https://t.me/BotFather)
-      2. Kirim `/newbot` untuk membuat bot baru
-      3. Ikuti petunjuk untuk mengatur nama dan username bot
-      4. BotFather akan mengirimkan token (contoh: `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`)
-
-      **Menambahkan token ke Zeabur:**
-      1. Buka tab **Variabel** layanan Anda di dashboard Zeabur
-      2. Tambahkan `TELEGRAM_BOT_TOKEN` dengan token bot Anda
-      3. Restart layanan
-
-      **Memasangkan akun Telegram Anda:**
-      1. Kirim `/start` ke bot Anda di Telegram
-      2. Bot akan membalas dengan kode pairing (contoh: `JN4MSY23`)
-      3. Buka **Command** di dashboard Zeabur untuk mengakses terminal container
-      4. Jalankan: `moltbot pairing approve telegram <kode>`
-      5. Anda akan melihat: `Approved telegram sender <user-id>.` menandakan pairing berhasil
-      6. Sekarang Anda dapat mengobrol dengan bot!
-
-      ## Konfigurasi Tambahan
-      Selain variabel lingkungan, Anda juga dapat mengkonfigurasi moltbot menggunakan:
-
-      **Web UI**
-      1. Buka moltbot Web UI
-      2. Buka Settings untuk mengkonfigurasi model, channel, dan preferensi
-
-      **Baris Perintah**
-      1. Buka **Command** di dashboard Zeabur
-      2. Gunakan perintah `moltbot` (atau `clawdbot`) untuk mengelola provider, model, dan pengaturan
-
-      ## Mengubah Model Default
-      - Saat menggunakan **Zeabur AI Hub**, model default adalah `zeabur-ai/gpt-5-mini`
-      - Saat menggunakan **Anthropic API Key**, model default adalah `anthropic/claude-opus-4-5`
-
-      Ubah melalui **halaman Chat** atau **Telegram Bot**:
-      - `/models` - lihat model yang tersedia
-      - `/model zeabur-ai/gpt-5-mini` - atur model
-
-      Atau melalui **halaman Settings**:
-      1. Buka Settings di moltbot Web UI
-      2. Pilih model yang Anda inginkan dari daftar
-
-      **Model tersedia (Zeabur AI Hub):** `zeabur-ai/gemini-3-pro-image-preview`, `zeabur-ai/gemini-3-pro-preview`, `zeabur-ai/gpt-5`, `zeabur-ai/claude-sonnet-4-5`, `zeabur-ai/gemini-3-flash-preview`, `zeabur-ai/gpt-5-mini`, `zeabur-ai/claude-haiku-4-5`, `zeabur-ai/gemini-2.5-pro`, `zeabur-ai/gemini-2.5-flash`, `zeabur-ai/gemini-2.5-flash-lite`, `zeabur-ai/gemini-2.5-flash-image`, `zeabur-ai/deepseek-v3.2`, `zeabur-ai/gpt-4.1`, `zeabur-ai/gpt-4.1-mini`, `zeabur-ai/gpt-4o`, `zeabur-ai/gpt-4o-mini`, `zeabur-ai/gpt-oss-120b`, `zeabur-ai/grok-4-fast-non-reasoning`, `zeabur-ai/glm-4.6`, `zeabur-ai/llama-3.3-70b`, `zeabur-ai/qwen-3-32`, `zeabur-ai/qwen3-next`, `zeabur-ai/kimi-k2-thinking`
-
-      ## Persistensi Data
-      Semua data disimpan di `/home/node`:
-      - `~/.clawdbot` - Konfigurasi, sesi, perangkat, dan kredensial
-      - `~/clawd` - Ruang kerja dan file memori
-
-      ## Dokumentasi
-      - GitHub: https://github.com/moltbot/moltbot
-      - Template Browser Sandbox: https://zeabur.com/templates/H8L4G1
+    es-ES:
+        description: moltbot (anteriormente Clawdbot) es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería (WhatsApp, Telegram, Slack, Discord, etc.) a través de una arquitectura Gateway basada en WebSocket.
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: STRING
+              name: Dominio
+              description: ¿Qué dominio desea vincular a moltbot?
+            - key: ZEABUR_AI_HUB_API_KEY
+              type: STRING
+              name: Clave API de Zeabur AI Hub (Recomendado)
+              description: Su clave API de Zeabur AI Hub para usar Gemini/GPT/Claude/DeepSeek a través de AI Hub
+            - key: ANTHROPIC_API_KEY
+              type: STRING
+              name: Clave API de Anthropic
+              description: Su clave API de Anthropic para Claude (opcional, puede configurarse después)
+            - key: OPENAI_API_KEY
+              type: STRING
+              name: Clave API de OpenAI
+              description: Su clave API de OpenAI (opcional, puede configurarse después)
+        readme: |
+          # moltbot
+          moltbot es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería a través de una arquitectura Gateway basada en WebSocket.
+
+          Esta plantilla usa el tag `main` (2026.1.25). Dado que moltbot está en desarrollo rápido, cambiar a otras versiones no garantiza un funcionamiento correcto. También puede haber errores no descubiertos. Si encuentra algún problema, no dude en consultar los [GitHub issues](https://github.com/moltbot/moltbot/issues) para buscar soluciones o reportar nuevos problemas. Para problemas relacionados con la plataforma Zeabur, contacte al soporte de Zeabur.
+
+          ---
+
+          ## Recursos Recomendados
+          moltbot consume muchos recursos de CPU. Los requisitos pueden variar según las herramientas y funciones que utilice.
+          - **Clúster Compartido**: 1000 m (1 vCPU), 1024 Mi (1 GB) - para pruebas
+          - **Servidor Dedicado**: 2+ vCPU, 2+ GB - altamente recomendado para rendimiento estable
+
+          ## Uso
+          1. Después del despliegue, se **genera automáticamente** un token de Gateway seguro
+          2. Encuentre la URL pre-generada en la pestaña **Instrucciones**
+          3. Haga clic en el enlace "Web UI (with token)" para conectar directamente (el token está incluido en la URL)
+          4. Cuando vea la interfaz de moltbot, el despliegue está completo
+          5. Vaya a la página **Chat** para probar si su proveedor de AI funciona
+
+          Para más detalles, consulte la [documentación oficial](https://github.com/moltbot/moltbot).
+
+          ## Configuración de Bot de Telegram
+          **Obtener el token de BotFather:**
+          1. Abra Telegram y busque [@BotFather](https://t.me/BotFather)
+          2. Envíe `/newbot` para crear un nuevo bot
+          3. Siga las instrucciones para configurar el nombre y nombre de usuario del bot
+          4. BotFather le enviará un token (ej: `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`)
+
+          **Agregar el token a Zeabur:**
+          1. Vaya a la pestaña **Variable** de su servicio en el panel de Zeabur
+          2. Agregue `TELEGRAM_BOT_TOKEN` con su token de bot
+          3. Reinicie el servicio
+
+          **Vincular su cuenta de Telegram:**
+          1. Envíe `/start` a su bot en Telegram
+          2. El bot responderá con un código de vinculación (ej: `JN4MSY23`)
+          3. Abra **Comando** en el panel de Zeabur para acceder a la terminal del contenedor
+          4. Ejecute: `moltbot pairing approve telegram <código>`
+          5. Verá: `Approved telegram sender <user-id>.` indicando vinculación exitosa
+          6. ¡Ahora puede chatear con el bot!
+
+          Para otras plataformas de mensajería (WhatsApp, Discord, Slack, etc.), consulte la [documentación de Canales](https://docs.molt.bot/channels).
+
+          ## Cambiar el Modelo Predeterminado
+          El modelo predeterminado depende de su proveedor de AI:
+          - **Zeabur AI Hub**: `zeabur-ai/gpt-5-mini`
+          - **Anthropic API Key**: `anthropic/claude-opus-4-5`
+
+          Para cambiarlo:
+          - **Comandos de chat**: Use `/models` para ver modelos disponibles, `/model <model-id>` para cambiar (ej: `/model zeabur-ai/gpt-5-mini`)
+          - **Web UI**: Vaya a Settings y seleccione su modelo preferido
+
+          ## Configurar Más Modelos
+          Consulte la [documentación de Providers](https://docs.molt.bot/providers) para agregar más modelos de AI.
+
+          ## Configuración Adicional
+          Además de las variables de entorno, puede configurar moltbot a través de la Web UI Settings o comandos CLI. Consulte la [documentación oficial](https://docs.molt.bot) para más detalles.
+
+          ## Persistencia de Datos
+          Todos los datos se almacenan en `/home/node`:
+          - `/home/node/.clawdbot` - Configuración, sesiones, dispositivos y credenciales
+          - `/home/node/clawd` - Espacio de trabajo y archivos de memoria
+
+          ## Browser Sandbox
+          Si necesita funciones del navegador (navegación web, capturas de pantalla, etc.), despliegue la [Plantilla Browser Sandbox](https://zeabur.com/templates/H8L4G1) junto con moltbot.
+
+          ## Documentación
+          - GitHub: https://github.com/moltbot/moltbot
+
+    id-ID:
+        description: moltbot (sebelumnya Clawdbot) adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan (WhatsApp, Telegram, Slack, Discord, dll.) melalui arsitektur Gateway berbasis WebSocket.
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: STRING
+              name: Domain
+              description: Domain apa yang ingin Anda ikat ke moltbot?
+            - key: ZEABUR_AI_HUB_API_KEY
+              type: STRING
+              name: Kunci API Zeabur AI Hub (Direkomendasikan)
+              description: Kunci API Zeabur AI Hub Anda untuk menggunakan Gemini/GPT/Claude/DeepSeek melalui AI Hub
+            - key: ANTHROPIC_API_KEY
+              type: STRING
+              name: Kunci API Anthropic
+              description: Kunci API Anthropic Anda untuk Claude (opsional, dapat dikonfigurasi nanti)
+            - key: OPENAI_API_KEY
+              type: STRING
+              name: Kunci API OpenAI
+              description: Kunci API OpenAI Anda (opsional, dapat dikonfigurasi nanti)
+        readme: |
+          # moltbot
+          moltbot adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan melalui arsitektur Gateway berbasis WebSocket.
+
+          Template ini menggunakan tag `main` (2026.1.25). Karena moltbot sedang dalam pengembangan cepat, beralih ke versi lain tidak dijamin dapat berfungsi dengan baik. Mungkin juga ada bug yang belum ditemukan. Jika Anda mengalami masalah, silakan kunjungi [GitHub issues](https://github.com/moltbot/moltbot/issues) untuk mencari solusi atau melaporkan masalah baru. Untuk masalah terkait platform Zeabur, silakan hubungi dukungan Zeabur.
+
+          ---
+
+          ## Sumber Daya yang Direkomendasikan
+          moltbot adalah aplikasi yang intensif CPU. Kebutuhan sumber daya dapat bervariasi tergantung pada alat dan fitur yang Anda gunakan.
+          - **Kluster Bersama**: 1000 m (1 vCPU), 1024 Mi (1 GB) - untuk pengujian
+          - **Server Khusus**: 2+ vCPU, 2+ GB - sangat direkomendasikan untuk performa stabil
+
+          ## Penggunaan
+          1. Setelah deploy, token Gateway yang aman akan **dibuat secara otomatis**
+          2. Temukan URL yang sudah dibuat di tab **Instruksi**
+          3. Klik tautan "Web UI (with token)" untuk terhubung langsung (token sudah termasuk dalam URL)
+          4. Ketika Anda melihat antarmuka moltbot, deployment selesai
+          5. Buka halaman **Chat** untuk menguji apakah penyedia AI Anda berfungsi
+
+          Untuk detail lebih lanjut, lihat [dokumentasi resmi](https://github.com/moltbot/moltbot).
+
+          ## Pengaturan Bot Telegram
+          **Mendapatkan token dari BotFather:**
+          1. Buka Telegram dan cari [@BotFather](https://t.me/BotFather)
+          2. Kirim `/newbot` untuk membuat bot baru
+          3. Ikuti petunjuk untuk mengatur nama dan username bot
+          4. BotFather akan mengirimkan token (contoh: `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`)
+
+          **Menambahkan token ke Zeabur:**
+          1. Buka tab **Variabel** layanan Anda di dashboard Zeabur
+          2. Tambahkan `TELEGRAM_BOT_TOKEN` dengan token bot Anda
+          3. Restart layanan
+
+          **Memasangkan akun Telegram Anda:**
+          1. Kirim `/start` ke bot Anda di Telegram
+          2. Bot akan membalas dengan kode pairing (contoh: `JN4MSY23`)
+          3. Buka **Command** di dashboard Zeabur untuk mengakses terminal container
+          4. Jalankan: `moltbot pairing approve telegram <kode>`
+          5. Anda akan melihat: `Approved telegram sender <user-id>.` menandakan pairing berhasil
+          6. Sekarang Anda dapat mengobrol dengan bot!
+
+          Untuk platform perpesanan lainnya (WhatsApp, Discord, Slack, dll.), lihat [dokumentasi Channels](https://docs.molt.bot/channels).
+
+          ## Mengubah Model Default
+          Model default tergantung pada penyedia AI Anda:
+          - **Zeabur AI Hub**: `zeabur-ai/gpt-5-mini`
+          - **Anthropic API Key**: `anthropic/claude-opus-4-5`
+
+          Untuk mengubahnya:
+          - **Perintah chat**: Gunakan `/models` untuk melihat model yang tersedia, `/model <model-id>` untuk beralih (contoh: `/model zeabur-ai/gpt-5-mini`)
+          - **Web UI**: Buka Settings dan pilih model yang Anda inginkan
+
+          ## Konfigurasi Model Lainnya
+          Lihat [dokumentasi Providers](https://docs.molt.bot/providers) untuk menambahkan lebih banyak model AI.
+
+          ## Konfigurasi Tambahan
+          Selain variabel lingkungan, Anda juga dapat mengkonfigurasi moltbot melalui Web UI Settings atau perintah CLI. Lihat [dokumentasi resmi](https://docs.molt.bot) untuk detail lebih lanjut.
+
+          ## Persistensi Data
+          Semua data disimpan di `/home/node`:
+          - `/home/node/.clawdbot` - Konfigurasi, sesi, perangkat, dan kredensial
+          - `/home/node/clawd` - Ruang kerja dan file memori
+
+          ## Browser Sandbox
+          Jika Anda memerlukan fitur browser (browsing web, screenshot, dll.), deploy [Template Browser Sandbox](https://zeabur.com/templates/H8L4G1) bersama moltbot.
+
+          ## Dokumentasi
+          - GitHub: https://github.com/moltbot/moltbot
+
+    ja-JP:
+        description: moltbot（旧 Clawdbot）は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォーム（WhatsApp、Telegram、Slack、Discord など）に接続する個人用 AI アシスタントです。
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: STRING
+              name: ドメイン
+              description: moltbot にバインドするドメインは？
+            - key: ZEABUR_AI_HUB_API_KEY
+              type: STRING
+              name: Zeabur AI Hub API キー（推奨）
+              description: Zeabur AI Hub API キー、AI Hub 経由で Gemini/GPT/Claude/DeepSeek を使用
+            - key: ANTHROPIC_API_KEY
+              type: STRING
+              name: Anthropic API キー
+              description: Anthropic Claude の API キー（任意、後で設定可能）
+            - key: OPENAI_API_KEY
+              type: STRING
+              name: OpenAI API キー
+              description: OpenAI API キー（任意、後で設定可能）
+        readme: |
+          # moltbot
+          moltbot は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォームに接続する個人用 AI アシスタントです。
+
+          本テンプレートは `main` タグ（2026.1.25）を使用しています。moltbot は急速に開発中のため、他のバージョンに変更しても正常に動作する保証はありません。未発見のバグがある可能性もあります。問題が発生した場合は、[GitHub issues](https://github.com/moltbot/moltbot/issues) で解決策を探したり、新しい問題を報告したりしてください。Zeabur プラットフォーム関連の問題については、Zeabur サポートにお問い合わせください。
+
+          ---
+
+          ## 推奨リソース
+          moltbot は CPU 集約型アプリです。使用するツールや機能によってリソース要件が異なる場合があります。
+          - **共有クラスター**：1000 m（1 vCPU）、1024 Mi（1 GB）- テスト・お試し用
+          - **専用サーバー**：2+ vCPU、2+ GB - 安定したパフォーマンスのために強く推奨
+
+          ## 使用方法
+          1. デプロイ後、安全な Gateway トークンが**自動生成**されます
+          2. **指示**タブで事前生成された URL を確認
+          3. 「Web UI (with token)」リンクをクリックして直接接続（トークンは URL に含まれています）
+          4. moltbot のインターフェースが表示されたらデプロイ完了です
+          5. **Chat** ページで AI プロバイダーが正常に動作しているかテスト
+
+          詳細は[公式ドキュメント](https://github.com/moltbot/moltbot)をご覧ください。
+
+          ## Telegram ボット設定
+          **BotFather からトークンを取得：**
+          1. Telegram を開いて [@BotFather](https://t.me/BotFather) を検索
+          2. `/newbot` を送信して新しいボットを作成
+          3. プロンプトに従ってボットの名前とユーザー名を設定
+          4. BotFather がトークンを送信します（例：`123456789:ABCdefGHIjklMNOpqrsTUVwxyz`）
+
+          **Zeabur にトークンを追加：**
+          1. Zeabur ダッシュボードのサービス**変数**タブに移動
+          2. `TELEGRAM_BOT_TOKEN` を追加してトークンを入力
+          3. サービスを再起動
+
+          **Telegram アカウントのペアリング：**
+          1. Telegram でボットに `/start` を送信
+          2. ボットがペアリングコードを返信（例：`JN4MSY23`）
+          3. Zeabur ダッシュボードで**コマンド**を開いてコンテナターミナルにアクセス
+          4. 実行：`moltbot pairing approve telegram <コード>`
+          5. `Approved telegram sender <user-id>.` と表示されればペアリング完了
+          6. ボットとチャットできるようになりました！
+
+          その他のメッセージングプラットフォーム（WhatsApp、Discord、Slack など）については、[Channels ドキュメント](https://docs.molt.bot/channels)をご覧ください。
+
+          ## デフォルトモデルの変更
+          デフォルトモデルは AI プロバイダーによって異なります：
+          - **Zeabur AI Hub**: `zeabur-ai/gpt-5-mini`
+          - **Anthropic API Key**: `anthropic/claude-opus-4-5`
+
+          変更方法：
+          - **チャットコマンド**：`/models` で利用可能なモデルを表示、`/model <model-id>` で切り替え（例：`/model zeabur-ai/gpt-5-mini`）
+          - **Web UI**：Settings でお好みのモデルを選択
+
+          ## 追加モデルの設定
+          追加の AI モデルを設定するには、[Providers ドキュメント](https://docs.molt.bot/providers)をご覧ください。
+
+          ## その他の設定方法
+          環境変数以外にも、Web UI Settings または CLI コマンドで moltbot を設定できます。詳細は[公式ドキュメント](https://docs.molt.bot)をご覧ください。
+
+          ## データ永続化
+          すべてのデータは `/home/node` に保存：
+          - `/home/node/.clawdbot` - 設定、セッション、デバイス、認証情報
+          - `/home/node/clawd` - ワークスペースとメモリファイル
+
+          ## Browser Sandbox
+          ブラウザ機能（Web ブラウジング、スクリーンショットなど）が必要な場合は、moltbot と一緒に [Browser Sandbox テンプレート](https://zeabur.com/templates/H8L4G1)をデプロイしてください。
+
+          ## ドキュメント
+          - GitHub：https://github.com/moltbot/moltbot
+
+    zh-CN:
+        description: moltbot（原 Clawdbot）是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台（WhatsApp、Telegram、Slack、Discord 等）。
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: STRING
+              name: 域名
+              description: 您想要绑定 moltbot 的域名是？
+            - key: ZEABUR_AI_HUB_API_KEY
+              type: STRING
+              name: Zeabur AI Hub API 密钥（推荐）
+              description: 您的 Zeabur AI Hub API 密钥，通过 AI Hub 使用 Gemini/GPT/Claude/DeepSeek
+            - key: ANTHROPIC_API_KEY
+              type: STRING
+              name: Anthropic API 密钥
+              description: 您的 Anthropic Claude API 密钥（选填，可之后再设定）
+            - key: OPENAI_API_KEY
+              type: STRING
+              name: OpenAI API 密钥
+              description: 您的 OpenAI API 密钥（选填，可之后再设定）
+        readme: |
+          # moltbot
+          moltbot 是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台。
+
+          本模板使用 `main` tag（2026.1.25）。由于 moltbot 正在快速开发中，切换到其他版本无法保证可以正常运作。也可能存在尚未发现的 bug。如果遇到任何问题，欢迎到 [GitHub issues](https://github.com/moltbot/moltbot/issues) 寻找解决方案或回报新问题。Zeabur 平台相关问题请联系 Zeabur 支持。
+
+          ---
+
+          ## 建议资源配置
+          moltbot 是 CPU 密集型应用。资源需求可能因使用的工具和功能而异。
+          - **共享集群**：1000 m（1 vCPU）、1024 Mi（1 GB）- 适合测试试用
+          - **专用服务器**：2+ vCPU、2+ GB - 强烈推荐，以获得稳定性能
+
+          ## 使用方式
+          1. 部署完成后，系统会**自动生成**一组安全的 Gateway Token
+          2. 在**使用说明**页签找到预先生成的 URL
+          3. 点击「Web UI (with token)」链接直接连接（Token 已包含在 URL 中）
+          4. 看到 moltbot 界面即表示部署完成
+          5. 前往 **Chat** 页面测试 AI 供应商是否正常运作
+
+          更多详情请参阅[官方文档](https://github.com/moltbot/moltbot)。
+
+          ## Telegram 机器人设置
+          **从 BotFather 获取 Token：**
+          1. 打开 Telegram 并搜索 [@BotFather](https://t.me/BotFather)
+          2. 发送 `/newbot` 创建新机器人
+          3. 按照提示设置机器人的名称和用户名
+          4. BotFather 会发送 Token 给您（例如 `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`）
+
+          **将 Token 添加到 Zeabur：**
+          1. 前往 Zeabur 控制台的服务**环境变量**页签
+          2. 添加 `TELEGRAM_BOT_TOKEN` 并填入您的 Token
+          3. 重新启动服务
+
+          **配对您的 Telegram 账号：**
+          1. 在 Telegram 向您的机器人发送 `/start`
+          2. 机器人会回复配对码（例如 `JN4MSY23`）
+          3. 在 Zeabur 控制台打开**命令**进入容器终端
+          4. 执行：`moltbot pairing approve telegram <配对码>`
+          5. 看到 `Approved telegram sender <user-id>.` 表示配对成功
+          6. 现在可以开始与机器人对话了！
+
+          如需设置其他通讯平台（WhatsApp、Discord、Slack 等），请参阅 [Channels 文档](https://docs.molt.bot/channels)。
+
+          ## 修改默认模型
+          默认模型取决于您的 AI 供应商：
+          - **Zeabur AI Hub**：`zeabur-ai/gpt-5-mini`
+          - **Anthropic API Key**：`anthropic/claude-opus-4-5`
+
+          修改方式：
+          - **聊天命令**：使用 `/models` 查看可用模型，`/model <model-id>` 切换（例如 `/model zeabur-ai/gpt-5-mini`）
+          - **Web UI**：前往 Settings 选择您偏好的模型
+
+          ## 设置更多模型
+          请参阅 [Providers 文档](https://docs.molt.bot/providers) 添加更多 AI 模型。
+
+          ## 更多配置方式
+          除了环境变量外，您也可以通过 Web UI Settings 或 CLI 命令配置 moltbot。更多详情请参阅[官方文档](https://docs.molt.bot)。
+
+          ## 数据持久化
+          所有数据存储在 `/home/node`：
+          - `/home/node/.clawdbot` - 配置、会话、设备和凭证
+          - `/home/node/clawd` - 工作区和记忆文件
+
+          ## Browser Sandbox
+          如需浏览器功能（网页浏览、截图等），请将 [Browser Sandbox 模板](https://zeabur.com/templates/H8L4G1)与 moltbot 一起部署。
+
+          ## 文档
+          - GitHub：https://github.com/moltbot/moltbot
+
+    zh-TW:
+        description: moltbot（原 Clawdbot）是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台（WhatsApp、Telegram、Slack、Discord 等）。
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: STRING
+              name: 網域
+              description: 您想要綁定 moltbot 的網域是？
+            - key: ZEABUR_AI_HUB_API_KEY
+              type: STRING
+              name: Zeabur AI Hub API 金鑰（推薦）
+              description: 您的 Zeabur AI Hub API 金鑰，透過 AI Hub 使用 Gemini/GPT/Claude/DeepSeek
+            - key: ANTHROPIC_API_KEY
+              type: STRING
+              name: Anthropic API 金鑰
+              description: 您的 Anthropic Claude API 金鑰（選填，可之後再設定）
+            - key: OPENAI_API_KEY
+              type: STRING
+              name: OpenAI API 金鑰
+              description: 您的 OpenAI API 金鑰（選填，可之後再設定）
+        readme: |
+          # moltbot
+          moltbot 是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台。
+
+          本模板使用 `main` tag（2026.1.25）。由於 moltbot 正在快速開發中，切換到其他版本無法保證可以正常運作。也可能存在尚未發現的 bug。如果遇到任何問題，歡迎到 [GitHub issues](https://github.com/moltbot/moltbot/issues) 尋找解決方案或回報新問題。Zeabur 平台相關問題請聯繫 Zeabur 支援。
+
+          ---
+
+          ## 建議資源配置
+          moltbot 是 CPU 密集型應用。資源需求可能因使用的工具和功能而異。
+          - **共享叢集**：1000 m（1 vCPU）、1024 Mi（1 GB）- 適合測試試用
+          - **專用伺服器**：2+ vCPU、2+ GB - 強烈推薦，以獲得穩定效能
+
+          ## 使用方式
+          1. 部署完成後，系統會**自動產生**一組安全的 Gateway Token
+          2. 在**使用說明**頁籤找到預先產生的 URL
+          3. 點擊「Web UI (with token)」連結直接連線（Token 已包含在 URL 中）
+          4. 看到 moltbot 介面即表示部署完成
+          5. 前往 **Chat** 頁面測試 AI 供應商是否正常運作
+
+          更多詳情請參閱[官方文件](https://github.com/moltbot/moltbot)。
+
+          ## Telegram 機器人設定
+          **從 BotFather 取得 Token：**
+          1. 開啟 Telegram 並搜尋 [@BotFather](https://t.me/BotFather)
+          2. 發送 `/newbot` 建立新機器人
+          3. 依照提示設定機器人的名稱和使用者名稱
+          4. BotFather 會傳送 Token 給您（例如 `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`）
+
+          **將 Token 加入 Zeabur：**
+          1. 前往 Zeabur 控制台的服務**環境變數**頁籤
+          2. 新增 `TELEGRAM_BOT_TOKEN` 並填入您的 Token
+          3. 重新啟動服務
+
+          **配對您的 Telegram 帳號：**
+          1. 在 Telegram 向您的機器人發送 `/start`
+          2. 機器人會回覆配對碼（例如 `JN4MSY23`）
+          3. 在 Zeabur 控制台開啟**指令**進入容器終端
+          4. 執行：`moltbot pairing approve telegram <配對碼>`
+          5. 看到 `Approved telegram sender <user-id>.` 表示配對成功
+          6. 現在可以開始與機器人對話了！
+
+          如需設定其他通訊平台（WhatsApp、Discord、Slack 等），請參閱 [Channels 文件](https://docs.molt.bot/channels)。
+
+          ## 修改預設模型
+          預設模型取決於您的 AI 供應商：
+          - **Zeabur AI Hub**：`zeabur-ai/gpt-5-mini`
+          - **Anthropic API Key**：`anthropic/claude-opus-4-5`
+
+          修改方式：
+          - **聊天指令**：使用 `/models` 查看可用模型，`/model <model-id>` 切換（例如 `/model zeabur-ai/gpt-5-mini`）
+          - **Web UI**：前往 Settings 選擇您偏好的模型
+
+          ## 設定更多模型
+          請參閱 [Providers 文件](https://docs.molt.bot/providers) 新增更多 AI 模型。
+
+          ## 更多設定方式
+          除了環境變數外，您也可以透過 Web UI Settings 或 CLI 指令設定 moltbot。更多詳情請參閱[官方文件](https://docs.molt.bot)。
+
+          ## 資料持久化
+          所有資料儲存在 `/home/node`：
+          - `/home/node/.clawdbot` - 設定、會話、裝置和憑證
+          - `/home/node/clawd` - 工作區和記憶檔案
+
+          ## Browser Sandbox
+          如需瀏覽器功能（網頁瀏覽、截圖等），請將 [Browser Sandbox 模板](https://zeabur.com/templates/H8L4G1)與 moltbot 一起部署。
+
+          ## 文件
+          - GitHub：https://github.com/moltbot/moltbot
+
