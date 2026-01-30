@@ -4,7 +4,7 @@
 
 set -e
 
-TEMPLATE_FILE="zeabur-template-moltbot-new-version.yaml"
+TEMPLATE_FILE="zeabur-template-clawdbot-VTZ4FX.yaml"
 PROJECT_NAME="${1:-clawdbot-$(date +%Y%m%d%H%M%S)}"
 REGION="${2:-hkg1}"
 

@@ -70,10 +70,11 @@ spec:
       **Pairing your Telegram account:**
       1. Send `/start` to your bot in Telegram
       2. The bot will reply with a pairing code (e.g., `JN4MSY23`)
-      3. Open **Command** in Zeabur dashboard to access the container terminal
-      4. Run: `moltbot pairing approve telegram <code>`
-      5. You'll see: `Approved telegram sender <user-id>.`
-      6. Now you can chat with the bot!
+      3. Approve the pairing using one of these methods:
+         - **Web Chat**: In the OpenClaw web interface chat box, type `openclaw pairing approve telegram <code>`
+         - **Terminal**: Open **Command** in Zeabur dashboard, run `openclaw pairing approve telegram <code>`
+      4. You'll see: `Approved telegram sender <user-id>.`
+      5. Now you can chat with the bot!
 
       For other messaging platforms (WhatsApp, Discord, Slack, etc.), see the [Channels documentation](https://docs.openclaw.ai/channels).
 
@@ -90,22 +91,22 @@ spec:
       See the [Providers documentation](https://docs.openclaw.ai/providers) for adding more AI models.
 
       ## Additional Configuration
-      Beyond environment variables, you can configure moltbot via Web UI Settings or CLI commands. See the [official documentation](https://docs.openclaw.ai) for more details.
+      Beyond environment variables, you can configure OpenClaw via Web UI Settings or CLI commands. See the [official documentation](https://docs.openclaw.ai) for more details.
 
       ## Data Persistence
       All data is stored under `/home/node`:
       - `/home/node/.openclaw` - Configuration, sessions, devices, and credentials
-      - `/home/node/clawd` - Workspace and memory files
+      - `/home/node/.openclaw/workspace` - Workspace and memory files
 
       ## Browser Sandbox
-      If you need browser features (web browsing, screenshots, etc.), deploy the [Browser Sandbox Template](https://zeabur.com/templates/H8L4G1) alongside moltbot.
+      If you need browser features (web browsing, screenshots, etc.), deploy the [Browser Sandbox Template](https://zeabur.com/templates/H8L4G1) alongside OpenClaw.
 
       ## Documentation
-      - GitHub: https://github.com/moltbot/moltbot
+      - GitHub: https://github.com/openclaw/openclaw
 
     services:
-      - name: moltbot
-        icon: https://raw.githubusercontent.com/moltbot/moltbot/main/docs/assets/pixel-lobster.svg
+      - name: OpenClaw
+        icon: https://raw.githubusercontent.com/openclaw/openclaw/main/docs/assets/pixel-lobster.svg
         template: PREBUILT
         domainKey: PUBLIC_DOMAIN
         spec:
@@ -129,15 +130,22 @@ spec:
                 export PATH="/home/node/bin:$PATH"
                 echo "openclaw command ready at /home/node/bin/openclaw"
 
-                # Patch pi-ai library for correct user agent
-                echo "=== Patching pi-ai library (Google Gemini CLI user agent fix) ==="
+                # Patch pi-ai library for correct user agent (only if version is older)
+                echo "=== Checking pi-ai library (Google Gemini CLI user agent fix) ==="
                 PI_AI_FILE="/app/node_modules/.pnpm/@mariozechner+pi-ai@"*"/node_modules/@mariozechner/pi-ai/dist/providers/google-gemini-cli.js"
                 if ls $PI_AI_FILE 1>/dev/null 2>&1; then
-                  echo "Before patch:"
-                  grep -o 'antigravity/[0-9.]* [a-z]*/[a-z0-9]*' $PI_AI_FILE | head -1 || echo "(not found)"
-                  sed -i 's|antigravity/1.11.5 darwin/arm64|antigravity/1.15.8 linux/amd64|g' $PI_AI_FILE
-                  echo "After patch:"
-                  grep -o 'antigravity/[0-9.]* [a-z]*/[a-z0-9]*' $PI_AI_FILE | head -1 || echo "(not found)"
+                  CURRENT_UA=$(grep -o 'antigravity/[0-9.]*' $PI_AI_FILE | head -1 || echo "")
+                  echo "Current user agent: $CURRENT_UA"
+                  if echo "$CURRENT_UA" | grep -q 'antigravity/1.11.5\|antigravity/1.12\|antigravity/1.13\|antigravity/1.14'; then
+                    echo "Version needs patching, applying fix..."
+                    sed -i 's|antigravity/1.11.5 darwin/arm64|antigravity/1.15.8 linux/amd64|g' $PI_AI_FILE
+                    sed -i 's|antigravity/1.12.[0-9]* [a-z]*/[a-z0-9]*|antigravity/1.15.8 linux/amd64|g' $PI_AI_FILE
+                    sed -i 's|antigravity/1.13.[0-9]* [a-z]*/[a-z0-9]*|antigravity/1.15.8 linux/amd64|g' $PI_AI_FILE
+                    sed -i 's|antigravity/1.14.[0-9]* [a-z]*/[a-z0-9]*|antigravity/1.15.8 linux/amd64|g' $PI_AI_FILE
+                    echo "After patch: $(grep -o 'antigravity/[0-9.]* [a-z]*/[a-z0-9]*' $PI_AI_FILE | head -1)"
+                  else
+                    echo "Version is already 1.15.8 or newer, skipping patch"
+                  fi
                 else
                   echo "pi-ai library not found, skipping patch"
                 fi
@@ -474,7 +482,7 @@ spec:
 
                 # Initialize workspace with memory files
                 echo "=== Initializing workspace ==="
-                WORKSPACE_DIR="${CLAWDBOT_WORKSPACE_DIR}"
+                WORKSPACE_DIR="${OPENCLAW_WORKSPACE_DIR}"
                 mkdir -p "$WORKSPACE_DIR/memory"
                 if [ ! -f "$WORKSPACE_DIR/MEMORY.md" ]; then
                   echo "Creating MEMORY.md..."
@@ -486,7 +494,7 @@ spec:
                 fi
                 echo "Workspace ready at $WORKSPACE_DIR"
 
-                exec node dist/index.js gateway --allow-unconfigured --bind "${CLAWDBOT_GATEWAY_BIND}" --port "${CLAWDBOT_GATEWAY_PORT}" --token "${CLAWDBOT_GATEWAY_TOKEN}"
+                exec node dist/index.js gateway --allow-unconfigured --bind "${OPENCLAW_GATEWAY_BIND}" --port "${OPENCLAW_GATEWAY_PORT}" --token "${OPENCLAW_GATEWAY_TOKEN}"
           ports:
           - id: web
             port: 18789
@@ -510,19 +518,19 @@ spec:
             NODE_OPTIONS:
               default: --max-old-space-size=1024
               readonly: true
-            CLAWDBOT_WORKSPACE_DIR:
-              default: /home/node/clawd
+            OPENCLAW_WORKSPACE_DIR:
+              default: /home/node/.openclaw/workspace
               readonly: true
-            CLAWDBOT_GATEWAY_PORT:
+            OPENCLAW_GATEWAY_PORT:
               default: "18789"
               readonly: true
-            CLAWDBOT_GATEWAY_BIND:
+            OPENCLAW_GATEWAY_BIND:
               default: lan
               readonly: true
-            MOLTBOT_STATE_DIR:
+            OPENCLAW_STATE_DIR:
               default: /home/node/.openclaw
               readonly: true
-            CLAWDBOT_GATEWAY_TOKEN:
+            OPENCLAW_GATEWAY_TOKEN:
               default: ${PASSWORD}
             ANTHROPIC_API_KEY:
               default: ${ANTHROPIC_API_KEY}
@@ -533,20 +541,20 @@ spec:
           instructions:
             - type: TEXT
               title: Web UI (with token)
-              content: ${ZEABUR_WEB_URL}?token=${CLAWDBOT_GATEWAY_TOKEN}
+              content: ${ZEABUR_WEB_URL}?token=${OPENCLAW_GATEWAY_TOKEN}
             - type: PASSWORD
               title: Gateway Token
-              content: ${CLAWDBOT_GATEWAY_TOKEN}
+              content: ${OPENCLAW_GATEWAY_TOKEN}
               category: Credentials
 
 localization:
   zh-TW:
-    name: moltbot
-    description: moltbot（原 Clawdbot）是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台（WhatsApp、Telegram、Slack、Discord 等）。
+    name: OpenClaw 🦞
+    description: OpenClaw 🦞（原 Clawdbot、Moltbot）是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台（WhatsApp、Telegram、Slack、Discord 等）。
     variables:
       - key: PUBLIC_DOMAIN
         name: 網域
-        description: 您想要綁定 moltbot 的網域是？
+        description: 您想要綁定 OpenClaw 的網域是？
       - key: ZEABUR_AI_HUB_API_KEY
         name: Zeabur AI Hub API 金鑰（推薦）
         description: 您的 Zeabur AI Hub API 金鑰，透過 AI Hub 使用 Gemini/GPT/Claude/DeepSeek
@@ -557,25 +565,25 @@ localization:
         name: OpenAI API 金鑰
         description: 您的 OpenAI API 金鑰（選填，可之後再設定）
     readme: |
-      # moltbot
-      moltbot 是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台。
+      # OpenClaw 🦞
+      OpenClaw 🦞（原 Clawdbot、Moltbot）是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台。
 
       ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.1.29`。OpenClaw 🦞 正在快速開發中，可能存在尚未發現的 bug。更改版本後也無法確保穩定性。如果遇到任何問題，歡迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 尋找解決方案或回報新問題。Zeabur 平台相關問題請聯繫 Zeabur 支援。
 
       ---
 
       ## 建議資源配置
-      moltbot 是 CPU 密集型應用。資源需求可能因使用的工具和功能而異。
+      OpenClaw 🦞 是 CPU 密集型應用。資源需求可能因使用的工具和功能而異。
       - **專用伺服器**：2+ vCPU、2+ GB - 強烈推薦，以獲得穩定效能
 
       ## 使用方式
       1. 部署完成後，系統會**自動產生**一組安全的 Gateway Token
       2. 在**使用說明**頁籤找到預先產生的 URL
       3. 點擊「Web UI (with token)」連結直接連線（Token 已包含在 URL 中）
-      4. 看到 moltbot 介面即表示部署完成
+      4. 看到 OpenClaw 介面即表示部署完成
       5. 前往 **Chat** 頁面測試 AI 供應商是否正常運作
 
-      更多詳情請參閱[官方文件](https://github.com/moltbot/moltbot)。
+      更多詳情請參閱[官方文件](https://github.com/openclaw/openclaw)。
 
       ## Telegram 機器人設定
       **從 BotFather 取得 Token：**
@@ -592,10 +600,11 @@ localization:
       **配對您的 Telegram 帳號：**
       1. 在 Telegram 向您的機器人發送 `/start`
       2. 機器人會回覆配對碼（例如 `JN4MSY23`）
-      3. 在 Zeabur 控制台開啟**指令**進入容器終端
-      4. 執行：`moltbot pairing approve telegram <配對碼>`
-      5. 看到 `Approved telegram sender <user-id>.` 表示配對成功
-      6. 現在可以開始與機器人對話了！
+      3. 使用以下任一方式核准配對：
+         - **網頁 Chat**：在 OpenClaw 網頁介面的對話框輸入 `openclaw pairing approve telegram <配對碼>`
+         - **終端機**：在 Zeabur 控制台開啟 **指令** 進入容器終端，執行 `openclaw pairing approve telegram <配對碼>`
+      4. 看到 `Approved telegram sender <user-id>.` 表示配對成功
+      5. 現在可以開始與機器人對話了！
 
       如需設定其他通訊平台（WhatsApp、Discord、Slack 等），請參閱 [Channels 文件](https://docs.openclaw.ai/channels)。
 
@@ -612,26 +621,26 @@ localization:
       請參閱 [Providers 文件](https://docs.openclaw.ai/providers) 新增更多 AI 模型。
 
       ## 更多設定方式
-      除了環境變數外，您也可以透過 Web UI Settings 或 CLI 指令設定 moltbot。更多詳情請參閱[官方文件](https://docs.openclaw.ai)。
+      除了環境變數外，您也可以透過 Web UI Settings 或 CLI 指令設定 OpenClaw。更多詳情請參閱[官方文件](https://docs.openclaw.ai)。
 
       ## 資料持久化
       所有資料儲存在 `/home/node`：
       - `/home/node/.openclaw` - 設定、會話、裝置和憑證
-      - `/home/node/clawd` - 工作區和記憶檔案
+      - `/home/node/.openclaw/workspace` - 工作區和記憶檔案
 
       ## Browser Sandbox
-      如需瀏覽器功能（網頁瀏覽、截圖等），請將 [Browser Sandbox 模板](https://zeabur.com/templates/H8L4G1)與 moltbot 一起部署。
+      如需瀏覽器功能（網頁瀏覽、截圖等），請將 [Browser Sandbox 模板](https://zeabur.com/templates/H8L4G1)與 OpenClaw 一起部署。
 
       ## 文件
-      - GitHub：https://github.com/moltbot/moltbot
+      - GitHub：https://github.com/openclaw/openclaw
 
   zh-CN:
-    name: moltbot
-    description: moltbot（原 Clawdbot）是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台（WhatsApp、Telegram、Slack、Discord 等）。
+    name: OpenClaw 🦞
+    description: OpenClaw 🦞（原 Clawdbot、Moltbot）是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台（WhatsApp、Telegram、Slack、Discord 等）。
     variables:
       - key: PUBLIC_DOMAIN
         name: 域名
-        description: 您想要绑定 moltbot 的域名是？
+        description: 您想要绑定 OpenClaw 的域名是？
       - key: ZEABUR_AI_HUB_API_KEY
         name: Zeabur AI Hub API 密钥（推荐）
         description: 您的 Zeabur AI Hub API 密钥，通过 AI Hub 使用 Gemini/GPT/Claude/DeepSeek
@@ -642,25 +651,25 @@ localization:
         name: OpenAI API 密钥
         description: 您的 OpenAI API 密钥（选填，可之后再设定）
     readme: |
-      # moltbot
-      moltbot 是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台。
+      # OpenClaw 🦞
+      OpenClaw 🦞（原 Clawdbot、Moltbot）是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台。
 
       ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.1.29`。OpenClaw 🦞 正在快速开发中，可能存在尚未发现的 bug。更改版本后也无法确保稳定性。如果遇到任何问题，欢迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 寻找解决方案或回报新问题。Zeabur 平台相关问题请联系 Zeabur 支持。
 
       ---
 
       ## 建议资源配置
-      moltbot 是 CPU 密集型应用。资源需求可能因使用的工具和功能而异。
+      OpenClaw 🦞 是 CPU 密集型应用。资源需求可能因使用的工具和功能而异。
       - **专用服务器**：2+ vCPU、2+ GB - 强烈推荐，以获得稳定性能
 
       ## 使用方式
       1. 部署完成后，系统会**自动生成**一组安全的 Gateway Token
       2. 在**使用说明**页签找到预先生成的 URL
       3. 点击「Web UI (with token)」链接直接连接（Token 已包含在 URL 中）
-      4. 看到 moltbot 界面即表示部署完成
+      4. 看到 OpenClaw 界面即表示部署完成
       5. 前往 **Chat** 页面测试 AI 供应商是否正常运作
 
-      更多详情请参阅[官方文档](https://github.com/moltbot/moltbot)。
+      更多详情请参阅[官方文档](https://github.com/openclaw/openclaw)。
 
       ## Telegram 机器人设置
       **从 BotFather 获取 Token：**
@@ -677,10 +686,11 @@ localization:
       **配对您的 Telegram 账号：**
       1. 在 Telegram 向您的机器人发送 `/start`
       2. 机器人会回复配对码（例如 `JN4MSY23`）
-      3. 在 Zeabur 控制台打开**命令**进入容器终端
-      4. 执行：`moltbot pairing approve telegram <配对码>`
-      5. 看到 `Approved telegram sender <user-id>.` 表示配对成功
-      6. 现在可以开始与机器人对话了！
+      3. 使用以下任一方式核准配对：
+         - **网页 Chat**：在 OpenClaw 网页界面的对话框输入 `openclaw pairing approve telegram <配对码>`
+         - **终端**：在 Zeabur 控制台打开**命令**进入容器终端，执行 `openclaw pairing approve telegram <配对码>`
+      4. 看到 `Approved telegram sender <user-id>.` 表示配对成功
+      5. 现在可以开始与机器人对话了！
 
       如需设置其他通讯平台（WhatsApp、Discord、Slack 等），请参阅 [Channels 文档](https://docs.openclaw.ai/channels)。
 
@@ -697,26 +707,26 @@ localization:
       请参阅 [Providers 文档](https://docs.openclaw.ai/providers) 添加更多 AI 模型。
 
       ## 更多配置方式
-      除了环境变量外，您也可以通过 Web UI Settings 或 CLI 命令配置 moltbot。更多详情请参阅[官方文档](https://docs.openclaw.ai)。
+      除了环境变量外，您也可以通过 Web UI Settings 或 CLI 命令配置 OpenClaw。更多详情请参阅[官方文档](https://docs.openclaw.ai)。
 
       ## 数据持久化
       所有数据存储在 `/home/node`：
       - `/home/node/.openclaw` - 配置、会话、设备和凭证
-      - `/home/node/clawd` - 工作区和记忆文件
+      - `/home/node/.openclaw/workspace` - 工作区和记忆文件
 
       ## Browser Sandbox
-      如需浏览器功能（网页浏览、截图等），请将 [Browser Sandbox 模板](https://zeabur.com/templates/H8L4G1)与 moltbot 一起部署。
+      如需浏览器功能（网页浏览、截图等），请将 [Browser Sandbox 模板](https://zeabur.com/templates/H8L4G1)与 OpenClaw 一起部署。
 
       ## 文档
-      - GitHub：https://github.com/moltbot/moltbot
+      - GitHub：https://github.com/openclaw/openclaw
 
   ja-JP:
-    name: moltbot
-    description: moltbot（旧 Clawdbot）は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォーム（WhatsApp、Telegram、Slack、Discord など）に接続する個人用 AI アシスタントです。
+    name: OpenClaw 🦞
+    description: OpenClaw 🦞（旧 Clawdbot、Moltbot）は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォーム（WhatsApp、Telegram、Slack、Discord など）に接続する個人用 AI アシスタントです。
     variables:
       - key: PUBLIC_DOMAIN
         name: ドメイン
-        description: moltbot にバインドするドメインは？
+        description: OpenClaw にバインドするドメインは？
       - key: ZEABUR_AI_HUB_API_KEY
         name: Zeabur AI Hub API キー（推奨）
         description: Zeabur AI Hub API キー、AI Hub 経由で Gemini/GPT/Claude/DeepSeek を使用
@@ -727,25 +737,25 @@ localization:
         name: OpenAI API キー
         description: OpenAI API キー（任意、後で設定可能）
     readme: |
-      # moltbot
-      moltbot は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォームに接続する個人用 AI アシスタントです。
+      # OpenClaw 🦞
+      OpenClaw 🦞（旧 Clawdbot、Moltbot）は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォームに接続する個人用 AI アシスタントです。
 
       ⚠️ 本テンプレートは `ghcr.io/openclaw/openclaw:2026.1.29` を使用しています。OpenClaw 🦞 は急速に開発中のため、未発見のバグがある可能性があります。バージョンを変更した場合も安定性を保証できません。問題が発生した場合は、[GitHub issues](https://github.com/openclaw/openclaw/issues) で解決策を探したり、新しい問題を報告したりしてください。Zeabur プラットフォーム関連の問題については、Zeabur サポートにお問い合わせください。
 
       ---
 
       ## 推奨リソース
-      moltbot は CPU 集約型アプリです。使用するツールや機能によってリソース要件が異なる場合があります。
+      OpenClaw 🦞 は CPU 集約型アプリです。使用するツールや機能によってリソース要件が異なる場合があります。
       - **専用サーバー**：2+ vCPU、2+ GB - 安定したパフォーマンスのために強く推奨
 
       ## 使用方法
       1. デプロイ後、安全な Gateway トークンが**自動生成**されます
       2. **指示**タブで事前生成された URL を確認
       3. 「Web UI (with token)」リンクをクリックして直接接続（トークンは URL に含まれています）
-      4. moltbot のインターフェースが表示されたらデプロイ完了です
+      4. OpenClaw のインターフェースが表示されたらデプロイ完了です
       5. **Chat** ページで AI プロバイダーが正常に動作しているかテスト
 
-      詳細は[公式ドキュメント](https://github.com/moltbot/moltbot)をご覧ください。
+      詳細は[公式ドキュメント](https://github.com/openclaw/openclaw)をご覧ください。
 
       ## Telegram ボット設定
       **BotFather からトークンを取得：**
@@ -762,10 +772,11 @@ localization:
       **Telegram アカウントのペアリング：**
       1. Telegram でボットに `/start` を送信
       2. ボットがペアリングコードを返信（例：`JN4MSY23`）
-      3. Zeabur ダッシュボードで**コマンド**を開いてコンテナターミナルにアクセス
-      4. 実行：`moltbot pairing approve telegram <コード>`
-      5. `Approved telegram sender <user-id>.` と表示されればペアリング完了
-      6. ボットとチャットできるようになりました！
+      3. 以下のいずれかの方法でペアリングを承認：
+         - **Web Chat**：OpenClaw のウェブインターフェースのチャットボックスに `openclaw pairing approve telegram <コード>` を入力
+         - **ターミナル**：Zeabur ダッシュボードの**コマンド**を開き、`openclaw pairing approve telegram <コード>` を実行
+      4. `Approved telegram sender <user-id>.` と表示されればペアリング完了
+      5. ボットとの会話を開始できます！
 
       その他のメッセージングプラットフォーム（WhatsApp、Discord、Slack など）については、[Channels ドキュメント](https://docs.openclaw.ai/channels)をご覧ください。
 
@@ -782,26 +793,26 @@ localization:
       追加の AI モデルを設定するには、[Providers ドキュメント](https://docs.openclaw.ai/providers)をご覧ください。
 
       ## その他の設定方法
-      環境変数以外にも、Web UI Settings または CLI コマンドで moltbot を設定できます。詳細は[公式ドキュメント](https://docs.openclaw.ai)をご覧ください。
+      環境変数以外にも、Web UI Settings または CLI コマンドで OpenClaw を設定できます。詳細は[公式ドキュメント](https://docs.openclaw.ai)をご覧ください。
 
       ## データ永続化
       すべてのデータは `/home/node` に保存：
       - `/home/node/.openclaw` - 設定、セッション、デバイス、認証情報
-      - `/home/node/clawd` - ワークスペースとメモリファイル
+      - `/home/node/.openclaw/workspace` - ワークスペースとメモリファイル
 
       ## Browser Sandbox
-      ブラウザ機能（Web ブラウジング、スクリーンショットなど）が必要な場合は、moltbot と一緒に [Browser Sandbox テンプレート](https://zeabur.com/templates/H8L4G1)をデプロイしてください。
+      ブラウザ機能（Web ブラウジング、スクリーンショットなど）が必要な場合は、OpenClaw と一緒に [Browser Sandbox テンプレート](https://zeabur.com/templates/H8L4G1)をデプロイしてください。
 
       ## ドキュメント
-      - GitHub：https://github.com/moltbot/moltbot
+      - GitHub：https://github.com/openclaw/openclaw
 
   es-ES:
-    name: moltbot
-    description: moltbot (anteriormente Clawdbot) es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería (WhatsApp, Telegram, Slack, Discord, etc.) a través de una arquitectura Gateway basada en WebSocket.
+    name: OpenClaw 🦞
+    description: OpenClaw 🦞 (anteriormente Clawdbot, Moltbot) es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería (WhatsApp, Telegram, Slack, Discord, etc.) a través de una arquitectura Gateway basada en WebSocket.
     variables:
       - key: PUBLIC_DOMAIN
         name: Dominio
-        description: ¿Qué dominio desea vincular a moltbot?
+        description: ¿Qué dominio desea vincular a OpenClaw?
       - key: ZEABUR_AI_HUB_API_KEY
         name: Clave API de Zeabur AI Hub (Recomendado)
         description: Su clave API de Zeabur AI Hub para usar Gemini/GPT/Claude/DeepSeek a través de AI Hub
@@ -812,15 +823,15 @@ localization:
         name: Clave API de OpenAI
         description: Su clave API de OpenAI (opcional, puede configurarse después)
     readme: |
-      # moltbot
-      moltbot es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería a través de una arquitectura Gateway basada en WebSocket.
+      # OpenClaw 🦞
+      OpenClaw 🦞 (anteriormente Clawdbot, Moltbot) es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería a través de una arquitectura Gateway basada en WebSocket.
 
       ⚠️ Esta plantilla usa `ghcr.io/openclaw/openclaw:2026.1.29`. OpenClaw 🦞 está en desarrollo rápido, por lo que puede haber errores no descubiertos. Cambiar de versión tampoco garantiza estabilidad. Si encuentra algún problema, no dude en consultar los [GitHub issues](https://github.com/openclaw/openclaw/issues) para buscar soluciones o reportar nuevos problemas. Para problemas relacionados con la plataforma Zeabur, contacte al soporte de Zeabur.
 
       ---
 
       ## Recursos Recomendados
-      moltbot consume muchos recursos de CPU. Los requisitos pueden variar según las herramientas y funciones que utilice.
+      OpenClaw 🦞 consume muchos recursos de CPU. Los requisitos pueden variar según las herramientas y funciones que utilice.
       - **Clúster Compartido**: 1000 m (1 vCPU), 1024 Mi (1 GB) - para pruebas
       - **Servidor Dedicado**: 2+ vCPU, 2+ GB - altamente recomendado para rendimiento estable
 
@@ -828,10 +839,10 @@ localization:
       1. Después del despliegue, se **genera automáticamente** un token de Gateway seguro
       2. Encuentre la URL pre-generada en la pestaña **Instrucciones**
       3. Haga clic en el enlace "Web UI (with token)" para conectar directamente (el token está incluido en la URL)
-      4. Cuando vea la interfaz de moltbot, el despliegue está completo
+      4. Cuando vea la interfaz de OpenClaw, el despliegue está completo
       5. Vaya a la página **Chat** para probar si su proveedor de AI funciona
 
-      Para más detalles, consulte la [documentación oficial](https://github.com/moltbot/moltbot).
+      Para más detalles, consulte la [documentación oficial](https://github.com/openclaw/openclaw).
 
       ## Configuración de Bot de Telegram
       **Obtener el token de BotFather:**
@@ -847,11 +858,12 @@ localization:
 
       **Vincular su cuenta de Telegram:**
       1. Envíe `/start` a su bot en Telegram
-      2. El bot responderá con un código de vinculación (ej: `JN4MSY23`)
-      3. Abra **Comando** en el panel de Zeabur para acceder a la terminal del contenedor
-      4. Ejecute: `moltbot pairing approve telegram <código>`
-      5. Verá: `Approved telegram sender <user-id>.` indicando vinculación exitosa
-      6. ¡Ahora puede chatear con el bot!
+      2. El bot responderá con un código de emparejamiento (ej. `JN4MSY23`)
+      3. Apruebe el emparejamiento usando uno de estos métodos:
+         - **Chat Web**: En la interfaz web de OpenClaw, escriba `openclaw pairing approve telegram <código>`
+         - **Terminal**: Abra **Comando** en el panel de Zeabur, ejecute `openclaw pairing approve telegram <código>`
+      4. Verá: `Approved telegram sender <user-id>.`
+      5. ¡Ahora puede chatear con el bot!
 
       Para otras plataformas de mensajería (WhatsApp, Discord, Slack, etc.), consulte la [documentación de Canales](https://docs.openclaw.ai/channels).
 
@@ -868,26 +880,26 @@ localization:
       Consulte la [documentación de Providers](https://docs.openclaw.ai/providers) para agregar más modelos de AI.
 
       ## Configuración Adicional
-      Además de las variables de entorno, puede configurar moltbot a través de la Web UI Settings o comandos CLI. Consulte la [documentación oficial](https://docs.openclaw.ai) para más detalles.
+      Además de las variables de entorno, puede configurar OpenClaw a través de la Web UI Settings o comandos CLI. Consulte la [documentación oficial](https://docs.openclaw.ai) para más detalles.
 
       ## Persistencia de Datos
       Todos los datos se almacenan en `/home/node`:
       - `/home/node/.openclaw` - Configuración, sesiones, dispositivos y credenciales
-      - `/home/node/clawd` - Espacio de trabajo y archivos de memoria
+      - `/home/node/.openclaw/workspace` - Espacio de trabajo y archivos de memoria
 
       ## Browser Sandbox
-      Si necesita funciones del navegador (navegación web, capturas de pantalla, etc.), despliegue la [Plantilla Browser Sandbox](https://zeabur.com/templates/H8L4G1) junto con moltbot.
+      Si necesita funciones del navegador (navegación web, capturas de pantalla, etc.), despliegue la [Plantilla Browser Sandbox](https://zeabur.com/templates/H8L4G1) junto con OpenClaw.
 
       ## Documentación
-      - GitHub: https://github.com/moltbot/moltbot
+      - GitHub：https://github.com/openclaw/openclaw
 
   id-ID:
-    name: moltbot
-    description: moltbot (sebelumnya Clawdbot) adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan (WhatsApp, Telegram, Slack, Discord, dll.) melalui arsitektur Gateway berbasis WebSocket.
+    name: OpenClaw 🦞
+    description: OpenClaw 🦞 (sebelumnya Clawdbot, Moltbot) adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan (WhatsApp, Telegram, Slack, Discord, dll.) melalui arsitektur Gateway berbasis WebSocket.
     variables:
       - key: PUBLIC_DOMAIN
         name: Domain
-        description: Domain apa yang ingin Anda ikat ke moltbot?
+        description: Domain apa yang ingin Anda ikat ke OpenClaw?
       - key: ZEABUR_AI_HUB_API_KEY
         name: Kunci API Zeabur AI Hub (Direkomendasikan)
         description: Kunci API Zeabur AI Hub Anda untuk menggunakan Gemini/GPT/Claude/DeepSeek melalui AI Hub
@@ -898,15 +910,15 @@ localization:
         name: Kunci API OpenAI
         description: Kunci API OpenAI Anda (opsional, dapat dikonfigurasi nanti)
     readme: |
-      # moltbot
-      moltbot adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan melalui arsitektur Gateway berbasis WebSocket.
+      # OpenClaw 🦞
+      OpenClaw 🦞 (sebelumnya Clawdbot, Moltbot) adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan melalui arsitektur Gateway berbasis WebSocket.
 
       ⚠️ Template ini menggunakan `ghcr.io/openclaw/openclaw:2026.1.29`. OpenClaw 🦞 sedang dalam pengembangan cepat, jadi mungkin ada bug yang belum ditemukan. Mengubah versi juga tidak menjamin stabilitas. Jika Anda mengalami masalah, silakan kunjungi [GitHub issues](https://github.com/openclaw/openclaw/issues) untuk mencari solusi atau melaporkan masalah baru. Untuk masalah terkait platform Zeabur, silakan hubungi dukungan Zeabur.
 
       ---
 
       ## Sumber Daya yang Direkomendasikan
-      moltbot adalah aplikasi yang intensif CPU. Kebutuhan sumber daya dapat bervariasi tergantung pada alat dan fitur yang Anda gunakan.
+      OpenClaw 🦞 adalah aplikasi yang intensif CPU. Kebutuhan sumber daya dapat bervariasi tergantung pada alat dan fitur yang Anda gunakan.
       - **Kluster Bersama**: 1000 m (1 vCPU), 1024 Mi (1 GB) - untuk pengujian
       - **Server Khusus**: 2+ vCPU, 2+ GB - sangat direkomendasikan untuk performa stabil
 
@@ -914,10 +926,10 @@ localization:
       1. Setelah deploy, token Gateway yang aman akan **dibuat secara otomatis**
       2. Temukan URL yang sudah dibuat di tab **Instruksi**
       3. Klik tautan "Web UI (with token)" untuk terhubung langsung (token sudah termasuk dalam URL)
-      4. Ketika Anda melihat antarmuka moltbot, deployment selesai
+      4. Ketika Anda melihat antarmuka OpenClaw, deployment selesai
       5. Buka halaman **Chat** untuk menguji apakah penyedia AI Anda berfungsi
 
-      Untuk detail lebih lanjut, lihat [dokumentasi resmi](https://github.com/moltbot/moltbot).
+      Untuk detail lebih lanjut, lihat [dokumentasi resmi](https://github.com/openclaw/openclaw).
 
       ## Pengaturan Bot Telegram
       **Mendapatkan token dari BotFather:**
@@ -931,15 +943,16 @@ localization:
       2. Tambahkan `TELEGRAM_BOT_TOKEN` dengan token bot Anda
       3. Restart layanan
 
-      **Memasangkan akun Telegram Anda:**
+      **Menghubungkan akun Telegram Anda:**
       1. Kirim `/start` ke bot Anda di Telegram
-      2. Bot akan membalas dengan kode pairing (contoh: `JN4MSY23`)
-      3. Buka **Command** di dashboard Zeabur untuk mengakses terminal container
-      4. Jalankan: `moltbot pairing approve telegram <kode>`
-      5. Anda akan melihat: `Approved telegram sender <user-id>.` menandakan pairing berhasil
-      6. Sekarang Anda dapat mengobrol dengan bot!
+      2. Bot akan membalas dengan kode pairing (mis. `JN4MSY23`)
+      3. Setujui pairing menggunakan salah satu metode berikut:
+         - **Web Chat**: Di antarmuka web OpenClaw, ketik `openclaw pairing approve telegram <kode>`
+         - **Terminal**: Buka **Command** di dashboard Zeabur, jalankan `openclaw pairing approve telegram <kode>`
+      4. Anda akan melihat: `Approved telegram sender <user-id>.`
+      5. Sekarang Anda dapat mengobrol dengan bot!
 
-      Untuk platform perpesanan lainnya (WhatsApp, Discord, Slack, dll.), lihat [dokumentasi Channels](https://docs.openclaw.ai/channels).
+      Untuk platform perpesanan lainnya (WhatsApp、Discord、Slack 等), lihat [dokumentasi Channels](https://docs.openclaw.ai/channels).
 
       ## Mengubah Model Default
       Model default tergantung pada penyedia AI Anda:
@@ -954,15 +967,15 @@ localization:
       Lihat [dokumentasi Providers](https://docs.openclaw.ai/providers) untuk menambahkan lebih banyak model AI.
 
       ## Konfigurasi Tambahan
-      Selain variabel lingkungan, Anda juga dapat mengkonfigurasi moltbot melalui Web UI Settings atau perintah CLI. Lihat [dokumentasi resmi](https://docs.openclaw.ai) untuk detail lebih lanjut.
+      Selain variabel lingkungan, Anda juga dapat mengkonfigurasi OpenClaw melalui Web UI Settings atau perintah CLI. Lihat [dokumentasi resmi](https://docs.openclaw.ai) untuk detail lebih lanjut.
 
       ## Persistensi Data
       Semua data disimpan di `/home/node`:
       - `/home/node/.openclaw` - Konfigurasi, sesi, perangkat, dan kredensial
-      - `/home/node/clawd` - Ruang kerja dan file memori
+      - `/home/node/.openclaw/workspace` - Ruang kerja dan file memori
 
       ## Browser Sandbox
-      Jika Anda memerlukan fitur browser (browsing web, screenshot, dll.), deploy [Template Browser Sandbox](https://zeabur.com/templates/H8L4G1) bersama moltbot.
+      Jika Anda memerlukan fitur browser (browsing web, screenshot, dll.), deploy [Template Browser Sandbox](https://zeabur.com/templates/H8L4G1) bersama OpenClaw.
 
       ## Dokumentasi
       - GitHub: https://github.com/openclaw/openclaw
