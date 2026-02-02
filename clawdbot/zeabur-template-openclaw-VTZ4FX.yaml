@@ -16,15 +16,7 @@ spec:
       - key: ZEABUR_AI_HUB_API_KEY
         type: AI_HUB_KEY
         name: Zeabur AI Hub API Key (Recommended)
-        description: Your Zeabur AI Hub API key for using Gemini/GPT/Claude/DeepSeek via AI Hub
-      - key: ANTHROPIC_API_KEY
-        type: STRING
-        name: Anthropic API Key
-        description: Your Anthropic API key for Claude (optional, can be configured later)
-      - key: OPENAI_API_KEY
-        type: STRING
-        name: OpenAI API Key
-        description: Your OpenAI API key (optional, can be configured later)
+        description: Your Zeabur AI Hub API key for using Gemini/GPT/Claude/DeepSeek via AI Hub (optional, can be configured later)
     tags:
       - AI
       - Assistant
@@ -38,7 +30,7 @@ spec:
       # OpenClaw 🦞
       OpenClaw 🦞 (formerly Clawdbot, Moltbot) is a personal AI assistant that runs locally and connects to multiple messaging platforms via a WebSocket-based Gateway architecture.
 
-      ⚠️ This template uses `ghcr.io/openclaw/openclaw:2026.1.29`. OpenClaw 🦞 is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues. If you encounter any issues, feel free to check the [GitHub issues](https://github.com/openclaw/openclaw/issues) for solutions or to report new ones. For Zeabur platform-related issues, please contact Zeabur support.
+      ⚠️ This template uses `ghcr.io/openclaw/openclaw:2026.1.30`. OpenClaw 🦞 is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues. If you encounter any issues, feel free to check the [GitHub issues](https://github.com/openclaw/openclaw/issues) for solutions or to report new ones. For Zeabur platform-related issues, please contact Zeabur support.
 
       ---
 
@@ -47,13 +39,14 @@ spec:
       - **Dedicated Server**: 2+ vCPU, 2+ GB - highly recommended for stable performance
 
       ## Usage
-      1. After deployment, a secure Gateway token is **automatically generated** for you
-      2. Find the pre-generated URL in the **Instructions** tab
-      3. Click the "Web UI (with token)" link to connect directly (token is included in URL)
-      4. When you see the OpenClaw 🦞 interface, deployment is complete
-      5. Go to the **Chat** page to test if your AI provider is working
+      1. After deployment, copy "Web UI (with token)" URL from the **Instructions** tab and paste it into your browser (first login requires token, after that you can access directly)
+      2. **Configure AI model** (choose one):
+         - **Zeabur AI Hub**: If you entered the API Key during deployment, go directly to step 3. You can also add `ZEABUR_AI_HUB_API_KEY` later via **Variables** tab in Zeabur dashboard (restart service after adding).
+         - **Other providers** (Anthropic, OpenAI, etc.): Go to Settings to add your API key
+      3. Go to the **Chat** page to test if your AI model is working
+      4. (Optional) Set up messaging platforms like Telegram, WhatsApp, etc.
 
-      For more details, see the [official documentation](https://github.com/openclaw/openclaw).
+      For AI model configuration, see the [official documentation](https://docs.openclaw.ai/providers).
 
       ## Telegram Bot Setup
       **Getting your bot token from BotFather:**
@@ -98,25 +91,61 @@ spec:
 
       For other messaging platforms (Discord, Slack, etc.), see the [Channels documentation](https://docs.openclaw.ai/channels).
 
-      ## Changing the Default Model
-      The default model depends on your AI provider:
-      - **Zeabur AI Hub**: `zeabur-ai/gpt-5-mini`
-      - **Anthropic API Key**: `anthropic/claude-opus-4-5`
+      ## AI Model Configuration
+      **Switch model for current conversation** (via chat commands):
+      - `/models` - View available models
+      - `/model <model-id>` - Switch model for this conversation only
 
-      To change it:
-      - **Chat commands**: Use `/models` to view available models, `/model <model-id>` to switch (e.g., `/model zeabur-ai/gpt-5-mini`)
-      - **Web UI**: Go to Settings and select your preferred model
+      **Change default model** (via Web UI Settings):
+      - Go to Settings → Agents → Default model to set the default model for all new conversations
 
-      ## Configure More Models
-      See the [Providers documentation](https://docs.openclaw.ai/providers) for adding more AI models.
+      **Add AI providers** (via Web UI Settings or environment variables):
+      - Add API keys for other AI providers (e.g., Anthropic, OpenAI)
 
-      ## Additional Configuration
-      Beyond environment variables, you can configure OpenClaw via Web UI Settings or CLI commands. See the [official documentation](https://docs.openclaw.ai) for more details.
+      For detailed configuration, see the [official documentation](https://docs.openclaw.ai/providers).
 
       ## Data Persistence
       All data is stored under `/home/node`:
       - `/home/node/.openclaw` - Configuration, sessions, devices, and credentials
       - `/home/node/.openclaw/workspace` - Workspace and memory files
+
+      ## Migrating from Clawdbot / Moltbot
+      **Old version data locations:**
+      - **Clawdbot**: config `~/.clawdbot/clawdbot.json`, workspace `~/clawd`
+      - **Moltbot**: config `~/.moltbot/moltbot.json` or `~/.clawdbot/moltbot.json`, workspace `~/clawd`
+
+      **New OpenClaw location:** `/home/node/.openclaw` (includes config and workspace)
+
+      **Migration steps:**
+      1. Backup data on your old service (see Backup & Restore below)
+      2. Deploy this new OpenClaw template
+      3. Restore your backup to the new service
+      4. Your configuration, sessions, and credentials will be preserved
+
+      The `clawdbot` and `moltbot` CLI commands are still available for backward compatibility.
+
+      ## Backup & Restore
+      💡 **Tip:** We recommend creating a backup after completing your initial setup or making significant configuration changes.
+
+      **Backup Methods** (both produce compressed files):
+      - **Method 1: Zeabur Backup Service (Recommended)** - Use Zeabur's built-in backup feature. See [Zeabur Backup Documentation](https://zeabur.com/docs/data-management/backup). File structure: `data/data/.openclaw/...`
+      - **Method 2: Manual Backup** - Open **Command** → Run `cd /home/node && tar -czvf backup.tar.gz .openclaw` → Download from **Files** tab
+
+      **Restore**:
+      - From Method 1 (e.g. `backup-6980cebef9b407ee4e87d608.tar.gz`):
+        1. Drag compressed file to `/home/node` folder in **Files** tab
+        2. Run `cd /home/node` in **Command**
+        3. `tar -xzvf <backup-file> --strip-components=2 -C /home/node`
+        4. `rm <backup-file>` to delete backup file
+        5. Restart service
+      - From Method 2:
+        1. Drag compressed file to `/home/node` folder in **Files** tab
+        2. Run `cd /home/node` in **Command**
+        3. `tar -xzvf backup.tar.gz`
+        4. `rm backup.tar.gz` to delete backup file
+        5. Restart service
+
+      ⚠️ Restore will overwrite existing configuration and data on the new service. Remember to also restore related environment variables (e.g. `TELEGRAM_BOT_TOKEN`).
 
       ## Feature Extensions
       - **Browser**: If you need browser features (web browsing, screenshots, etc.), deploy the [Browser Template](https://zeabur.com/templates/H8L4G1)
@@ -125,7 +154,17 @@ spec:
       This template disables mDNS/Bonjour (`OPENCLAW_DISABLE_BONJOUR=1`) because Zeabur container hostnames can exceed the 63-byte DNS label limit. mDNS is only used for local network discovery (like AirPlay/Chromecast) and is not needed in cloud environments where services connect via internal DNS.
 
       ## Documentation
+      - Documentation: https://docs.openclaw.ai
       - GitHub: https://github.com/openclaw/openclaw
+
+      ## Changelog
+      **2026/2/2**
+      - Add AI model configuration section (global vs conversation settings)
+      - Add migration guide from Clawdbot / Moltbot with data paths
+      - Add backup & restore section with Zeabur backup service
+      - Add tip to backup after initial setup
+      - Remove Google Gemini CLI patch (fixed upstream)
+      - Remove ANTHROPIC_API_KEY and OPENAI_API_KEY from deployment variables (can be configured later via Web UI or environment variables)
 
     services:
       - name: OpenClaw
@@ -134,7 +173,7 @@ spec:
         domainKey: PUBLIC_DOMAIN
         spec:
           source:
-            image: ghcr.io/openclaw/openclaw:2026.1.29
+            image: ghcr.io/openclaw/openclaw:2026.1.30
             command:
               - /bin/sh
               - -c
@@ -152,26 +191,6 @@ spec:
                 ln -sf /home/node/bin/openclaw /home/node/bin/clawdbot
                 export PATH="/home/node/bin:$PATH"
                 echo "openclaw command ready at /home/node/bin/openclaw"
-
-                # Patch pi-ai library for correct user agent (only if version is older)
-                echo "=== Checking pi-ai library (Google Gemini CLI user agent fix) ==="
-                PI_AI_FILE="/app/node_modules/.pnpm/@mariozechner+pi-ai@"*"/node_modules/@mariozechner/pi-ai/dist/providers/google-gemini-cli.js"
-                if ls $PI_AI_FILE 1>/dev/null 2>&1; then
-                  CURRENT_UA=$(grep -o 'antigravity/[0-9.]*' $PI_AI_FILE | head -1 || echo "")
-                  echo "Current user agent: $CURRENT_UA"
-                  if echo "$CURRENT_UA" | grep -q 'antigravity/1.11.5\|antigravity/1.12\|antigravity/1.13\|antigravity/1.14'; then
-                    echo "Version needs patching, applying fix..."
-                    sed -i 's|antigravity/1.11.5 darwin/arm64|antigravity/1.15.8 linux/amd64|g' $PI_AI_FILE
-                    sed -i 's|antigravity/1.12.[0-9]* [a-z]*/[a-z0-9]*|antigravity/1.15.8 linux/amd64|g' $PI_AI_FILE
-                    sed -i 's|antigravity/1.13.[0-9]* [a-z]*/[a-z0-9]*|antigravity/1.15.8 linux/amd64|g' $PI_AI_FILE
-                    sed -i 's|antigravity/1.14.[0-9]* [a-z]*/[a-z0-9]*|antigravity/1.15.8 linux/amd64|g' $PI_AI_FILE
-                    echo "After patch: $(grep -o 'antigravity/[0-9.]* [a-z]*/[a-z0-9]*' $PI_AI_FILE | head -1)"
-                  else
-                    echo "Version is already 1.15.8 or newer, skipping patch"
-                  fi
-                else
-                  echo "pi-ai library not found, skipping patch"
-                fi
 
                 # Create initial config (only if not exists)
                 # openclaw reads from ~/.openclaw/openclaw.json
@@ -555,10 +574,6 @@ spec:
               readonly: true
             OPENCLAW_GATEWAY_TOKEN:
               default: ${PASSWORD}
-            ANTHROPIC_API_KEY:
-              default: ${ANTHROPIC_API_KEY}
-            OPENAI_API_KEY:
-              default: ${OPENAI_API_KEY}
             ZEABUR_AI_HUB_API_KEY:
               default: ${ZEABUR_AI_HUB_API_KEY}
             OPENCLAW_DISABLE_BONJOUR:
@@ -583,18 +598,12 @@ localization:
         description: 您想要綁定 OpenClaw 的網域是？
       - key: ZEABUR_AI_HUB_API_KEY
         name: Zeabur AI Hub API 金鑰（推薦）
-        description: 您的 Zeabur AI Hub API 金鑰，透過 AI Hub 使用 Gemini/GPT/Claude/DeepSeek
-      - key: ANTHROPIC_API_KEY
-        name: Anthropic API 金鑰
-        description: 您的 Anthropic Claude API 金鑰（選填，可之後再設定）
-      - key: OPENAI_API_KEY
-        name: OpenAI API 金鑰
-        description: 您的 OpenAI API 金鑰（選填，可之後再設定）
+        description: 您的 Zeabur AI Hub API 金鑰，透過 AI Hub 使用 Gemini/GPT/Claude/DeepSeek（選填，可之後再設定）
     readme: |
       # OpenClaw 🦞
       OpenClaw 🦞（原 Clawdbot、Moltbot）是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台。
 
-      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.1.29`。OpenClaw 🦞 正在快速開發中，可能存在尚未發現的 bug。更改版本後也無法確保穩定性。如果遇到任何問題，歡迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 尋找解決方案或回報新問題。Zeabur 平台相關問題請聯繫 Zeabur 支援。
+      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.1.30`。OpenClaw 🦞 正在快速開發中，可能存在尚未發現的 bug。更改版本後也無法確保穩定性。如果遇到任何問題，歡迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 尋找解決方案或回報新問題。Zeabur 平台相關問題請聯繫 Zeabur 支援。
 
       ---
 
@@ -603,13 +612,14 @@ localization:
       - **專用伺服器**：2+ vCPU、2+ GB - 強烈推薦，以獲得穩定效能
 
       ## 使用方式
-      1. 部署完成後，系統會**自動產生**一組安全的 Gateway Token
-      2. 在**使用說明**頁籤找到預先產生的 URL
-      3. 點擊「Web UI (with token)」連結直接連線（Token 已包含在 URL 中）
-      4. 看到 OpenClaw 介面即表示部署完成
-      5. 前往 **Chat** 頁面測試 AI 供應商是否正常運作
+      1. 部署完成後，在**使用說明**頁籤複製「Web UI (with token)」網址，貼到瀏覽器開啟（首次登入需要 token，之後可直接開啟網址）
+      2. **設定 AI 模型**（二擇一）：
+         - **Zeabur AI Hub**：若部署時已輸入 API Key，直接前往步驟 3。也可之後在 Zeabur 控制台的**變數**頁籤新增 `ZEABUR_AI_HUB_API_KEY`（新增後記得重新啟動服務）。
+         - **其他供應商**（Anthropic、OpenAI 等）：前往 Settings 新增 API 金鑰
+      3. 前往 **Chat** 頁面測試 AI 模型是否正常運作
+      4. （選擇性）設定 Telegram、WhatsApp 等通訊平台
 
-      更多詳情請參閱[官方文件](https://github.com/openclaw/openclaw)。
+      AI 模型設定請參閱[官方文件](https://docs.openclaw.ai/providers)。
 
       ## Telegram 機器人設定
       **從 BotFather 取得 Token：**
@@ -654,25 +664,61 @@ localization:
 
       如需設定其他通訊平台（Discord、Slack 等），請參閱 [Channels 文件](https://docs.openclaw.ai/channels)。
 
-      ## 修改預設模型
-      預設模型取決於您的 AI 供應商：
-      - **Zeabur AI Hub**：`zeabur-ai/gpt-5-mini`
-      - **Anthropic API Key**：`anthropic/claude-opus-4-5`
+      ## AI 模型設定
+      **切換本次對話的模型**（透過聊天指令）：
+      - `/models` - 查看可用模型
+      - `/model <model-id>` - 僅在本次對話中切換模型
 
-      修改方式：
-      - **聊天指令**：使用 `/models` 查看可用模型，`/model <model-id>` 切換（例如 `/model zeabur-ai/gpt-5-mini`）
-      - **Web UI**：前往 Settings 選擇您偏好的模型
+      **修改預設模型**（透過 Web UI Settings）：
+      - 前往 Settings → Agents → Default model 設定所有新對話的預設模型
 
-      ## 設定更多模型
-      請參閱 [Providers 文件](https://docs.openclaw.ai/providers) 新增更多 AI 模型。
+      **新增 AI 供應商**（透過 Web UI Settings 或環境變數）：
+      - 新增其他 AI 供應商的 API 金鑰（如 Anthropic、OpenAI 等）
 
-      ## 更多設定方式
-      除了環境變數外，您也可以透過 Web UI Settings 或 CLI 指令設定 OpenClaw。更多詳情請參閱[官方文件](https://docs.openclaw.ai)。
+      詳細設定請參閱[官方文件](https://docs.openclaw.ai/providers)。
 
       ## 資料持久化
       所有資料儲存在 `/home/node`：
       - `/home/node/.openclaw` - 設定、會話、裝置和憑證
       - `/home/node/.openclaw/workspace` - 工作區和記憶檔案
+
+      ## 從 Clawdbot / Moltbot 遷移
+      **舊版資料位置：**
+      - **Clawdbot**：設定 `~/.clawdbot/clawdbot.json`、工作區 `~/clawd`
+      - **Moltbot**：設定 `~/.moltbot/moltbot.json` 或 `~/.clawdbot/moltbot.json`、工作區 `~/clawd`
+
+      **新版 OpenClaw 位置：**`/home/node/.openclaw`（包含設定和工作區）
+
+      **遷移步驟：**
+      1. 在舊服務上備份資料（參考下方備份與還原）
+      2. 部署這個新的 OpenClaw 模板
+      3. 將備份還原到新服務
+      4. 您的設定、對話記錄和憑證都會保留
+
+      為了向下相容，`clawdbot` 和 `moltbot` CLI 指令仍可使用。
+
+      ## 備份與還原
+      💡 **建議：** 在完成初始設定或進行重大設定變更後，建議先建立備份。
+
+      **備份方式**（兩種都會產生壓縮檔）：
+      - **方法一：Zeabur 備份服務（推薦）** - 使用 Zeabur 內建的備份功能。請參閱 [Zeabur 備份文件](https://zeabur.com/docs/zh-TW/data-management/backup)。檔案結構：`data/data/.openclaw/...`
+      - **方法二：手動備份** - 開啟**指令** → 執行 `cd /home/node && tar -czvf backup.tar.gz .openclaw` → 從**檔案**頁籤下載
+
+      **還原**：
+      - 方法一的備份（例如 `backup-6980cebef9b407ee4e87d608.tar.gz`）：
+        1. 在**檔案**頁籤將壓縮檔拖移到 `/home/node` 資料夾
+        2. 在**指令**執行 `cd /home/node`
+        3. `tar -xzvf <備份檔名> --strip-components=2 -C /home/node`
+        4. `rm <備份檔名>` 刪除備份檔
+        5. 重新啟動服務
+      - 方法二的備份：
+        1. 在**檔案**頁籤將壓縮檔拖移到 `/home/node` 資料夾
+        2. 在**指令**執行 `cd /home/node`
+        3. `tar -xzvf backup.tar.gz`
+        4. `rm backup.tar.gz` 刪除備份檔
+        5. 重新啟動服務
+
+      ⚠️ 還原會覆蓋新服務上現有的設定和資料。記得也要將相關的環境變數（如 `TELEGRAM_BOT_TOKEN`）設定回去。
 
       ## 功能擴充
       - **瀏覽器**：如需瀏覽器功能（網頁瀏覽、截圖等），請部署 [Browser 模板](https://zeabur.com/templates/H8L4G1)
@@ -681,7 +727,17 @@ localization:
       此模板停用了 mDNS/Bonjour（`OPENCLAW_DISABLE_BONJOUR=1`），因為 Zeabur 容器主機名稱可能超過 63 bytes 的 DNS 標籤限制。mDNS 僅用於區域網路發現（類似 AirPlay/Chromecast），在雲端環境中服務透過內部 DNS 連線，因此不需要此功能。
 
       ## 文件
+      - 文件：https://docs.openclaw.ai
       - GitHub：https://github.com/openclaw/openclaw
+
+      ## 更新日誌
+      **2026/2/2**
+      - 新增 AI 模型設定區塊（全域 vs 本次對話設定）
+      - 新增從 Clawdbot / Moltbot 遷移指南及資料路徑
+      - 新增備份與還原區塊，支援 Zeabur 備份服務
+      - 新增初始設定完成後備份提醒
+      - 移除 Google Gemini CLI patch（上游已修復）
+      - 移除部署時的 ANTHROPIC_API_KEY 和 OPENAI_API_KEY 變數（可之後透過 Web UI 或環境變數設定）
 
   zh-CN:
     name: OpenClaw 🦞
@@ -692,18 +748,12 @@ localization:
         description: 您想要绑定 OpenClaw 的域名是？
       - key: ZEABUR_AI_HUB_API_KEY
         name: Zeabur AI Hub API 密钥（推荐）
-        description: 您的 Zeabur AI Hub API 密钥，通过 AI Hub 使用 Gemini/GPT/Claude/DeepSeek
-      - key: ANTHROPIC_API_KEY
-        name: Anthropic API 密钥
-        description: 您的 Anthropic Claude API 密钥（选填，可之后再设定）
-      - key: OPENAI_API_KEY
-        name: OpenAI API 密钥
-        description: 您的 OpenAI API 密钥（选填，可之后再设定）
+        description: 您的 Zeabur AI Hub API 密钥，通过 AI Hub 使用 Gemini/GPT/Claude/DeepSeek（选填，可之后再设定）
     readme: |
       # OpenClaw 🦞
       OpenClaw 🦞（原 Clawdbot、Moltbot）是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台。
 
-      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.1.29`。OpenClaw 🦞 正在快速开发中，可能存在尚未发现的 bug。更改版本后也无法确保稳定性。如果遇到任何问题，欢迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 寻找解决方案或回报新问题。Zeabur 平台相关问题请联系 Zeabur 支持。
+      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.1.30`。OpenClaw 🦞 正在快速开发中，可能存在尚未发现的 bug。更改版本后也无法确保稳定性。如果遇到任何问题，欢迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 寻找解决方案或回报新问题。Zeabur 平台相关问题请联系 Zeabur 支持。
 
       ---
 
@@ -712,13 +762,14 @@ localization:
       - **专用服务器**：2+ vCPU、2+ GB - 强烈推荐，以获得稳定性能
 
       ## 使用方式
-      1. 部署完成后，系统会**自动生成**一组安全的 Gateway Token
-      2. 在**使用说明**页签找到预先生成的 URL
-      3. 点击「Web UI (with token)」链接直接连接（Token 已包含在 URL 中）
-      4. 看到 OpenClaw 界面即表示部署完成
-      5. 前往 **Chat** 页面测试 AI 供应商是否正常运作
+      1. 部署完成后，在**使用说明**页签复制「Web UI (with token)」网址，贴到浏览器打开（首次登录需要 token，之后可直接打开网址）
+      2. **设置 AI 模型**（二选一）：
+         - **Zeabur AI Hub**：若部署时已输入 API Key，直接前往步骤 3。也可之后在 Zeabur 控制台的**变量**页签添加 `ZEABUR_AI_HUB_API_KEY`（添加后记得重新启动服务）。
+         - **其他供应商**（Anthropic、OpenAI 等）：前往 Settings 添加 API 密钥
+      3. 前往 **Chat** 页面测试 AI 模型是否正常运作
+      4. （可选）设置 Telegram、WhatsApp 等通讯平台
 
-      更多详情请参阅[官方文档](https://github.com/openclaw/openclaw)。
+      AI 模型设置请参阅[官方文档](https://docs.openclaw.ai/providers)。
 
       ## Telegram 机器人设置
       **从 BotFather 获取 Token：**
@@ -763,25 +814,61 @@ localization:
 
       如需设置其他通讯平台（Discord、Slack 等），请参阅 [Channels 文档](https://docs.openclaw.ai/channels)。
 
-      ## 修改默认模型
-      默认模型取决于您的 AI 供应商：
-      - **Zeabur AI Hub**：`zeabur-ai/gpt-5-mini`
-      - **Anthropic API Key**：`anthropic/claude-opus-4-5`
+      ## AI 模型设置
+      **切换本次对话的模型**（通过聊天命令）：
+      - `/models` - 查看可用模型
+      - `/model <model-id>` - 仅在本次对话中切换模型
 
-      修改方式：
-      - **聊天命令**：使用 `/models` 查看可用模型，`/model <model-id>` 切换（例如 `/model zeabur-ai/gpt-5-mini`）
-      - **Web UI**：前往 Settings 选择您偏好的模型
+      **修改默认模型**（通过 Web UI Settings）：
+      - 前往 Settings → Agents → Default model 设置所有新对话的默认模型
 
-      ## 设置更多模型
-      请参阅 [Providers 文档](https://docs.openclaw.ai/providers) 添加更多 AI 模型。
+      **添加 AI 供应商**（通过 Web UI Settings 或环境变量）：
+      - 添加其他 AI 供应商的 API 密钥（如 Anthropic、OpenAI 等）
 
-      ## 更多配置方式
-      除了环境变量外，您也可以通过 Web UI Settings 或 CLI 命令配置 OpenClaw。更多详情请参阅[官方文档](https://docs.openclaw.ai)。
+      详细设置请参阅[官方文档](https://docs.openclaw.ai/providers)。
 
       ## 数据持久化
       所有数据存储在 `/home/node`：
       - `/home/node/.openclaw` - 配置、会话、设备和凭证
       - `/home/node/.openclaw/workspace` - 工作区和记忆文件
+
+      ## 从 Clawdbot / Moltbot 迁移
+      **旧版数据位置：**
+      - **Clawdbot**：配置 `~/.clawdbot/clawdbot.json`、工作区 `~/clawd`
+      - **Moltbot**：配置 `~/.moltbot/moltbot.json` 或 `~/.clawdbot/moltbot.json`、工作区 `~/clawd`
+
+      **新版 OpenClaw 位置：**`/home/node/.openclaw`（包含配置和工作区）
+
+      **迁移步骤：**
+      1. 在旧服务上备份数据（参考下方备份与还原）
+      2. 部署这个新的 OpenClaw 模板
+      3. 将备份还原到新服务
+      4. 您的配置、对话记录和凭证都会保留
+
+      为了向下兼容，`clawdbot` 和 `moltbot` CLI 命令仍可使用。
+
+      ## 备份与还原
+      💡 **建议：** 在完成初始设置或进行重大配置变更后，建议先创建备份。
+
+      **备份方式**（两种都会产生压缩文件）：
+      - **方法一：Zeabur 备份服务（推荐）** - 使用 Zeabur 内置的备份功能。请参阅 [Zeabur 备份文档](https://zeabur.com/docs/zh-CN/data-management/backup)。文件结构：`data/data/.openclaw/...`
+      - **方法二：手动备份** - 打开**命令** → 执行 `cd /home/node && tar -czvf backup.tar.gz .openclaw` → 从**文件**页签下载
+
+      **还原**：
+      - 方法一的备份（例如 `backup-6980cebef9b407ee4e87d608.tar.gz`）：
+        1. 在**文件**页签将压缩文件拖移到 `/home/node` 文件夹
+        2. 在**命令**执行 `cd /home/node`
+        3. `tar -xzvf <备份文件名> --strip-components=2 -C /home/node`
+        4. `rm <备份文件名>` 删除备份文件
+        5. 重新启动服务
+      - 方法二的备份：
+        1. 在**文件**页签将压缩文件拖移到 `/home/node` 文件夹
+        2. 在**命令**执行 `cd /home/node`
+        3. `tar -xzvf backup.tar.gz`
+        4. `rm backup.tar.gz` 删除备份文件
+        5. 重新启动服务
+
+      ⚠️ 还原会覆盖新服务上现有的配置和数据。记得也要将相关的环境变量（如 `TELEGRAM_BOT_TOKEN`）设置回去。
 
       ## 功能扩充
       - **浏览器**：如需浏览器功能（网页浏览、截图等），请部署 [Browser 模板](https://zeabur.com/templates/H8L4G1)
@@ -790,7 +877,17 @@ localization:
       此模板停用了 mDNS/Bonjour（`OPENCLAW_DISABLE_BONJOUR=1`），因为 Zeabur 容器主机名称可能超过 63 bytes 的 DNS 标签限制。mDNS 仅用于区域网络发现（类似 AirPlay/Chromecast），在云端环境中服务通过内部 DNS 连接，因此不需要此功能。
 
       ## 文档
+      - 文档：https://docs.openclaw.ai
       - GitHub：https://github.com/openclaw/openclaw
+
+      ## 更新日志
+      **2026/2/2**
+      - 新增 AI 模型设置区块（全局 vs 本次对话设置）
+      - 新增从 Clawdbot / Moltbot 迁移指南及数据路径
+      - 新增备份与还原区块，支持 Zeabur 备份服务
+      - 新增初始设置完成后备份提醒
+      - 移除 Google Gemini CLI patch（上游已修复）
+      - 移除部署时的 ANTHROPIC_API_KEY 和 OPENAI_API_KEY 变量（可之后通过 Web UI 或环境变量设置）
 
   ja-JP:
     name: OpenClaw 🦞
@@ -801,18 +898,12 @@ localization:
         description: OpenClaw にバインドするドメインは？
       - key: ZEABUR_AI_HUB_API_KEY
         name: Zeabur AI Hub API キー（推奨）
-        description: Zeabur AI Hub API キー、AI Hub 経由で Gemini/GPT/Claude/DeepSeek を使用
-      - key: ANTHROPIC_API_KEY
-        name: Anthropic API キー
-        description: Anthropic Claude の API キー（任意、後で設定可能）
-      - key: OPENAI_API_KEY
-        name: OpenAI API キー
-        description: OpenAI API キー（任意、後で設定可能）
+        description: Zeabur AI Hub API キー、AI Hub 経由で Gemini/GPT/Claude/DeepSeek を使用（任意、後で設定可能）
     readme: |
       # OpenClaw 🦞
       OpenClaw 🦞（旧 Clawdbot、Moltbot）は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォームに接続する個人用 AI アシスタントです。
 
-      ⚠️ 本テンプレートは `ghcr.io/openclaw/openclaw:2026.1.29` を使用しています。OpenClaw 🦞 は急速に開発中のため、未発見のバグがある可能性があります。バージョンを変更した場合も安定性を保証できません。問題が発生した場合は、[GitHub issues](https://github.com/openclaw/openclaw/issues) で解決策を探したり、新しい問題を報告したりしてください。Zeabur プラットフォーム関連の問題については、Zeabur サポートにお問い合わせください。
+      ⚠️ 本テンプレートは `ghcr.io/openclaw/openclaw:2026.1.30` を使用しています。OpenClaw 🦞 は急速に開発中のため、未発見のバグがある可能性があります。バージョンを変更した場合も安定性を保証できません。問題が発生した場合は、[GitHub issues](https://github.com/openclaw/openclaw/issues) で解決策を探したり、新しい問題を報告したりしてください。Zeabur プラットフォーム関連の問題については、Zeabur サポートにお問い合わせください。
 
       ---
 
@@ -821,13 +912,14 @@ localization:
       - **専用サーバー**：2+ vCPU、2+ GB - 安定したパフォーマンスのために強く推奨
 
       ## 使用方法
-      1. デプロイ後、安全な Gateway トークンが**自動生成**されます
-      2. **指示**タブで事前生成された URL を確認
-      3. 「Web UI (with token)」リンクをクリックして直接接続（トークンは URL に含まれています）
-      4. OpenClaw のインターフェースが表示されたらデプロイ完了です
-      5. **Chat** ページで AI プロバイダーが正常に動作しているかテスト
+      1. デプロイ後、**指示**タブの「Web UI (with token)」URL をコピーしてブラウザに貼り付けて開く（初回ログインは token が必要、以降は直接 URL にアクセス可能）
+      2. **AI モデルを設定**（いずれかを選択）：
+         - **Zeabur AI Hub**：デプロイ時に API Key を入力済みの場合、ステップ 3 へ進む。後から Zeabur ダッシュボードの**変数**タブで `ZEABUR_AI_HUB_API_KEY` を追加も可能（追加後はサービスを再起動）。
+         - **他のプロバイダー**（Anthropic、OpenAI など）：Settings で API キーを追加
+      3. **Chat** ページで AI モデルが正常に動作しているかテスト
+      4. （オプション）Telegram、WhatsApp などのメッセージングプラットフォームを設定
 
-      詳細は[公式ドキュメント](https://github.com/openclaw/openclaw)をご覧ください。
+      AI モデル設定については[公式ドキュメント](https://docs.openclaw.ai/providers)をご覧ください。
 
       ## Telegram ボット設定
       **BotFather からトークンを取得：**
@@ -872,25 +964,61 @@ localization:
 
       その他のメッセージングプラットフォーム（Discord、Slack など）については、[Channels ドキュメント](https://docs.openclaw.ai/channels)をご覧ください。
 
-      ## デフォルトモデルの変更
-      デフォルトモデルは AI プロバイダーによって異なります：
-      - **Zeabur AI Hub**: `zeabur-ai/gpt-5-mini`
-      - **Anthropic API Key**: `anthropic/claude-opus-4-5`
+      ## AI モデル設定
+      **現在の会話のモデルを切り替え**（チャットコマンド）：
+      - `/models` - 利用可能なモデルを表示
+      - `/model <model-id>` - この会話のみモデルを切り替え
 
-      変更方法：
-      - **チャットコマンド**：`/models` で利用可能なモデルを表示、`/model <model-id>` で切り替え（例：`/model zeabur-ai/gpt-5-mini`）
-      - **Web UI**：Settings でお好みのモデルを選択
+      **デフォルトモデルの変更**（Web UI Settings）：
+      - Settings → Agents → Default model ですべての新しい会話のデフォルトモデルを設定
 
-      ## 追加モデルの設定
-      追加の AI モデルを設定するには、[Providers ドキュメント](https://docs.openclaw.ai/providers)をご覧ください。
+      **AI プロバイダーの追加**（Web UI Settings または環境変数）：
+      - 他の AI プロバイダーの API キーを追加（Anthropic、OpenAI など）
 
-      ## その他の設定方法
-      環境変数以外にも、Web UI Settings または CLI コマンドで OpenClaw を設定できます。詳細は[公式ドキュメント](https://docs.openclaw.ai)をご覧ください。
+      詳細な設定については、[公式ドキュメント](https://docs.openclaw.ai/providers)をご覧ください。
 
       ## データ永続化
       すべてのデータは `/home/node` に保存：
       - `/home/node/.openclaw` - 設定、セッション、デバイス、認証情報
       - `/home/node/.openclaw/workspace` - ワークスペースとメモリファイル
+
+      ## Clawdbot / Moltbot からの移行
+      **旧バージョンのデータ場所：**
+      - **Clawdbot**：設定 `~/.clawdbot/clawdbot.json`、ワークスペース `~/clawd`
+      - **Moltbot**：設定 `~/.moltbot/moltbot.json` または `~/.clawdbot/moltbot.json`、ワークスペース `~/clawd`
+
+      **新しい OpenClaw の場所：**`/home/node/.openclaw`（設定とワークスペースを含む）
+
+      **移行手順：**
+      1. 旧サービスでデータをバックアップ（下記のバックアップと復元を参照）
+      2. この新しい OpenClaw テンプレートをデプロイ
+      3. バックアップを新サービスに復元
+      4. 設定、会話履歴、認証情報は保持されます
+
+      下位互換性のため、`clawdbot` と `moltbot` CLI コマンドは引き続き使用可能です。
+
+      ## バックアップと復元
+      💡 **ヒント：** 初期設定完了後や重要な設定変更後にバックアップを作成することをお勧めします。
+
+      **バックアップ方法**（どちらも圧縮ファイルを生成）：
+      - **方法1：Zeabur バックアップサービス（推奨）** - Zeabur の組み込みバックアップ機能を使用。[Zeabur バックアップドキュメント](https://zeabur.com/docs/ja-JP/data-management/backup)を参照。ファイル構造：`data/data/.openclaw/...`
+      - **方法2：手動バックアップ** - **コマンド**を開く → `cd /home/node && tar -czvf backup.tar.gz .openclaw` を実行 → **ファイル**タブからダウンロード
+
+      **復元**：
+      - 方法1のバックアップ（例：`backup-6980cebef9b407ee4e87d608.tar.gz`）：
+        1. **ファイル**タブで圧縮ファイルを `/home/node` フォルダにドラッグ
+        2. **コマンド**で `cd /home/node` を実行
+        3. `tar -xzvf <バックアップファイル名> --strip-components=2 -C /home/node`
+        4. `rm <バックアップファイル名>` でバックアップファイルを削除
+        5. サービスを再起動
+      - 方法2のバックアップ：
+        1. **ファイル**タブで圧縮ファイルを `/home/node` フォルダにドラッグ
+        2. **コマンド**で `cd /home/node` を実行
+        3. `tar -xzvf backup.tar.gz`
+        4. `rm backup.tar.gz` でバックアップファイルを削除
+        5. サービスを再起動
+
+      ⚠️ 復元すると、新サービス上の既存の設定とデータが上書きされます。関連する環境変数（例：`TELEGRAM_BOT_TOKEN`）も忘れずに設定してください。
 
       ## 機能拡張
       - **ブラウザ**：ブラウザ機能（Web ブラウジング、スクリーンショットなど）が必要な場合は、[Browser テンプレート](https://zeabur.com/templates/H8L4G1)をデプロイしてください
@@ -899,7 +1027,17 @@ localization:
       このテンプレートでは mDNS/Bonjour を無効化しています（`OPENCLAW_DISABLE_BONJOUR=1`）。Zeabur コンテナのホスト名が 63 バイトの DNS ラベル制限を超える可能性があるためです。mDNS はローカルネットワーク検出（AirPlay/Chromecast のような）にのみ使用され、クラウド環境ではサービスは内部 DNS を通じて接続するため、この機能は不要です。
 
       ## ドキュメント
+      - ドキュメント：https://docs.openclaw.ai
       - GitHub：https://github.com/openclaw/openclaw
+
+      ## 変更履歴
+      **2026/2/2**
+      - AI モデル設定セクションを追加（グローバル vs 会話ごとの設定）
+      - Clawdbot / Moltbot からの移行ガイドとデータパスを追加
+      - バックアップと復元セクションを追加、Zeabur バックアップサービス対応
+      - 初期設定完了後のバックアップ推奨を追加
+      - Google Gemini CLI パッチを削除（上流で修正済み）
+      - デプロイ時の ANTHROPIC_API_KEY と OPENAI_API_KEY 変数を削除（後で Web UI または環境変数から設定可能）
 
   es-ES:
     name: OpenClaw 🦞
@@ -910,18 +1048,12 @@ localization:
         description: ¿Qué dominio desea vincular a OpenClaw?
       - key: ZEABUR_AI_HUB_API_KEY
         name: Clave API de Zeabur AI Hub (Recomendado)
-        description: Su clave API de Zeabur AI Hub para usar Gemini/GPT/Claude/DeepSeek a través de AI Hub
-      - key: ANTHROPIC_API_KEY
-        name: Clave API de Anthropic
-        description: Su clave API de Anthropic para Claude (opcional, puede configurarse después)
-      - key: OPENAI_API_KEY
-        name: Clave API de OpenAI
-        description: Su clave API de OpenAI (opcional, puede configurarse después)
+        description: Su clave API de Zeabur AI Hub para usar Gemini/GPT/Claude/DeepSeek a través de AI Hub (opcional, puede configurarse después)
     readme: |
       # OpenClaw 🦞
       OpenClaw 🦞 (anteriormente Clawdbot, Moltbot) es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería a través de una arquitectura Gateway basada en WebSocket.
 
-      ⚠️ Esta plantilla usa `ghcr.io/openclaw/openclaw:2026.1.29`. OpenClaw 🦞 está en desarrollo rápido, por lo que puede haber errores no descubiertos. Cambiar de versión tampoco garantiza estabilidad. Si encuentra algún problema, no dude en consultar los [GitHub issues](https://github.com/openclaw/openclaw/issues) para buscar soluciones o reportar nuevos problemas. Para problemas relacionados con la plataforma Zeabur, contacte al soporte de Zeabur.
+      ⚠️ Esta plantilla usa `ghcr.io/openclaw/openclaw:2026.1.30`. OpenClaw 🦞 está en desarrollo rápido, por lo que puede haber errores no descubiertos. Cambiar de versión tampoco garantiza estabilidad. Si encuentra algún problema, no dude en consultar los [GitHub issues](https://github.com/openclaw/openclaw/issues) para buscar soluciones o reportar nuevos problemas. Para problemas relacionados con la plataforma Zeabur, contacte al soporte de Zeabur.
 
       ---
 
@@ -931,13 +1063,14 @@ localization:
       - **Servidor Dedicado**: 2+ vCPU, 2+ GB - altamente recomendado para rendimiento estable
 
       ## Uso
-      1. Después del despliegue, se **genera automáticamente** un token de Gateway seguro
-      2. Encuentre la URL pre-generada en la pestaña **Instrucciones**
-      3. Haga clic en el enlace "Web UI (with token)" para conectar directamente (el token está incluido en la URL)
-      4. Cuando vea la interfaz de OpenClaw, el despliegue está completo
-      5. Vaya a la página **Chat** para probar si su proveedor de AI funciona
+      1. Después del despliegue, copie la URL "Web UI (with token)" de la pestaña **Instrucciones** y péguela en su navegador (el primer inicio de sesión requiere token, después puede acceder directamente)
+      2. **Configure el modelo de AI** (elija uno):
+         - **Zeabur AI Hub**: Si ingresó la API Key durante el despliegue, vaya directamente al paso 3. También puede agregar `ZEABUR_AI_HUB_API_KEY` después en la pestaña **Variables** del panel de Zeabur (reinicie el servicio después de agregar).
+         - **Otros proveedores** (Anthropic, OpenAI, etc.): Vaya a Settings para agregar su clave API
+      3. Vaya a la página **Chat** para probar si su modelo de AI funciona
+      4. (Opcional) Configure plataformas de mensajería como Telegram, WhatsApp, etc.
 
-      Para más detalles, consulte la [documentación oficial](https://github.com/openclaw/openclaw).
+      Para configuración de modelos de AI, consulte la [documentación oficial](https://docs.openclaw.ai/providers).
 
       ## Configuración de Bot de Telegram
       **Obtener el token de BotFather:**
@@ -982,25 +1115,61 @@ localization:
 
       Para otras plataformas de mensajería (Discord, Slack, etc.), consulte la [documentación de Canales](https://docs.openclaw.ai/channels).
 
-      ## Cambiar el Modelo Predeterminado
-      El modelo predeterminado depende de su proveedor de AI:
-      - **Zeabur AI Hub**: `zeabur-ai/gpt-5-mini`
-      - **Anthropic API Key**: `anthropic/claude-opus-4-5`
+      ## Configuración de Modelos de AI
+      **Cambiar modelo para la conversación actual** (a través de comandos de chat):
+      - `/models` - Ver modelos disponibles
+      - `/model <model-id>` - Cambiar modelo solo para esta conversación
 
-      Para cambiarlo:
-      - **Comandos de chat**: Use `/models` para ver modelos disponibles, `/model <model-id>` para cambiar (ej: `/model zeabur-ai/gpt-5-mini`)
-      - **Web UI**: Vaya a Settings y seleccione su modelo preferido
+      **Cambiar modelo predeterminado** (a través de Web UI Settings):
+      - Ir a Settings → Agents → Default model para establecer el modelo predeterminado para todas las conversaciones nuevas
 
-      ## Configurar Más Modelos
-      Consulte la [documentación de Providers](https://docs.openclaw.ai/providers) para agregar más modelos de AI.
+      **Agregar proveedores de AI** (a través de Web UI Settings o variables de entorno):
+      - Agregar claves API de otros proveedores de AI (por ejemplo, Anthropic, OpenAI)
 
-      ## Configuración Adicional
-      Además de las variables de entorno, puede configurar OpenClaw a través de la Web UI Settings o comandos CLI. Consulte la [documentación oficial](https://docs.openclaw.ai) para más detalles.
+      Para configuración detallada, consulte la [documentación oficial](https://docs.openclaw.ai/providers).
 
       ## Persistencia de Datos
       Todos los datos se almacenan en `/home/node`:
       - `/home/node/.openclaw` - Configuración, sesiones, dispositivos y credenciales
       - `/home/node/.openclaw/workspace` - Espacio de trabajo y archivos de memoria
+
+      ## Migración desde Clawdbot / Moltbot
+      **Ubicaciones de datos de versiones anteriores:**
+      - **Clawdbot**: config `~/.clawdbot/clawdbot.json`, workspace `~/clawd`
+      - **Moltbot**: config `~/.moltbot/moltbot.json` o `~/.clawdbot/moltbot.json`, workspace `~/clawd`
+
+      **Nueva ubicación de OpenClaw:** `/home/node/.openclaw` (incluye config y workspace)
+
+      **Pasos de migración:**
+      1. Haga copia de seguridad en su servicio antiguo (vea Copia de Seguridad y Restauración abajo)
+      2. Despliegue esta nueva plantilla de OpenClaw
+      3. Restaure su copia de seguridad en el nuevo servicio
+      4. Su configuración, historial de conversaciones y credenciales se conservarán
+
+      Los comandos CLI `clawdbot` y `moltbot` siguen disponibles para compatibilidad.
+
+      ## Copia de Seguridad y Restauración
+      💡 **Consejo:** Recomendamos crear una copia de seguridad después de completar la configuración inicial o realizar cambios importantes.
+
+      **Métodos de Copia de Seguridad** (ambos producen archivos comprimidos):
+      - **Método 1: Servicio de Zeabur (Recomendado)** - Use la función integrada de Zeabur. Consulte la [Documentación de Zeabur](https://zeabur.com/docs/es-ES/data-management/backup). Estructura: `data/data/.openclaw/...`
+      - **Método 2: Manual** - Abra **Comando** → Ejecute `cd /home/node && tar -czvf backup.tar.gz .openclaw` → Descargue desde **Archivos**
+
+      **Restauración**:
+      - Desde Método 1 (ej. `backup-6980cebef9b407ee4e87d608.tar.gz`):
+        1. Arrastre el archivo comprimido a `/home/node` en **Archivos**
+        2. Ejecute `cd /home/node` en **Comando**
+        3. `tar -xzvf <archivo-backup> --strip-components=2 -C /home/node`
+        4. `rm <archivo-backup>` para eliminar el archivo
+        5. Reinicie el servicio
+      - Desde Método 2:
+        1. Arrastre el archivo comprimido a `/home/node` en **Archivos**
+        2. Ejecute `cd /home/node` en **Comando**
+        3. `tar -xzvf backup.tar.gz`
+        4. `rm backup.tar.gz` para eliminar el archivo
+        5. Reinicie el servicio
+
+      ⚠️ La restauración sobrescribirá la configuración y los datos existentes en el nuevo servicio. Recuerde también restaurar las variables de entorno relacionadas (ej. `TELEGRAM_BOT_TOKEN`).
 
       ## Extensiones de Funciones
       - **Navegador**: Si necesita funciones del navegador (navegación web, capturas de pantalla, etc.), despliegue la [Plantilla Browser](https://zeabur.com/templates/H8L4G1)
@@ -1009,7 +1178,17 @@ localization:
       Esta plantilla deshabilita mDNS/Bonjour (`OPENCLAW_DISABLE_BONJOUR=1`) porque los nombres de host de los contenedores de Zeabur pueden exceder el límite de 63 bytes de las etiquetas DNS. mDNS solo se usa para el descubrimiento de red local (como AirPlay/Chromecast) y no es necesario en entornos de nube donde los servicios se conectan a través de DNS interno.
 
       ## Documentación
-      - GitHub：https://github.com/openclaw/openclaw
+      - Documentación: https://docs.openclaw.ai
+      - GitHub: https://github.com/openclaw/openclaw
+
+      ## Registro de Cambios
+      **2026/2/2**
+      - Añadir sección de configuración de modelos de AI (global vs conversación)
+      - Añadir guía de migración desde Clawdbot / Moltbot con rutas de datos
+      - Añadir sección de copia de seguridad y restauración con servicio de Zeabur
+      - Añadir consejo de hacer copia de seguridad después de la configuración inicial
+      - Eliminar parche de Google Gemini CLI (corregido en upstream)
+      - Eliminar variables ANTHROPIC_API_KEY y OPENAI_API_KEY del despliegue (configurable después via Web UI o variables de entorno)
 
   id-ID:
     name: OpenClaw 🦞
@@ -1020,18 +1199,12 @@ localization:
         description: Domain apa yang ingin Anda ikat ke OpenClaw?
       - key: ZEABUR_AI_HUB_API_KEY
         name: Kunci API Zeabur AI Hub (Direkomendasikan)
-        description: Kunci API Zeabur AI Hub Anda untuk menggunakan Gemini/GPT/Claude/DeepSeek melalui AI Hub
-      - key: ANTHROPIC_API_KEY
-        name: Kunci API Anthropic
-        description: Kunci API Anthropic Anda untuk Claude (opsional, dapat dikonfigurasi nanti)
-      - key: OPENAI_API_KEY
-        name: Kunci API OpenAI
-        description: Kunci API OpenAI Anda (opsional, dapat dikonfigurasi nanti)
+        description: Kunci API Zeabur AI Hub Anda untuk menggunakan Gemini/GPT/Claude/DeepSeek melalui AI Hub (opsional, dapat dikonfigurasi nanti)
     readme: |
       # OpenClaw 🦞
       OpenClaw 🦞 (sebelumnya Clawdbot, Moltbot) adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan melalui arsitektur Gateway berbasis WebSocket.
 
-      ⚠️ Template ini menggunakan `ghcr.io/openclaw/openclaw:2026.1.29`. OpenClaw 🦞 sedang dalam pengembangan cepat, jadi mungkin ada bug yang belum ditemukan. Mengubah versi juga tidak menjamin stabilitas. Jika Anda mengalami masalah, silakan kunjungi [GitHub issues](https://github.com/openclaw/openclaw/issues) untuk mencari solusi atau melaporkan masalah baru. Untuk masalah terkait platform Zeabur, silakan hubungi dukungan Zeabur.
+      ⚠️ Template ini menggunakan `ghcr.io/openclaw/openclaw:2026.1.30`. OpenClaw 🦞 sedang dalam pengembangan cepat, jadi mungkin ada bug yang belum ditemukan. Mengubah versi juga tidak menjamin stabilitas. Jika Anda mengalami masalah, silakan kunjungi [GitHub issues](https://github.com/openclaw/openclaw/issues) untuk mencari solusi atau melaporkan masalah baru. Untuk masalah terkait platform Zeabur, silakan hubungi dukungan Zeabur.
 
       ---
 
@@ -1041,13 +1214,14 @@ localization:
       - **Server Khusus**: 2+ vCPU, 2+ GB - sangat direkomendasikan untuk performa stabil
 
       ## Penggunaan
-      1. Setelah deploy, token Gateway yang aman akan **dibuat secara otomatis**
-      2. Temukan URL yang sudah dibuat di tab **Instruksi**
-      3. Klik tautan "Web UI (with token)" untuk terhubung langsung (token sudah termasuk dalam URL)
-      4. Ketika Anda melihat antarmuka OpenClaw, deployment selesai
-      5. Buka halaman **Chat** untuk menguji apakah penyedia AI Anda berfungsi
+      1. Setelah deploy, salin URL "Web UI (with token)" dari tab **Instruksi** dan tempelkan di browser Anda (login pertama memerlukan token, setelah itu bisa langsung akses URL)
+      2. **Konfigurasi model AI** (pilih salah satu):
+         - **Zeabur AI Hub**: Jika sudah memasukkan API Key saat deploy, langsung ke langkah 3. Bisa juga menambahkan `ZEABUR_AI_HUB_API_KEY` nanti di tab **Variables** dashboard Zeabur (restart layanan setelah menambahkan).
+         - **Penyedia lain** (Anthropic, OpenAI, dll.): Buka Settings untuk menambahkan kunci API
+      3. Buka halaman **Chat** untuk menguji apakah model AI Anda berfungsi
+      4. (Opsional) Atur platform pesan seperti Telegram, WhatsApp, dll.
 
-      Untuk detail lebih lanjut, lihat [dokumentasi resmi](https://github.com/openclaw/openclaw).
+      Untuk konfigurasi model AI, lihat [dokumentasi resmi](https://docs.openclaw.ai/providers).
 
       ## Pengaturan Bot Telegram
       **Mendapatkan token dari BotFather:**
@@ -1092,25 +1266,61 @@ localization:
 
       Untuk platform perpesanan lainnya (Discord, Slack, dll.), lihat [dokumentasi Channels](https://docs.openclaw.ai/channels).
 
-      ## Mengubah Model Default
-      Model default tergantung pada penyedia AI Anda:
-      - **Zeabur AI Hub**: `zeabur-ai/gpt-5-mini`
-      - **Anthropic API Key**: `anthropic/claude-opus-4-5`
+      ## Konfigurasi Model AI
+      **Beralih model untuk percakapan saat ini** (melalui perintah chat):
+      - `/models` - Melihat model yang tersedia
+      - `/model <model-id>` - Beralih model hanya untuk percakapan ini
 
-      Untuk mengubahnya:
-      - **Perintah chat**: Gunakan `/models` untuk melihat model yang tersedia, `/model <model-id>` untuk beralih (contoh: `/model zeabur-ai/gpt-5-mini`)
-      - **Web UI**: Buka Settings dan pilih model yang Anda inginkan
+      **Mengubah model default** (melalui Web UI Settings):
+      - Buka Settings → Agents → Default model untuk mengatur model default untuk semua percakapan baru
 
-      ## Konfigurasi Model Lainnya
-      Lihat [dokumentasi Providers](https://docs.openclaw.ai/providers) untuk menambahkan lebih banyak model AI.
+      **Menambah penyedia AI** (melalui Web UI Settings atau variabel lingkungan):
+      - Menambahkan kunci API dari penyedia AI lain (misalnya Anthropic, OpenAI)
 
-      ## Konfigurasi Tambahan
-      Selain variabel lingkungan, Anda juga dapat mengkonfigurasi OpenClaw melalui Web UI Settings atau perintah CLI. Lihat [dokumentasi resmi](https://docs.openclaw.ai) untuk detail lebih lanjut.
+      Untuk konfigurasi detail, lihat [dokumentasi resmi](https://docs.openclaw.ai/providers).
 
       ## Persistensi Data
       Semua data disimpan di `/home/node`:
       - `/home/node/.openclaw` - Konfigurasi, sesi, perangkat, dan kredensial
       - `/home/node/.openclaw/workspace` - Ruang kerja dan file memori
+
+      ## Migrasi dari Clawdbot / Moltbot
+      **Lokasi data versi lama:**
+      - **Clawdbot**: config `~/.clawdbot/clawdbot.json`, workspace `~/clawd`
+      - **Moltbot**: config `~/.moltbot/moltbot.json` atau `~/.clawdbot/moltbot.json`, workspace `~/clawd`
+
+      **Lokasi OpenClaw baru:** `/home/node/.openclaw` (termasuk config dan workspace)
+
+      **Langkah migrasi:**
+      1. Cadangkan data di layanan lama Anda (lihat Cadangan & Pemulihan di bawah)
+      2. Deploy template OpenClaw baru ini
+      3. Pulihkan cadangan Anda ke layanan baru
+      4. Konfigurasi, riwayat percakapan, dan kredensial Anda akan dipertahankan
+
+      Perintah CLI `clawdbot` dan `moltbot` masih tersedia untuk kompatibilitas.
+
+      ## Cadangan & Pemulihan
+      💡 **Tips:** Kami merekomendasikan untuk membuat cadangan setelah menyelesaikan pengaturan awal atau melakukan perubahan konfigurasi penting.
+
+      **Metode Cadangan** (keduanya menghasilkan file terkompresi):
+      - **Metode 1: Layanan Zeabur (Direkomendasikan)** - Gunakan fitur cadangan bawaan Zeabur. Lihat [Dokumentasi Zeabur](https://zeabur.com/docs/data-management/backup). Struktur: `data/data/.openclaw/...`
+      - **Metode 2: Manual** - Buka **Command** → Jalankan `cd /home/node && tar -czvf backup.tar.gz .openclaw` → Unduh dari **Files**
+
+      **Pemulihan**:
+      - Dari Metode 1 (contoh: `backup-6980cebef9b407ee4e87d608.tar.gz`):
+        1. Seret file terkompresi ke folder `/home/node` di **Files**
+        2. Jalankan `cd /home/node` di **Command**
+        3. `tar -xzvf <nama-file-backup> --strip-components=2 -C /home/node`
+        4. `rm <nama-file-backup>` untuk menghapus file backup
+        5. Restart layanan
+      - Dari Metode 2:
+        1. Seret file terkompresi ke folder `/home/node` di **Files**
+        2. Jalankan `cd /home/node` di **Command**
+        3. `tar -xzvf backup.tar.gz`
+        4. `rm backup.tar.gz` untuk menghapus file backup
+        5. Restart layanan
+
+      ⚠️ Pemulihan akan menimpa konfigurasi dan data yang ada di layanan baru. Jangan lupa untuk juga mengatur kembali variabel lingkungan terkait (contoh: `TELEGRAM_BOT_TOKEN`).
 
       ## Ekstensi Fitur
       - **Browser**: Jika Anda memerlukan fitur browser (browsing web, screenshot, dll.), deploy [Template Browser](https://zeabur.com/templates/H8L4G1)
@@ -1119,4 +1329,14 @@ localization:
       Template ini menonaktifkan mDNS/Bonjour (`OPENCLAW_DISABLE_BONJOUR=1`) karena nama host container Zeabur dapat melebihi batas label DNS 63 byte. mDNS hanya digunakan untuk penemuan jaringan lokal (seperti AirPlay/Chromecast) dan tidak diperlukan di lingkungan cloud di mana layanan terhubung melalui DNS internal.
 
       ## Dokumentasi
+      - Dokumentasi: https://docs.openclaw.ai
       - GitHub: https://github.com/openclaw/openclaw
+
+      ## Catatan Perubahan
+      **2026/2/2**
+      - Tambah bagian konfigurasi model AI (global vs percakapan)
+      - Tambah panduan migrasi dari Clawdbot / Moltbot dengan jalur data
+      - Tambah bagian cadangan & pemulihan dengan layanan Zeabur
+      - Tambah tips untuk membuat cadangan setelah pengaturan awal
+      - Hapus patch Google Gemini CLI (sudah diperbaiki di upstream)
+      - Hapus variabel ANTHROPIC_API_KEY dan OPENAI_API_KEY dari deployment (dapat dikonfigurasi nanti via Web UI atau variabel lingkungan)
