@@ -38,6 +38,9 @@ spec:
       OpenClaw 🦞 is CPU-intensive. Resource requirements may vary depending on the tools and features you use.
       - **Dedicated Server**: 2+ vCPU, 2+ GB - highly recommended for stable performance
 
+      ## Feature Extensions
+      - **Browser**: If you need browser features (web browsing, screenshots, etc.), deploy the [Browser Template](https://zeabur.com/templates/H8L4G1)
+
       ## Usage
       1. After deployment, copy "Web UI (with token)" URL from the **Instructions** tab and paste it into your browser (first login requires token, after that you can access directly)
       2. **Configure AI model** (choose one):
@@ -109,21 +112,6 @@ spec:
       - `/home/node/.openclaw` - Configuration, sessions, devices, and credentials
       - `/home/node/.openclaw/workspace` - Workspace and memory files
 
-      ## Migrating from Clawdbot / Moltbot
-      **Old version data locations:**
-      - **Clawdbot**: config `~/.clawdbot/clawdbot.json`, workspace `~/clawd`
-      - **Moltbot**: config `~/.moltbot/moltbot.json` or `~/.clawdbot/moltbot.json`, workspace `~/clawd`
-
-      **New OpenClaw location:** `/home/node/.openclaw` (includes config and workspace)
-
-      **Migration steps:**
-      1. Backup data on your old service (see Backup & Restore below)
-      2. Deploy this new OpenClaw template
-      3. Restore your backup to the new service
-      4. Your configuration, sessions, and credentials will be preserved
-
-      The `clawdbot` and `moltbot` CLI commands are still available for backward compatibility.
-
       ## Backup & Restore
       💡 **Tip:** We recommend creating a backup after completing your initial setup or making significant configuration changes.
 
@@ -133,13 +121,13 @@ spec:
 
       **Restore**:
       - From Method 1 (e.g. `backup-6980cebef9b407ee4e87d608.tar.gz`):
-        1. Drag compressed file to `/home/node` folder in **Files** tab
+        1. Drag compressed file to `/home/node` folder in **Files** tab, file will appear in the list when upload is complete
         2. Run `cd /home/node` in **Command**
         3. `tar -xzvf <backup-file> --strip-components=2 -C /home/node`
         4. `rm <backup-file>` to delete backup file
         5. Restart service
       - From Method 2:
-        1. Drag compressed file to `/home/node` folder in **Files** tab
+        1. Drag compressed file to `/home/node` folder in **Files** tab, file will appear in the list when upload is complete
         2. Run `cd /home/node` in **Command**
         3. `tar -xzvf backup.tar.gz`
         4. `rm backup.tar.gz` to delete backup file
@@ -147,8 +135,28 @@ spec:
 
       ⚠️ Restore will overwrite existing configuration and data on the new service. Remember to also restore related environment variables (e.g. `TELEGRAM_BOT_TOKEN`).
 
-      ## Feature Extensions
-      - **Browser**: If you need browser features (web browsing, screenshots, etc.), deploy the [Browser Template](https://zeabur.com/templates/H8L4G1)
+      ## Migrating from Clawdbot / Moltbot
+      **Old version data locations:**
+      - **Clawdbot**: config `~/.clawdbot`, workspace `~/clawd`
+      - **Moltbot**: config `~/.moltbot` or `~/.clawdbot`, workspace `~/clawd`
+
+      **New OpenClaw location:** `/home/node/.openclaw` (includes config and workspace)
+
+      OpenClaw has backward compatibility and will automatically read from `.clawdbot` and `.moltbot` folders, so you can extract directly without renaming.
+
+      **Migration steps:**
+      1. Backup data on your old service:
+         - Open **Command** in old service
+         - `cd /home/node && tar -czvf backup.tar.gz .clawdbot .moltbot clawd 2>/dev/null` (ignores missing folders)
+         - Download `backup.tar.gz` from **Files** tab
+      2. Deploy this new OpenClaw template
+      3. Restore backup to new service:
+         - Drag `backup.tar.gz` to `/home/node` folder in **Files** tab
+         - Open **Command**: `cd /home/node && tar -xzvf backup.tar.gz && rm backup.tar.gz`
+         - Restart service
+      4. Your configuration, sessions, and credentials will be preserved
+
+      The `clawdbot` and `moltbot` CLI commands are still available for backward compatibility.
 
       ## Zeabur-Specific Configuration
       This template disables mDNS/Bonjour (`OPENCLAW_DISABLE_BONJOUR=1`) because Zeabur container hostnames can exceed the 63-byte DNS label limit. mDNS is only used for local network discovery (like AirPlay/Chromecast) and is not needed in cloud environments where services connect via internal DNS.
@@ -164,7 +172,7 @@ spec:
       - Add backup & restore section with Zeabur backup service
       - Add tip to backup after initial setup
       - Remove Google Gemini CLI patch (fixed upstream)
-      - Remove ANTHROPIC_API_KEY and OPENAI_API_KEY from deployment variables (can be configured later via Web UI or environment variables)
+      - Remove ANTHROPIC_API_KEY and OPENAI_API_KEY from deployment variables to prevent OpenClaw from detecting empty API keys and failing (can be configured later via Web UI or environment variables)
 
     services:
       - name: OpenClaw
@@ -611,6 +619,9 @@ localization:
       OpenClaw 🦞 是 CPU 密集型應用。資源需求可能因使用的工具和功能而異。
       - **專用伺服器**：2+ vCPU、2+ GB - 強烈推薦，以獲得穩定效能
 
+      ## 功能擴充
+      - **瀏覽器**：如需瀏覽器功能（網頁瀏覽、截圖等），請部署 [Browser 模板](https://zeabur.com/templates/H8L4G1)
+
       ## 使用方式
       1. 部署完成後，在**使用說明**頁籤複製「Web UI (with token)」網址，貼到瀏覽器開啟（首次登入需要 token，之後可直接開啟網址）
       2. **設定 AI 模型**（二擇一）：
@@ -682,21 +693,6 @@ localization:
       - `/home/node/.openclaw` - 設定、會話、裝置和憑證
       - `/home/node/.openclaw/workspace` - 工作區和記憶檔案
 
-      ## 從 Clawdbot / Moltbot 遷移
-      **舊版資料位置：**
-      - **Clawdbot**：設定 `~/.clawdbot/clawdbot.json`、工作區 `~/clawd`
-      - **Moltbot**：設定 `~/.moltbot/moltbot.json` 或 `~/.clawdbot/moltbot.json`、工作區 `~/clawd`
-
-      **新版 OpenClaw 位置：**`/home/node/.openclaw`（包含設定和工作區）
-
-      **遷移步驟：**
-      1. 在舊服務上備份資料（參考下方備份與還原）
-      2. 部署這個新的 OpenClaw 模板
-      3. 將備份還原到新服務
-      4. 您的設定、對話記錄和憑證都會保留
-
-      為了向下相容，`clawdbot` 和 `moltbot` CLI 指令仍可使用。
-
       ## 備份與還原
       💡 **建議：** 在完成初始設定或進行重大設定變更後，建議先建立備份。
 
@@ -706,13 +702,13 @@ localization:
 
       **還原**：
       - 方法一的備份（例如 `backup-6980cebef9b407ee4e87d608.tar.gz`）：
-        1. 在**檔案**頁籤將壓縮檔拖移到 `/home/node` 資料夾
+        1. 在**檔案**頁籤將壓縮檔拖移到 `/home/node` 資料夾，上傳完成後會看到檔案出現在清單中
         2. 在**指令**執行 `cd /home/node`
         3. `tar -xzvf <備份檔名> --strip-components=2 -C /home/node`
         4. `rm <備份檔名>` 刪除備份檔
         5. 重新啟動服務
       - 方法二的備份：
-        1. 在**檔案**頁籤將壓縮檔拖移到 `/home/node` 資料夾
+        1. 在**檔案**頁籤將壓縮檔拖移到 `/home/node` 資料夾，上傳完成後會看到檔案出現在清單中
         2. 在**指令**執行 `cd /home/node`
         3. `tar -xzvf backup.tar.gz`
         4. `rm backup.tar.gz` 刪除備份檔
@@ -720,8 +716,28 @@ localization:
 
       ⚠️ 還原會覆蓋新服務上現有的設定和資料。記得也要將相關的環境變數（如 `TELEGRAM_BOT_TOKEN`）設定回去。
 
-      ## 功能擴充
-      - **瀏覽器**：如需瀏覽器功能（網頁瀏覽、截圖等），請部署 [Browser 模板](https://zeabur.com/templates/H8L4G1)
+      ## 從 Clawdbot / Moltbot 遷移
+      **舊版資料位置：**
+      - **Clawdbot**：設定 `~/.clawdbot`、工作區 `~/clawd`
+      - **Moltbot**：設定 `~/.moltbot` 或 `~/.clawdbot`、工作區 `~/clawd`
+
+      **新版 OpenClaw 位置：**`/home/node/.openclaw`（包含設定和工作區）
+
+      OpenClaw 具有向下相容性，會自動讀取 `.clawdbot` 和 `.moltbot` 資料夾，直接解壓縮即可使用，不需要重新命名。
+
+      **遷移步驟：**
+      1. 在舊服務上備份資料：
+         - 在舊服務開啟**指令**
+         - `cd /home/node && tar -czvf backup.tar.gz .clawdbot .moltbot clawd 2>/dev/null`（會忽略不存在的資料夾）
+         - 從**檔案**頁籤下載 `backup.tar.gz`
+      2. 部署這個新的 OpenClaw 模板
+      3. 將備份還原到新服務：
+         - 將 `backup.tar.gz` 拖移到**檔案**頁籤的 `/home/node` 資料夾
+         - 開啟**指令**：`cd /home/node && tar -xzvf backup.tar.gz && rm backup.tar.gz`
+         - 重新啟動服務
+      4. 您的設定、對話記錄和憑證都會保留
+
+      為了向下相容，`clawdbot` 和 `moltbot` CLI 指令仍可使用。
 
       ## Zeabur 專屬設定
       此模板停用了 mDNS/Bonjour（`OPENCLAW_DISABLE_BONJOUR=1`），因為 Zeabur 容器主機名稱可能超過 63 bytes 的 DNS 標籤限制。mDNS 僅用於區域網路發現（類似 AirPlay/Chromecast），在雲端環境中服務透過內部 DNS 連線，因此不需要此功能。
@@ -737,7 +753,7 @@ localization:
       - 新增備份與還原區塊，支援 Zeabur 備份服務
       - 新增初始設定完成後備份提醒
       - 移除 Google Gemini CLI patch（上游已修復）
-      - 移除部署時的 ANTHROPIC_API_KEY 和 OPENAI_API_KEY 變數（可之後透過 Web UI 或環境變數設定）
+      - 移除部署時的 ANTHROPIC_API_KEY 和 OPENAI_API_KEY 變數，避免 OpenClaw 偵測到空的 API Key 然後執行失敗（可之後透過 Web UI 或環境變數設定）
 
   zh-CN:
     name: OpenClaw 🦞
@@ -760,6 +776,9 @@ localization:
       ## 建议资源配置
       OpenClaw 🦞 是 CPU 密集型应用。资源需求可能因使用的工具和功能而异。
       - **专用服务器**：2+ vCPU、2+ GB - 强烈推荐，以获得稳定性能
+
+      ## 功能扩充
+      - **浏览器**：如需浏览器功能（网页浏览、截图等），请部署 [Browser 模板](https://zeabur.com/templates/H8L4G1)
 
       ## 使用方式
       1. 部署完成后，在**使用说明**页签复制「Web UI (with token)」网址，贴到浏览器打开（首次登录需要 token，之后可直接打开网址）
@@ -832,21 +851,6 @@ localization:
       - `/home/node/.openclaw` - 配置、会话、设备和凭证
       - `/home/node/.openclaw/workspace` - 工作区和记忆文件
 
-      ## 从 Clawdbot / Moltbot 迁移
-      **旧版数据位置：**
-      - **Clawdbot**：配置 `~/.clawdbot/clawdbot.json`、工作区 `~/clawd`
-      - **Moltbot**：配置 `~/.moltbot/moltbot.json` 或 `~/.clawdbot/moltbot.json`、工作区 `~/clawd`
-
-      **新版 OpenClaw 位置：**`/home/node/.openclaw`（包含配置和工作区）
-
-      **迁移步骤：**
-      1. 在旧服务上备份数据（参考下方备份与还原）
-      2. 部署这个新的 OpenClaw 模板
-      3. 将备份还原到新服务
-      4. 您的配置、对话记录和凭证都会保留
-
-      为了向下兼容，`clawdbot` 和 `moltbot` CLI 命令仍可使用。
-
       ## 备份与还原
       💡 **建议：** 在完成初始设置或进行重大配置变更后，建议先创建备份。
 
@@ -856,13 +860,13 @@ localization:
 
       **还原**：
       - 方法一的备份（例如 `backup-6980cebef9b407ee4e87d608.tar.gz`）：
-        1. 在**文件**页签将压缩文件拖移到 `/home/node` 文件夹
+        1. 在**文件**页签将压缩文件拖移到 `/home/node` 文件夹，上传完成后会看到文件出现在列表中
         2. 在**命令**执行 `cd /home/node`
         3. `tar -xzvf <备份文件名> --strip-components=2 -C /home/node`
         4. `rm <备份文件名>` 删除备份文件
         5. 重新启动服务
       - 方法二的备份：
-        1. 在**文件**页签将压缩文件拖移到 `/home/node` 文件夹
+        1. 在**文件**页签将压缩文件拖移到 `/home/node` 文件夹，上传完成后会看到文件出现在列表中
         2. 在**命令**执行 `cd /home/node`
         3. `tar -xzvf backup.tar.gz`
         4. `rm backup.tar.gz` 删除备份文件
@@ -870,8 +874,28 @@ localization:
 
       ⚠️ 还原会覆盖新服务上现有的配置和数据。记得也要将相关的环境变量（如 `TELEGRAM_BOT_TOKEN`）设置回去。
 
-      ## 功能扩充
-      - **浏览器**：如需浏览器功能（网页浏览、截图等），请部署 [Browser 模板](https://zeabur.com/templates/H8L4G1)
+      ## 从 Clawdbot / Moltbot 迁移
+      **旧版数据位置：**
+      - **Clawdbot**：配置 `~/.clawdbot`、工作区 `~/clawd`
+      - **Moltbot**：配置 `~/.moltbot` 或 `~/.clawdbot`、工作区 `~/clawd`
+
+      **新版 OpenClaw 位置：**`/home/node/.openclaw`（包含配置和工作区）
+
+      OpenClaw 具有向下兼容性，会自动读取 `.clawdbot` 和 `.moltbot` 文件夹，直接解压缩即可使用，不需要重命名。
+
+      **迁移步骤：**
+      1. 在旧服务上备份数据：
+         - 在旧服务打开**命令**
+         - `cd /home/node && tar -czvf backup.tar.gz .clawdbot .moltbot clawd 2>/dev/null`（会忽略不存在的文件夹）
+         - 从**文件**页签下载 `backup.tar.gz`
+      2. 部署这个新的 OpenClaw 模板
+      3. 将备份还原到新服务：
+         - 将 `backup.tar.gz` 拖移到**文件**页签的 `/home/node` 文件夹
+         - 打开**命令**：`cd /home/node && tar -xzvf backup.tar.gz && rm backup.tar.gz`
+         - 重新启动服务
+      4. 您的配置、对话记录和凭证都会保留
+
+      为了向下兼容，`clawdbot` 和 `moltbot` CLI 命令仍可使用。
 
       ## Zeabur 专属配置
       此模板停用了 mDNS/Bonjour（`OPENCLAW_DISABLE_BONJOUR=1`），因为 Zeabur 容器主机名称可能超过 63 bytes 的 DNS 标签限制。mDNS 仅用于区域网络发现（类似 AirPlay/Chromecast），在云端环境中服务通过内部 DNS 连接，因此不需要此功能。
@@ -887,7 +911,7 @@ localization:
       - 新增备份与还原区块，支持 Zeabur 备份服务
       - 新增初始设置完成后备份提醒
       - 移除 Google Gemini CLI patch（上游已修复）
-      - 移除部署时的 ANTHROPIC_API_KEY 和 OPENAI_API_KEY 变量（可之后通过 Web UI 或环境变量设置）
+      - 移除部署时的 ANTHROPIC_API_KEY 和 OPENAI_API_KEY 变量，避免 OpenClaw 检测到空的 API Key 然后执行失败（可之后通过 Web UI 或环境变量设置）
 
   ja-JP:
     name: OpenClaw 🦞
@@ -910,6 +934,9 @@ localization:
       ## 推奨リソース
       OpenClaw 🦞 は CPU 集約型アプリです。使用するツールや機能によってリソース要件が異なる場合があります。
       - **専用サーバー**：2+ vCPU、2+ GB - 安定したパフォーマンスのために強く推奨
+
+      ## 機能拡張
+      - **ブラウザ**：ブラウザ機能（Web ブラウジング、スクリーンショットなど）が必要な場合は、[Browser テンプレート](https://zeabur.com/templates/H8L4G1)をデプロイしてください
 
       ## 使用方法
       1. デプロイ後、**指示**タブの「Web UI (with token)」URL をコピーしてブラウザに貼り付けて開く（初回ログインは token が必要、以降は直接 URL にアクセス可能）
@@ -982,21 +1009,6 @@ localization:
       - `/home/node/.openclaw` - 設定、セッション、デバイス、認証情報
       - `/home/node/.openclaw/workspace` - ワークスペースとメモリファイル
 
-      ## Clawdbot / Moltbot からの移行
-      **旧バージョンのデータ場所：**
-      - **Clawdbot**：設定 `~/.clawdbot/clawdbot.json`、ワークスペース `~/clawd`
-      - **Moltbot**：設定 `~/.moltbot/moltbot.json` または `~/.clawdbot/moltbot.json`、ワークスペース `~/clawd`
-
-      **新しい OpenClaw の場所：**`/home/node/.openclaw`（設定とワークスペースを含む）
-
-      **移行手順：**
-      1. 旧サービスでデータをバックアップ（下記のバックアップと復元を参照）
-      2. この新しい OpenClaw テンプレートをデプロイ
-      3. バックアップを新サービスに復元
-      4. 設定、会話履歴、認証情報は保持されます
-
-      下位互換性のため、`clawdbot` と `moltbot` CLI コマンドは引き続き使用可能です。
-
       ## バックアップと復元
       💡 **ヒント：** 初期設定完了後や重要な設定変更後にバックアップを作成することをお勧めします。
 
@@ -1006,13 +1018,13 @@ localization:
 
       **復元**：
       - 方法1のバックアップ（例：`backup-6980cebef9b407ee4e87d608.tar.gz`）：
-        1. **ファイル**タブで圧縮ファイルを `/home/node` フォルダにドラッグ
+        1. **ファイル**タブで圧縮ファイルを `/home/node` フォルダにドラッグ、アップロード完了後にリストに表示されます
         2. **コマンド**で `cd /home/node` を実行
         3. `tar -xzvf <バックアップファイル名> --strip-components=2 -C /home/node`
         4. `rm <バックアップファイル名>` でバックアップファイルを削除
         5. サービスを再起動
       - 方法2のバックアップ：
-        1. **ファイル**タブで圧縮ファイルを `/home/node` フォルダにドラッグ
+        1. **ファイル**タブで圧縮ファイルを `/home/node` フォルダにドラッグ、アップロード完了後にリストに表示されます
         2. **コマンド**で `cd /home/node` を実行
         3. `tar -xzvf backup.tar.gz`
         4. `rm backup.tar.gz` でバックアップファイルを削除
@@ -1020,8 +1032,28 @@ localization:
 
       ⚠️ 復元すると、新サービス上の既存の設定とデータが上書きされます。関連する環境変数（例：`TELEGRAM_BOT_TOKEN`）も忘れずに設定してください。
 
-      ## 機能拡張
-      - **ブラウザ**：ブラウザ機能（Web ブラウジング、スクリーンショットなど）が必要な場合は、[Browser テンプレート](https://zeabur.com/templates/H8L4G1)をデプロイしてください
+      ## Clawdbot / Moltbot からの移行
+      **旧バージョンのデータ場所：**
+      - **Clawdbot**：設定 `~/.clawdbot`、ワークスペース `~/clawd`
+      - **Moltbot**：設定 `~/.moltbot` または `~/.clawdbot`、ワークスペース `~/clawd`
+
+      **新しい OpenClaw の場所：**`/home/node/.openclaw`（設定とワークスペースを含む）
+
+      OpenClaw は下位互換性があり、`.clawdbot` と `.moltbot` フォルダを自動的に読み取ります。そのまま解凍するだけで使用でき、名前変更は不要です。
+
+      **移行手順：**
+      1. 旧サービスでデータをバックアップ：
+         - 旧サービスで**コマンド**を開く
+         - `cd /home/node && tar -czvf backup.tar.gz .clawdbot .moltbot clawd 2>/dev/null`（存在しないフォルダは無視）
+         - **ファイル**タブから `backup.tar.gz` をダウンロード
+      2. この新しい OpenClaw テンプレートをデプロイ
+      3. バックアップを新サービスに復元：
+         - `backup.tar.gz` を**ファイル**タブの `/home/node` フォルダにドラッグ
+         - **コマンド**を開く：`cd /home/node && tar -xzvf backup.tar.gz && rm backup.tar.gz`
+         - サービスを再起動
+      4. 設定、会話履歴、認証情報は保持されます
+
+      下位互換性のため、`clawdbot` と `moltbot` CLI コマンドは引き続き使用可能です。
 
       ## Zeabur 固有の設定
       このテンプレートでは mDNS/Bonjour を無効化しています（`OPENCLAW_DISABLE_BONJOUR=1`）。Zeabur コンテナのホスト名が 63 バイトの DNS ラベル制限を超える可能性があるためです。mDNS はローカルネットワーク検出（AirPlay/Chromecast のような）にのみ使用され、クラウド環境ではサービスは内部 DNS を通じて接続するため、この機能は不要です。
@@ -1037,7 +1069,7 @@ localization:
       - バックアップと復元セクションを追加、Zeabur バックアップサービス対応
       - 初期設定完了後のバックアップ推奨を追加
       - Google Gemini CLI パッチを削除（上流で修正済み）
-      - デプロイ時の ANTHROPIC_API_KEY と OPENAI_API_KEY 変数を削除（後で Web UI または環境変数から設定可能）
+      - デプロイ時の ANTHROPIC_API_KEY と OPENAI_API_KEY 変数を削除、OpenClaw が空の API Key を検出して実行に失敗するのを防止（後で Web UI または環境変数から設定可能）
 
   es-ES:
     name: OpenClaw 🦞
@@ -1061,6 +1093,9 @@ localization:
       OpenClaw 🦞 consume muchos recursos de CPU. Los requisitos pueden variar según las herramientas y funciones que utilice.
       - **Clúster Compartido**: 1000 m (1 vCPU), 1024 Mi (1 GB) - para pruebas
       - **Servidor Dedicado**: 2+ vCPU, 2+ GB - altamente recomendado para rendimiento estable
+
+      ## Extensiones de Funciones
+      - **Navegador**: Si necesita funciones del navegador (navegación web, capturas de pantalla, etc.), despliegue la [Plantilla Browser](https://zeabur.com/templates/H8L4G1)
 
       ## Uso
       1. Después del despliegue, copie la URL "Web UI (with token)" de la pestaña **Instrucciones** y péguela en su navegador (el primer inicio de sesión requiere token, después puede acceder directamente)
@@ -1133,21 +1168,6 @@ localization:
       - `/home/node/.openclaw` - Configuración, sesiones, dispositivos y credenciales
       - `/home/node/.openclaw/workspace` - Espacio de trabajo y archivos de memoria
 
-      ## Migración desde Clawdbot / Moltbot
-      **Ubicaciones de datos de versiones anteriores:**
-      - **Clawdbot**: config `~/.clawdbot/clawdbot.json`, workspace `~/clawd`
-      - **Moltbot**: config `~/.moltbot/moltbot.json` o `~/.clawdbot/moltbot.json`, workspace `~/clawd`
-
-      **Nueva ubicación de OpenClaw:** `/home/node/.openclaw` (incluye config y workspace)
-
-      **Pasos de migración:**
-      1. Haga copia de seguridad en su servicio antiguo (vea Copia de Seguridad y Restauración abajo)
-      2. Despliegue esta nueva plantilla de OpenClaw
-      3. Restaure su copia de seguridad en el nuevo servicio
-      4. Su configuración, historial de conversaciones y credenciales se conservarán
-
-      Los comandos CLI `clawdbot` y `moltbot` siguen disponibles para compatibilidad.
-
       ## Copia de Seguridad y Restauración
       💡 **Consejo:** Recomendamos crear una copia de seguridad después de completar la configuración inicial o realizar cambios importantes.
 
@@ -1157,13 +1177,13 @@ localization:
 
       **Restauración**:
       - Desde Método 1 (ej. `backup-6980cebef9b407ee4e87d608.tar.gz`):
-        1. Arrastre el archivo comprimido a `/home/node` en **Archivos**
+        1. Arrastre el archivo comprimido a `/home/node` en **Archivos**, el archivo aparecerá en la lista cuando se complete la carga
         2. Ejecute `cd /home/node` en **Comando**
         3. `tar -xzvf <archivo-backup> --strip-components=2 -C /home/node`
         4. `rm <archivo-backup>` para eliminar el archivo
         5. Reinicie el servicio
       - Desde Método 2:
-        1. Arrastre el archivo comprimido a `/home/node` en **Archivos**
+        1. Arrastre el archivo comprimido a `/home/node` en **Archivos**, el archivo aparecerá en la lista cuando se complete la carga
         2. Ejecute `cd /home/node` en **Comando**
         3. `tar -xzvf backup.tar.gz`
         4. `rm backup.tar.gz` para eliminar el archivo
@@ -1171,8 +1191,28 @@ localization:
 
       ⚠️ La restauración sobrescribirá la configuración y los datos existentes en el nuevo servicio. Recuerde también restaurar las variables de entorno relacionadas (ej. `TELEGRAM_BOT_TOKEN`).
 
-      ## Extensiones de Funciones
-      - **Navegador**: Si necesita funciones del navegador (navegación web, capturas de pantalla, etc.), despliegue la [Plantilla Browser](https://zeabur.com/templates/H8L4G1)
+      ## Migración desde Clawdbot / Moltbot
+      **Ubicaciones de datos de versiones anteriores:**
+      - **Clawdbot**: config `~/.clawdbot`, workspace `~/clawd`
+      - **Moltbot**: config `~/.moltbot` o `~/.clawdbot`, workspace `~/clawd`
+
+      **Nueva ubicación de OpenClaw:** `/home/node/.openclaw` (incluye config y workspace)
+
+      OpenClaw tiene compatibilidad hacia atrás y leerá automáticamente las carpetas `.clawdbot` y `.moltbot`, puede extraer directamente sin renombrar.
+
+      **Pasos de migración:**
+      1. Haga copia de seguridad en su servicio antiguo:
+         - Abra **Comando** en el servicio antiguo
+         - `cd /home/node && tar -czvf backup.tar.gz .clawdbot .moltbot clawd 2>/dev/null` (ignora carpetas inexistentes)
+         - Descargue `backup.tar.gz` desde **Archivos**
+      2. Despliegue esta nueva plantilla de OpenClaw
+      3. Restaure en el nuevo servicio:
+         - Arrastre `backup.tar.gz` a la carpeta `/home/node` en **Archivos**
+         - Abra **Comando**: `cd /home/node && tar -xzvf backup.tar.gz && rm backup.tar.gz`
+         - Reinicie el servicio
+      4. Su configuración, historial de conversaciones y credenciales se conservarán
+
+      Los comandos CLI `clawdbot` y `moltbot` siguen disponibles para compatibilidad.
 
       ## Configuración Específica de Zeabur
       Esta plantilla deshabilita mDNS/Bonjour (`OPENCLAW_DISABLE_BONJOUR=1`) porque los nombres de host de los contenedores de Zeabur pueden exceder el límite de 63 bytes de las etiquetas DNS. mDNS solo se usa para el descubrimiento de red local (como AirPlay/Chromecast) y no es necesario en entornos de nube donde los servicios se conectan a través de DNS interno.
@@ -1188,7 +1228,7 @@ localization:
       - Añadir sección de copia de seguridad y restauración con servicio de Zeabur
       - Añadir consejo de hacer copia de seguridad después de la configuración inicial
       - Eliminar parche de Google Gemini CLI (corregido en upstream)
-      - Eliminar variables ANTHROPIC_API_KEY y OPENAI_API_KEY del despliegue (configurable después via Web UI o variables de entorno)
+      - Eliminar variables ANTHROPIC_API_KEY y OPENAI_API_KEY del despliegue para evitar que OpenClaw detecte claves API vacías y falle (configurable después via Web UI o variables de entorno)
 
   id-ID:
     name: OpenClaw 🦞
@@ -1212,6 +1252,9 @@ localization:
       OpenClaw 🦞 adalah aplikasi yang intensif CPU. Kebutuhan sumber daya dapat bervariasi tergantung pada alat dan fitur yang Anda gunakan.
       - **Kluster Bersama**: 1000 m (1 vCPU), 1024 Mi (1 GB) - untuk pengujian
       - **Server Khusus**: 2+ vCPU, 2+ GB - sangat direkomendasikan untuk performa stabil
+
+      ## Ekstensi Fitur
+      - **Browser**: Jika Anda memerlukan fitur browser (browsing web, screenshot, dll.), deploy [Template Browser](https://zeabur.com/templates/H8L4G1)
 
       ## Penggunaan
       1. Setelah deploy, salin URL "Web UI (with token)" dari tab **Instruksi** dan tempelkan di browser Anda (login pertama memerlukan token, setelah itu bisa langsung akses URL)
@@ -1284,21 +1327,6 @@ localization:
       - `/home/node/.openclaw` - Konfigurasi, sesi, perangkat, dan kredensial
       - `/home/node/.openclaw/workspace` - Ruang kerja dan file memori
 
-      ## Migrasi dari Clawdbot / Moltbot
-      **Lokasi data versi lama:**
-      - **Clawdbot**: config `~/.clawdbot/clawdbot.json`, workspace `~/clawd`
-      - **Moltbot**: config `~/.moltbot/moltbot.json` atau `~/.clawdbot/moltbot.json`, workspace `~/clawd`
-
-      **Lokasi OpenClaw baru:** `/home/node/.openclaw` (termasuk config dan workspace)
-
-      **Langkah migrasi:**
-      1. Cadangkan data di layanan lama Anda (lihat Cadangan & Pemulihan di bawah)
-      2. Deploy template OpenClaw baru ini
-      3. Pulihkan cadangan Anda ke layanan baru
-      4. Konfigurasi, riwayat percakapan, dan kredensial Anda akan dipertahankan
-
-      Perintah CLI `clawdbot` dan `moltbot` masih tersedia untuk kompatibilitas.
-
       ## Cadangan & Pemulihan
       💡 **Tips:** Kami merekomendasikan untuk membuat cadangan setelah menyelesaikan pengaturan awal atau melakukan perubahan konfigurasi penting.
 
@@ -1308,13 +1336,13 @@ localization:
 
       **Pemulihan**:
       - Dari Metode 1 (contoh: `backup-6980cebef9b407ee4e87d608.tar.gz`):
-        1. Seret file terkompresi ke folder `/home/node` di **Files**
+        1. Seret file terkompresi ke folder `/home/node` di **Files**, file akan muncul di daftar setelah upload selesai
         2. Jalankan `cd /home/node` di **Command**
         3. `tar -xzvf <nama-file-backup> --strip-components=2 -C /home/node`
         4. `rm <nama-file-backup>` untuk menghapus file backup
         5. Restart layanan
       - Dari Metode 2:
-        1. Seret file terkompresi ke folder `/home/node` di **Files**
+        1. Seret file terkompresi ke folder `/home/node` di **Files**, file akan muncul di daftar setelah upload selesai
         2. Jalankan `cd /home/node` di **Command**
         3. `tar -xzvf backup.tar.gz`
         4. `rm backup.tar.gz` untuk menghapus file backup
@@ -1322,8 +1350,28 @@ localization:
 
       ⚠️ Pemulihan akan menimpa konfigurasi dan data yang ada di layanan baru. Jangan lupa untuk juga mengatur kembali variabel lingkungan terkait (contoh: `TELEGRAM_BOT_TOKEN`).
 
-      ## Ekstensi Fitur
-      - **Browser**: Jika Anda memerlukan fitur browser (browsing web, screenshot, dll.), deploy [Template Browser](https://zeabur.com/templates/H8L4G1)
+      ## Migrasi dari Clawdbot / Moltbot
+      **Lokasi data versi lama:**
+      - **Clawdbot**: config `~/.clawdbot`, workspace `~/clawd`
+      - **Moltbot**: config `~/.moltbot` atau `~/.clawdbot`, workspace `~/clawd`
+
+      **Lokasi OpenClaw baru:** `/home/node/.openclaw` (termasuk config dan workspace)
+
+      OpenClaw memiliki kompatibilitas mundur dan akan otomatis membaca folder `.clawdbot` dan `.moltbot`, cukup ekstrak langsung tanpa perlu mengganti nama.
+
+      **Langkah migrasi:**
+      1. Cadangkan data di layanan lama Anda:
+         - Buka **Command** di layanan lama
+         - `cd /home/node && tar -czvf backup.tar.gz .clawdbot .moltbot clawd 2>/dev/null` (mengabaikan folder yang tidak ada)
+         - Unduh `backup.tar.gz` dari **Files**
+      2. Deploy template OpenClaw baru ini
+      3. Pulihkan ke layanan baru:
+         - Seret `backup.tar.gz` ke folder `/home/node` di **Files**
+         - Buka **Command**: `cd /home/node && tar -xzvf backup.tar.gz && rm backup.tar.gz`
+         - Restart layanan
+      4. Konfigurasi, riwayat percakapan, dan kredensial Anda akan dipertahankan
+
+      Perintah CLI `clawdbot` dan `moltbot` masih tersedia untuk kompatibilitas.
 
       ## Konfigurasi Khusus Zeabur
       Template ini menonaktifkan mDNS/Bonjour (`OPENCLAW_DISABLE_BONJOUR=1`) karena nama host container Zeabur dapat melebihi batas label DNS 63 byte. mDNS hanya digunakan untuk penemuan jaringan lokal (seperti AirPlay/Chromecast) dan tidak diperlukan di lingkungan cloud di mana layanan terhubung melalui DNS internal.
@@ -1339,4 +1387,4 @@ localization:
       - Tambah bagian cadangan & pemulihan dengan layanan Zeabur
       - Tambah tips untuk membuat cadangan setelah pengaturan awal
       - Hapus patch Google Gemini CLI (sudah diperbaiki di upstream)
-      - Hapus variabel ANTHROPIC_API_KEY dan OPENAI_API_KEY dari deployment (dapat dikonfigurasi nanti via Web UI atau variabel lingkungan)
+      - Hapus variabel ANTHROPIC_API_KEY dan OPENAI_API_KEY dari deployment untuk mencegah OpenClaw mendeteksi API Key kosong dan gagal (dapat dikonfigurasi nanti via Web UI atau variabel lingkungan)
