@@ -118,8 +118,8 @@ spec:
       - `/home/node/.openclaw` - Configuration, sessions, devices, and credentials
       - `/home/node/.openclaw/workspace` - Workspace and memory files
 
-      ## Browser Sandbox
-      If you need browser features (web browsing, screenshots, etc.), deploy the [Browser Sandbox Template](https://zeabur.com/templates/H8L4G1) alongside OpenClaw.
+      ## Feature Extensions
+      - **Browser**: If you need browser features (web browsing, screenshots, etc.), deploy the [Browser Template](https://zeabur.com/templates/H8L4G1)
 
       ## Zeabur-Specific Configuration
       This template disables mDNS/Bonjour (`OPENCLAW_DISABLE_BONJOUR=1`) because Zeabur container hostnames can exceed the 63-byte DNS label limit. mDNS is only used for local network discovery (like AirPlay/Chromecast) and is not needed in cloud environments where services connect via internal DNS.
@@ -674,8 +674,8 @@ localization:
       - `/home/node/.openclaw` - 設定、會話、裝置和憑證
       - `/home/node/.openclaw/workspace` - 工作區和記憶檔案
 
-      ## Browser Sandbox
-      如需瀏覽器功能（網頁瀏覽、截圖等），請將 [Browser Sandbox 模板](https://zeabur.com/templates/H8L4G1)與 OpenClaw 一起部署。
+      ## 功能擴充
+      - **瀏覽器**：如需瀏覽器功能（網頁瀏覽、截圖等），請部署 [Browser 模板](https://zeabur.com/templates/H8L4G1)
 
       ## Zeabur 專屬設定
       此模板停用了 mDNS/Bonjour（`OPENCLAW_DISABLE_BONJOUR=1`），因為 Zeabur 容器主機名稱可能超過 63 bytes 的 DNS 標籤限制。mDNS 僅用於區域網路發現（類似 AirPlay/Chromecast），在雲端環境中服務透過內部 DNS 連線，因此不需要此功能。
@@ -783,8 +783,8 @@ localization:
       - `/home/node/.openclaw` - 配置、会话、设备和凭证
       - `/home/node/.openclaw/workspace` - 工作区和记忆文件
 
-      ## Browser Sandbox
-      如需浏览器功能（网页浏览、截图等），请将 [Browser Sandbox 模板](https://zeabur.com/templates/H8L4G1)与 OpenClaw 一起部署。
+      ## 功能扩充
+      - **浏览器**：如需浏览器功能（网页浏览、截图等），请部署 [Browser 模板](https://zeabur.com/templates/H8L4G1)
 
       ## Zeabur 专属配置
       此模板停用了 mDNS/Bonjour（`OPENCLAW_DISABLE_BONJOUR=1`），因为 Zeabur 容器主机名称可能超过 63 bytes 的 DNS 标签限制。mDNS 仅用于区域网络发现（类似 AirPlay/Chromecast），在云端环境中服务通过内部 DNS 连接，因此不需要此功能。
@@ -892,8 +892,8 @@ localization:
       - `/home/node/.openclaw` - 設定、セッション、デバイス、認証情報
       - `/home/node/.openclaw/workspace` - ワークスペースとメモリファイル
 
-      ## Browser Sandbox
-      ブラウザ機能（Web ブラウジング、スクリーンショットなど）が必要な場合は、OpenClaw と一緒に [Browser Sandbox テンプレート](https://zeabur.com/templates/H8L4G1)をデプロイしてください。
+      ## 機能拡張
+      - **ブラウザ**：ブラウザ機能（Web ブラウジング、スクリーンショットなど）が必要な場合は、[Browser テンプレート](https://zeabur.com/templates/H8L4G1)をデプロイしてください
 
       ## Zeabur 固有の設定
       このテンプレートでは mDNS/Bonjour を無効化しています（`OPENCLAW_DISABLE_BONJOUR=1`）。Zeabur コンテナのホスト名が 63 バイトの DNS ラベル制限を超える可能性があるためです。mDNS はローカルネットワーク検出（AirPlay/Chromecast のような）にのみ使用され、クラウド環境ではサービスは内部 DNS を通じて接続するため、この機能は不要です。
@@ -1002,8 +1002,8 @@ localization:
       - `/home/node/.openclaw` - Configuración, sesiones, dispositivos y credenciales
       - `/home/node/.openclaw/workspace` - Espacio de trabajo y archivos de memoria
 
-      ## Browser Sandbox
-      Si necesita funciones del navegador (navegación web, capturas de pantalla, etc.), despliegue la [Plantilla Browser Sandbox](https://zeabur.com/templates/H8L4G1) junto con OpenClaw.
+      ## Extensiones de Funciones
+      - **Navegador**: Si necesita funciones del navegador (navegación web, capturas de pantalla, etc.), despliegue la [Plantilla Browser](https://zeabur.com/templates/H8L4G1)
 
       ## Configuración Específica de Zeabur
       Esta plantilla deshabilita mDNS/Bonjour (`OPENCLAW_DISABLE_BONJOUR=1`) porque los nombres de host de los contenedores de Zeabur pueden exceder el límite de 63 bytes de las etiquetas DNS. mDNS solo se usa para el descubrimiento de red local (como AirPlay/Chromecast) y no es necesario en entornos de nube donde los servicios se conectan a través de DNS interno.
@@ -1112,8 +1112,8 @@ localization:
       - `/home/node/.openclaw` - Konfigurasi, sesi, perangkat, dan kredensial
       - `/home/node/.openclaw/workspace` - Ruang kerja dan file memori
 
-      ## Browser Sandbox
-      Jika Anda memerlukan fitur browser (browsing web, screenshot, dll.), deploy [Template Browser Sandbox](https://zeabur.com/templates/H8L4G1) bersama OpenClaw.
+      ## Ekstensi Fitur
+      - **Browser**: Jika Anda memerlukan fitur browser (browsing web, screenshot, dll.), deploy [Template Browser](https://zeabur.com/templates/H8L4G1)
 
       ## Konfigurasi Khusus Zeabur
       Template ini menonaktifkan mDNS/Bonjour (`OPENCLAW_DISABLE_BONJOUR=1`) karena nama host container Zeabur dapat melebihi batas label DNS 63 byte. mDNS hanya digunakan untuk penemuan jaringan lokal (seperti AirPlay/Chromecast) dan tidak diperlukan di lingkungan cloud di mana layanan terhubung melalui DNS internal.
