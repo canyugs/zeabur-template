@@ -30,7 +30,13 @@ spec:
       # OpenClaw 🦞
       OpenClaw 🦞 (formerly Clawdbot, Moltbot) is a personal AI assistant that runs locally and connects to multiple messaging platforms via a WebSocket-based Gateway architecture.
 
-      ⚠️ This template uses `ghcr.io/openclaw/openclaw:2026.1.30`. OpenClaw 🦞 is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues. If you encounter any issues, feel free to check the [GitHub issues](https://github.com/openclaw/openclaw/issues) for solutions or to report new ones. For Zeabur platform-related issues, please contact Zeabur support.
+      ⚠️ This template uses `ghcr.io/openclaw/openclaw:2026.1.30`. OpenClaw 🦞 is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues.
+
+      ⚠️ If you encounter any issues, feel free to check the [GitHub issues](https://github.com/openclaw/openclaw/issues) for solutions or to report new ones. For Zeabur platform-related issues, please contact Zeabur support.
+
+      ⚠️ macOS-specific software and packages (e.g. Homebrew) are not supported in this container environment. Please look for alternative solutions.
+
+      ⚠️ This template is pre-configured and ready to use - no need to run the setup wizard. If you do want to run the wizard, remember to set bind to `lan` mode. Refer to the [official documentation](https://docs.openclaw.ai) for more advanced configuration.
 
       ---
 
@@ -133,7 +139,7 @@ spec:
         4. `rm backup.tar.gz` to delete backup file
         5. Restart service
 
-      ⚠️ Restore will overwrite existing configuration and data on the new service. Remember to also restore related environment variables (e.g. `TELEGRAM_BOT_TOKEN`).
+      ⚠️ Restore will overwrite existing configuration and data on the new service. Remember to also restore related environment variables (e.g. `TELEGRAM_BOT_TOKEN`). Channel backup/restore has only been tested with Telegram and WhatsApp.
 
       ## Migrating from Clawdbot / Moltbot
       **Old version data locations:**
@@ -173,6 +179,8 @@ spec:
       - Add tip to backup after initial setup
       - Remove Google Gemini CLI patch (fixed upstream)
       - Remove ANTHROPIC_API_KEY and OPENAI_API_KEY from deployment variables to prevent OpenClaw from detecting empty API keys and failing (can be configured later via Web UI or environment variables)
+
+      To change the image version, go to **Settings** tab → **Service Image Source** → modify `ghcr.io/openclaw/openclaw:<tag>`.
 
     services:
       - name: OpenClaw
@@ -611,7 +619,13 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞（原 Clawdbot、Moltbot）是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台。
 
-      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.1.30`。OpenClaw 🦞 正在快速開發中，可能存在尚未發現的 bug。更改版本後也無法確保穩定性。如果遇到任何問題，歡迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 尋找解決方案或回報新問題。Zeabur 平台相關問題請聯繫 Zeabur 支援。
+      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.1.30`。OpenClaw 🦞 正在快速開發中，可能存在尚未發現的 bug。更改版本後也無法確保穩定性。
+
+      ⚠️ 如果遇到任何問題，歡迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 尋找解決方案或回報新問題。Zeabur 平台相關問題請聯繫 Zeabur 支援。
+
+      ⚠️ macOS 特有的軟體與套件（如 Homebrew）無法在此容器環境中使用，請尋找其他替代方案。
+
+      ⚠️ 本模板已預先設定好可直接使用，不需要執行設定精靈。如果要執行精靈，請記得將 bind 設定為 `lan` 模式，或參考[官方文件](https://docs.openclaw.ai)進行更進階的設定。
 
       ---
 
@@ -714,7 +728,7 @@ localization:
         4. `rm backup.tar.gz` 刪除備份檔
         5. 重新啟動服務
 
-      ⚠️ 還原會覆蓋新服務上現有的設定和資料。記得也要將相關的環境變數（如 `TELEGRAM_BOT_TOKEN`）設定回去。
+      ⚠️ 還原會覆蓋新服務上現有的設定和資料。記得也要將相關的環境變數（如 `TELEGRAM_BOT_TOKEN`）設定回去。Channel 的備份還原目前只測試過 Telegram 和 WhatsApp 可以成功還原。
 
       ## 從 Clawdbot / Moltbot 遷移
       **舊版資料位置：**
@@ -755,6 +769,8 @@ localization:
       - 移除 Google Gemini CLI patch（上游已修復）
       - 移除部署時的 ANTHROPIC_API_KEY 和 OPENAI_API_KEY 變數，避免 OpenClaw 偵測到空的 API Key 然後執行失敗（可之後透過 Web UI 或環境變數設定）
 
+      如需更換映像檔版本，請前往**設定**頁籤 → **服務映像檔來源** → 修改 `ghcr.io/openclaw/openclaw:<tag>`。
+
   zh-CN:
     name: OpenClaw 🦞
     description: OpenClaw 🦞（原 Clawdbot、Moltbot）是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台（WhatsApp、Telegram、Slack、Discord 等）。
@@ -769,7 +785,13 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞（原 Clawdbot、Moltbot）是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台。
 
-      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.1.30`。OpenClaw 🦞 正在快速开发中，可能存在尚未发现的 bug。更改版本后也无法确保稳定性。如果遇到任何问题，欢迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 寻找解决方案或回报新问题。Zeabur 平台相关问题请联系 Zeabur 支持。
+      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.1.30`。OpenClaw 🦞 正在快速开发中，可能存在尚未发现的 bug。更改版本后也无法确保稳定性。
+
+      ⚠️ 如果遇到任何问题，欢迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 寻找解决方案或回报新问题。Zeabur 平台相关问题请联系 Zeabur 支持。
+
+      ⚠️ macOS 特有的软件与套件（如 Homebrew）无法在此容器环境中使用，请寻找其他替代方案。
+
+      ⚠️ 本模板已预先配置好可直接使用，不需要运行设置向导。如果要运行向导，请记得将 bind 设置为 `lan` 模式，或参考[官方文档](https://docs.openclaw.ai)进行更高级的配置。
 
       ---
 
@@ -872,7 +894,7 @@ localization:
         4. `rm backup.tar.gz` 删除备份文件
         5. 重新启动服务
 
-      ⚠️ 还原会覆盖新服务上现有的配置和数据。记得也要将相关的环境变量（如 `TELEGRAM_BOT_TOKEN`）设置回去。
+      ⚠️ 还原会覆盖新服务上现有的配置和数据。记得也要将相关的环境变量（如 `TELEGRAM_BOT_TOKEN`）设置回去。Channel 的备份还原目前只测试过 Telegram 和 WhatsApp 可以成功还原。
 
       ## 从 Clawdbot / Moltbot 迁移
       **旧版数据位置：**
@@ -913,6 +935,8 @@ localization:
       - 移除 Google Gemini CLI patch（上游已修复）
       - 移除部署时的 ANTHROPIC_API_KEY 和 OPENAI_API_KEY 变量，避免 OpenClaw 检测到空的 API Key 然后执行失败（可之后通过 Web UI 或环境变量设置）
 
+      如需更换镜像版本，请前往**设置**页签 → **服务镜像来源** → 修改 `ghcr.io/openclaw/openclaw:<tag>`。
+
   ja-JP:
     name: OpenClaw 🦞
     description: OpenClaw 🦞（旧 Clawdbot、Moltbot）は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォーム（WhatsApp、Telegram、Slack、Discord など）に接続する個人用 AI アシスタントです。
@@ -927,7 +951,13 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞（旧 Clawdbot、Moltbot）は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォームに接続する個人用 AI アシスタントです。
 
-      ⚠️ 本テンプレートは `ghcr.io/openclaw/openclaw:2026.1.30` を使用しています。OpenClaw 🦞 は急速に開発中のため、未発見のバグがある可能性があります。バージョンを変更した場合も安定性を保証できません。問題が発生した場合は、[GitHub issues](https://github.com/openclaw/openclaw/issues) で解決策を探したり、新しい問題を報告したりしてください。Zeabur プラットフォーム関連の問題については、Zeabur サポートにお問い合わせください。
+      ⚠️ 本テンプレートは `ghcr.io/openclaw/openclaw:2026.1.30` を使用しています。OpenClaw 🦞 は急速に開発中のため、未発見のバグがある可能性があります。バージョンを変更した場合も安定性を保証できません。
+
+      ⚠️ 問題が発生した場合は、[GitHub issues](https://github.com/openclaw/openclaw/issues) で解決策を探したり、新しい問題を報告したりしてください。Zeabur プラットフォーム関連の問題については、Zeabur サポートにお問い合わせください。
+
+      ⚠️ macOS 固有のソフトウェアやパッケージ（Homebrew など）はこのコンテナ環境ではサポートされていません。代替ソリューションをお探しください。
+
+      ⚠️ 本テンプレートは事前設定済みですぐに使用できます。セットアップウィザードを実行する必要はありません。ウィザードを実行する場合は、bind を `lan` モードに設定するか、[公式ドキュメント](https://docs.openclaw.ai)を参照してより高度な設定を行ってください。
 
       ---
 
@@ -1030,7 +1060,7 @@ localization:
         4. `rm backup.tar.gz` でバックアップファイルを削除
         5. サービスを再起動
 
-      ⚠️ 復元すると、新サービス上の既存の設定とデータが上書きされます。関連する環境変数（例：`TELEGRAM_BOT_TOKEN`）も忘れずに設定してください。
+      ⚠️ 復元すると、新サービス上の既存の設定とデータが上書きされます。関連する環境変数（例：`TELEGRAM_BOT_TOKEN`）も忘れずに設定してください。チャンネルのバックアップ復元は現在 Telegram と WhatsApp でのみテスト済みです。
 
       ## Clawdbot / Moltbot からの移行
       **旧バージョンのデータ場所：**
@@ -1071,6 +1101,8 @@ localization:
       - Google Gemini CLI パッチを削除（上流で修正済み）
       - デプロイ時の ANTHROPIC_API_KEY と OPENAI_API_KEY 変数を削除、OpenClaw が空の API Key を検出して実行に失敗するのを防止（後で Web UI または環境変数から設定可能）
 
+      イメージバージョンを変更するには、**設定**タブ → **サービスイメージソース** → `ghcr.io/openclaw/openclaw:<tag>` を編集してください。
+
   es-ES:
     name: OpenClaw 🦞
     description: OpenClaw 🦞 (anteriormente Clawdbot, Moltbot) es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería (WhatsApp, Telegram, Slack, Discord, etc.) a través de una arquitectura Gateway basada en WebSocket.
@@ -1085,7 +1117,13 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞 (anteriormente Clawdbot, Moltbot) es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería a través de una arquitectura Gateway basada en WebSocket.
 
-      ⚠️ Esta plantilla usa `ghcr.io/openclaw/openclaw:2026.1.30`. OpenClaw 🦞 está en desarrollo rápido, por lo que puede haber errores no descubiertos. Cambiar de versión tampoco garantiza estabilidad. Si encuentra algún problema, no dude en consultar los [GitHub issues](https://github.com/openclaw/openclaw/issues) para buscar soluciones o reportar nuevos problemas. Para problemas relacionados con la plataforma Zeabur, contacte al soporte de Zeabur.
+      ⚠️ Esta plantilla usa `ghcr.io/openclaw/openclaw:2026.1.30`. OpenClaw 🦞 está en desarrollo rápido, por lo que puede haber errores no descubiertos. Cambiar de versión tampoco garantiza estabilidad.
+
+      ⚠️ Si encuentra algún problema, no dude en consultar los [GitHub issues](https://github.com/openclaw/openclaw/issues) para buscar soluciones o reportar nuevos problemas. Para problemas relacionados con la plataforma Zeabur, contacte al soporte de Zeabur.
+
+      ⚠️ El software y paquetes específicos de macOS (como Homebrew) no son compatibles en este entorno de contenedor. Por favor busque soluciones alternativas.
+
+      ⚠️ Esta plantilla está preconfigurada y lista para usar - no es necesario ejecutar el asistente de configuración. Si desea ejecutar el asistente, recuerde configurar bind en modo `lan`. Consulte la [documentación oficial](https://docs.openclaw.ai) para configuraciones más avanzadas.
 
       ---
 
@@ -1189,7 +1227,7 @@ localization:
         4. `rm backup.tar.gz` para eliminar el archivo
         5. Reinicie el servicio
 
-      ⚠️ La restauración sobrescribirá la configuración y los datos existentes en el nuevo servicio. Recuerde también restaurar las variables de entorno relacionadas (ej. `TELEGRAM_BOT_TOKEN`).
+      ⚠️ La restauración sobrescribirá la configuración y los datos existentes en el nuevo servicio. Recuerde también restaurar las variables de entorno relacionadas (ej. `TELEGRAM_BOT_TOKEN`). La copia de seguridad/restauración de canales solo se ha probado con Telegram y WhatsApp.
 
       ## Migración desde Clawdbot / Moltbot
       **Ubicaciones de datos de versiones anteriores:**
@@ -1230,6 +1268,8 @@ localization:
       - Eliminar parche de Google Gemini CLI (corregido en upstream)
       - Eliminar variables ANTHROPIC_API_KEY y OPENAI_API_KEY del despliegue para evitar que OpenClaw detecte claves API vacías y falle (configurable después via Web UI o variables de entorno)
 
+      Para cambiar la versión de imagen, vaya a **Configuración** → **Fuente de imagen del servicio** → modifique `ghcr.io/openclaw/openclaw:<tag>`.
+
   id-ID:
     name: OpenClaw 🦞
     description: OpenClaw 🦞 (sebelumnya Clawdbot, Moltbot) adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan (WhatsApp, Telegram, Slack, Discord, dll.) melalui arsitektur Gateway berbasis WebSocket.
@@ -1244,7 +1284,13 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞 (sebelumnya Clawdbot, Moltbot) adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan melalui arsitektur Gateway berbasis WebSocket.
 
-      ⚠️ Template ini menggunakan `ghcr.io/openclaw/openclaw:2026.1.30`. OpenClaw 🦞 sedang dalam pengembangan cepat, jadi mungkin ada bug yang belum ditemukan. Mengubah versi juga tidak menjamin stabilitas. Jika Anda mengalami masalah, silakan kunjungi [GitHub issues](https://github.com/openclaw/openclaw/issues) untuk mencari solusi atau melaporkan masalah baru. Untuk masalah terkait platform Zeabur, silakan hubungi dukungan Zeabur.
+      ⚠️ Template ini menggunakan `ghcr.io/openclaw/openclaw:2026.1.30`. OpenClaw 🦞 sedang dalam pengembangan cepat, jadi mungkin ada bug yang belum ditemukan. Mengubah versi juga tidak menjamin stabilitas.
+
+      ⚠️ Jika Anda mengalami masalah, silakan kunjungi [GitHub issues](https://github.com/openclaw/openclaw/issues) untuk mencari solusi atau melaporkan masalah baru. Untuk masalah terkait platform Zeabur, silakan hubungi dukungan Zeabur.
+
+      ⚠️ Software dan paket khusus macOS (seperti Homebrew) tidak didukung di lingkungan container ini. Silakan cari solusi alternatif.
+
+      ⚠️ Template ini sudah dikonfigurasi dan siap digunakan - tidak perlu menjalankan wizard pengaturan. Jika ingin menjalankan wizard, ingat untuk mengatur bind ke mode `lan`. Lihat [dokumentasi resmi](https://docs.openclaw.ai) untuk konfigurasi lebih lanjut.
 
       ---
 
@@ -1348,7 +1394,7 @@ localization:
         4. `rm backup.tar.gz` untuk menghapus file backup
         5. Restart layanan
 
-      ⚠️ Pemulihan akan menimpa konfigurasi dan data yang ada di layanan baru. Jangan lupa untuk juga mengatur kembali variabel lingkungan terkait (contoh: `TELEGRAM_BOT_TOKEN`).
+      ⚠️ Pemulihan akan menimpa konfigurasi dan data yang ada di layanan baru. Jangan lupa untuk juga mengatur kembali variabel lingkungan terkait (contoh: `TELEGRAM_BOT_TOKEN`). Cadangan/pemulihan channel hanya diuji dengan Telegram dan WhatsApp.
 
       ## Migrasi dari Clawdbot / Moltbot
       **Lokasi data versi lama:**
@@ -1388,3 +1434,5 @@ localization:
       - Tambah tips untuk membuat cadangan setelah pengaturan awal
       - Hapus patch Google Gemini CLI (sudah diperbaiki di upstream)
       - Hapus variabel ANTHROPIC_API_KEY dan OPENAI_API_KEY dari deployment untuk mencegah OpenClaw mendeteksi API Key kosong dan gagal (dapat dikonfigurasi nanti via Web UI atau variabel lingkungan)
+
+      Untuk mengubah versi image, buka **Settings** → **Service Image Source** → ubah `ghcr.io/openclaw/openclaw:<tag>`.
