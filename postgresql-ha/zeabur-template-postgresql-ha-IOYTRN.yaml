@@ -342,6 +342,7 @@ spec:
         - etcd2
         - etcd3
       spec:
+        id: postgresql
         source:
           image: ghcr.io/zalando/spilo-15:3.2-p1
           command:
@@ -405,35 +406,50 @@ spec:
             default: ${POSTGRES_ADMIN_PASSWORD}
           ETCD3_HOSTS:
             default: etcd1:2379,etcd2:2379,etcd3:2379
+          POSTGRES_CONNECTION_STRING:
+            default: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}
+            expose: true
           POSTGRES_USER:
             default: postgres
+          POSTGRES_USERNAME:
+            default: postgres
+            expose: true
           POSTGRES_PASSWORD:
             default: ${POSTGRES_SUPERUSER_PASSWORD}
+            expose: true
           POSTGRES_DB:
             default: postgres
+          POSTGRES_DATABASE:
+            default: postgres
+            expose: true
           POSTGRES_HOST:
             default: ${CONTAINER_HOSTNAME}
+            expose: true
           POSTGRES_PORT:
             default: ${DATABASE_PORT}
+            expose: true
           PASSWORD:
             default: ${POSTGRES_SUPERUSER_PASSWORD}
         instructions:
-          - title: Superuser Connection String
-            content: "postgresql://postgres:${POSTGRES_SUPERUSER_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/postgres"
-          - title: Admin Connection String
-            content: "postgresql://admin:${POSTGRES_ADMIN_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/postgres"
-          - title: Superuser Username
-            content: "postgres"
-          - title: Superuser Password
-            content: "${POSTGRES_SUPERUSER_PASSWORD}"
-          - title: Admin Username
-            content: "admin"
-          - title: Admin Password
-            content: "${POSTGRES_ADMIN_PASSWORD}"
+          - title: Connection String
+            content: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DATABASE}
+          - title: PostgreSQL Connect Command
+            content: psql "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DATABASE}"
+          - title: PostgreSQL Username
+            content: ${POSTGRES_USERNAME}
+          - title: PostgreSQL Password
+            content: ${POSTGRES_PASSWORD}
+          - title: PostgreSQL Database
+            content: ${POSTGRES_DATABASE}
+          - title: PostgreSQL Host
+            content: ${PORT_FORWARDED_HOSTNAME}
+          - title: PostgreSQL Port
+            content: ${DATABASE_PORT_FORWARDED_PORT}
           - title: Cluster Status (run in container)
             content: "patronictl list pg-ha"
 
-    - name: patroni2
+    - id: postgresql
+      name: patroni2
       icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
       template: PREBUILT_V2
       dependencies:
@@ -504,35 +520,50 @@ spec:
             default: ${POSTGRES_ADMIN_PASSWORD}
           ETCD3_HOSTS:
             default: etcd1:2379,etcd2:2379,etcd3:2379
+          POSTGRES_CONNECTION_STRING:
+            default: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}
+            expose: true
           POSTGRES_USER:
             default: postgres
+          POSTGRES_USERNAME:
+            default: postgres
+            expose: true
           POSTGRES_PASSWORD:
             default: ${POSTGRES_SUPERUSER_PASSWORD}
+            expose: true
           POSTGRES_DB:
             default: postgres
+          POSTGRES_DATABASE:
+            default: postgres
+            expose: true
           POSTGRES_HOST:
             default: ${CONTAINER_HOSTNAME}
+            expose: true
           POSTGRES_PORT:
             default: ${DATABASE_PORT}
+            expose: true
           PASSWORD:
             default: ${POSTGRES_SUPERUSER_PASSWORD}
         instructions:
-          - title: Superuser Connection String
-            content: "postgresql://postgres:${POSTGRES_SUPERUSER_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/postgres"
-          - title: Admin Connection String
-            content: "postgresql://admin:${POSTGRES_ADMIN_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/postgres"
-          - title: Superuser Username
-            content: "postgres"
-          - title: Superuser Password
-            content: "${POSTGRES_SUPERUSER_PASSWORD}"
-          - title: Admin Username
-            content: "admin"
-          - title: Admin Password
-            content: "${POSTGRES_ADMIN_PASSWORD}"
+          - title: Connection String
+            content: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DATABASE}
+          - title: PostgreSQL Connect Command
+            content: psql "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DATABASE}"
+          - title: PostgreSQL Username
+            content: ${POSTGRES_USERNAME}
+          - title: PostgreSQL Password
+            content: ${POSTGRES_PASSWORD}
+          - title: PostgreSQL Database
+            content: ${POSTGRES_DATABASE}
+          - title: PostgreSQL Host
+            content: ${PORT_FORWARDED_HOSTNAME}
+          - title: PostgreSQL Port
+            content: ${DATABASE_PORT_FORWARDED_PORT}
           - title: Cluster Status (run in container)
             content: "patronictl list pg-ha"
 
-    - name: patroni3
+    - id: postgresql
+      name: patroni3
       icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
       template: PREBUILT_V2
       dependencies:
@@ -603,31 +634,45 @@ spec:
             default: ${POSTGRES_ADMIN_PASSWORD}
           ETCD3_HOSTS:
             default: etcd1:2379,etcd2:2379,etcd3:2379
+          POSTGRES_CONNECTION_STRING:
+            default: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}
+            expose: true
           POSTGRES_USER:
             default: postgres
+          POSTGRES_USERNAME:
+            default: postgres
+            expose: true
           POSTGRES_PASSWORD:
             default: ${POSTGRES_SUPERUSER_PASSWORD}
+            expose: true
           POSTGRES_DB:
             default: postgres
+          POSTGRES_DATABASE:
+            default: postgres
+            expose: true
           POSTGRES_HOST:
             default: ${CONTAINER_HOSTNAME}
+            expose: true
           POSTGRES_PORT:
             default: ${DATABASE_PORT}
+            expose: true
           PASSWORD:
             default: ${POSTGRES_SUPERUSER_PASSWORD}
         instructions:
-          - title: Superuser Connection String
-            content: "postgresql://postgres:${POSTGRES_SUPERUSER_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/postgres"
-          - title: Admin Connection String
-            content: "postgresql://admin:${POSTGRES_ADMIN_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/postgres"
-          - title: Superuser Username
-            content: "postgres"
-          - title: Superuser Password
-            content: "${POSTGRES_SUPERUSER_PASSWORD}"
-          - title: Admin Username
-            content: "admin"
-          - title: Admin Password
-            content: "${POSTGRES_ADMIN_PASSWORD}"
+          - title: Connection String
+            content: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DATABASE}
+          - title: PostgreSQL Connect Command
+            content: psql "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DATABASE}"
+          - title: PostgreSQL Username
+            content: ${POSTGRES_USERNAME}
+          - title: PostgreSQL Password
+            content: ${POSTGRES_PASSWORD}
+          - title: PostgreSQL Database
+            content: ${POSTGRES_DATABASE}
+          - title: PostgreSQL Host
+            content: ${PORT_FORWARDED_HOSTNAME}
+          - title: PostgreSQL Port
+            content: ${DATABASE_PORT_FORWARDED_PORT}
           - title: Cluster Status (run in container)
             content: "patronictl list pg-ha"
 
