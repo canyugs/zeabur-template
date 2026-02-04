@@ -12,6 +12,10 @@ spec:
           type: DOMAIN
           name: Domain
           description: The domain of your Wren AI
+        - key: OPENAI_API_KEY
+          type: PASSWORD
+          name: OpenAI API Key
+          description: Your OpenAI API key for AI features
     readme: ""
     services:
         - name: wren-engine
@@ -19,22 +23,23 @@ spec:
           template: PREBUILT_V2
           spec:
             source:
-                image: ghcr.io/canner/wren-engine
+                image: ghcr.io/canner/wren-engine:0.22.0
             ports:
                 - id: http
                   port: 8080
                   type: HTTP
+            volumes:
+                - id: data
+                  dir: /usr/src/app/data
             configs:
                 - path: /usr/src/app/etc/config.properties
                   template: |
                     node.environment=production
                     wren.directory=/usr/src/app/etc/mdl
-
-                  permission: null
-                  envsubst: null
-            volumes:
-                - id: etc
-                  dir: /usr/src/app/etc
+                    wren.datasource.type=duckdb
+                - path: /usr/src/app/etc/mdl/mdl.json
+                  template: |
+                    {"catalog":"wrenai","schema":"public","models":[]}
             portForwarding:
                 enabled: false
         - name: wren-ui
@@ -43,7 +48,7 @@ spec:
           domainKey: PUBLIC_DOMAIN
           spec:
             source:
-                image: ghcr.io/canner/wren-ui
+                image: ghcr.io/canner/wren-ui:0.32.2
             ports:
                 - id: web
                   port: 3000
@@ -55,19 +60,42 @@ spec:
                 DB_TYPE:
                     default: sqlite
                     expose: false
-                IBIS_SERVER_ENDPOINT:
-                    default: http://ibis-server:8000
-                    expose: false
                 SQLITE_FILE:
                     default: /app/data/db.sqlite3
-                    expose: false
-                WREN_AI_ENDPOINT:
-                    default: http://wren-ai-service:5555
                     expose: false
                 WREN_ENGINE_ENDPOINT:
                     default: http://wren-engine:8080
                     expose: false
-              
+                WREN_AI_ENDPOINT:
+                    default: http://wren-ai-service:5555
+                    expose: false
+                IBIS_SERVER_ENDPOINT:
+                    default: http://ibis-server:8000
+                    expose: false
+                GENERATION_MODEL:
+                    default: gpt-4o-mini
+                    expose: false
+                WREN_ENGINE_PORT:
+                    default: "8080"
+                    expose: false
+                WREN_PRODUCT_VERSION:
+                    default: "0.29.1"
+                    expose: false
+                WREN_ENGINE_VERSION:
+                    default: "0.22.0"
+                    expose: false
+                WREN_AI_SERVICE_VERSION:
+                    default: "0.29.0"
+                    expose: false
+                WREN_UI_VERSION:
+                    default: "0.32.2"
+                    expose: false
+                TELEMETRY_ENABLED:
+                    default: "false"
+                    expose: false
+                EXPERIMENTAL_ENGINE_RUST_VERSION:
+                    default: "false"
+                    expose: false
             portForwarding:
                 enabled: false
         - name: ibis-server
@@ -75,11 +103,14 @@ spec:
           template: PREBUILT_V2
           spec:
             source:
-                image: ghcr.io/canner/wren-engine-ibis
+                image: ghcr.io/canner/wren-engine-ibis:0.22.0
             ports:
                 - id: http
                   port: 8000
                   type: HTTP
+            volumes:
+                - id: data
+                  dir: /usr/src/app/data
             env:
                 WREN_ENGINE_ENDPOINT:
                     default: http://wren-engine:8080
@@ -91,12 +122,15 @@ spec:
           template: PREBUILT_V2
           spec:
             source:
-                image: ghcr.io/canner/wren-ai-service
+                image: ghcr.io/canner/wren-ai-service:0.29.0
             ports:
                 - id: http
                   port: 5555
                   type: HTTP
             env:
+                OPENAI_API_KEY:
+                    default: ${OPENAI_API_KEY}
+                    expose: false
                 CONFIG_PATH:
                     default: /app/config.yaml
                     expose: false
@@ -120,7 +154,7 @@ spec:
                     expose: false
             configs:
                 - path: /app/config.yaml
-                  template: "type: llm\nprovider: litellm_llm\ntimeout: 120\nmodels:\n  - alias: default\n    model: gpt-4.1-nano-2025-04-14\n    context_window_size: 1000000\n    kwargs:\n      max_tokens: 4096\n      n: 1\n      seed: 0\n      temperature: 0\n  - model: gpt-4.1-mini-2025-04-14\n    context_window_size: 1000000\n    kwargs:\n      max_tokens: 4096\n      n: 1\n      seed: 0\n      temperature: 0\n  - model: gpt-4.1-2025-04-14\n    context_window_size: 1000000\n    kwargs:\n      max_tokens: 4096\n      n: 1\n      seed: 0\n      temperature: 0\n  - model: gpt-5-nano-2025-08-07\n    context_window_size: 380000\n    kwargs:\n      max_completion_tokens: 4096\n      n: 1\n      seed: 0\n      reasoning_effort: minimal\n  - model: gpt-5-mini-2025-08-07\n    context_window_size: 380000\n    kwargs:\n      max_completion_tokens: 4096\n      n: 1\n      seed: 0\n      reasoning_effort: minimal\n  - model: gpt-5-2025-08-07\n    context_window_size: 380000\n    kwargs:\n      max_completion_tokens: 4096\n      n: 1\n      seed: 0\n      reasoning_effort: minimal\n---\ntype: embedder\nprovider: litellm_embedder\nmodels:\n  - model: text-embedding-3-large\n    alias: default\n    timeout: 120\n\n---\ntype: engine\nprovider: wren_ui\nendpoint: http://wren-ui:3000\n\n---\ntype: engine\nprovider: wren_ibis\nendpoint: http://ibis-server:8000\n\n---\ntype: document_store\nprovider: qdrant\nlocation: http://qdrant:6333\nembedding_model_dim: 3072\ntimeout: 120\nrecreate_index: false \n\n---\ntype: pipeline\npipes:\n  - name: db_schema_indexing\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: historical_question_indexing\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: table_description_indexing\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: db_schema_retrieval\n    llm: litellm_llm.default\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: historical_question_retrieval\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: sql_generation\n    llm: litellm_llm.default\n    engine: wren_ui\n    document_store: qdrant\n  - name: sql_correction\n    llm: litellm_llm.default\n    engine: wren_ui\n    document_store: qdrant\n  - name: followup_sql_generation\n    llm: litellm_llm.default\n    engine: wren_ui\n    document_store: qdrant\n  - name: sql_answer\n    llm: litellm_llm.default\n  - name: semantics_description\n    llm: litellm_llm.default\n  - name: relationship_recommendation\n    llm: litellm_llm.default\n  - name: question_recommendation\n    llm: litellm_llm.default\n  - name: question_recommendation_sql_generation\n    llm: litellm_llm.default\n    engine: wren_ui\n    document_store: qdrant\n  - name: intent_classification\n    llm: litellm_llm.default\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: misleading_assistance\n    llm: litellm_llm.default\n  - name: data_assistance\n    llm: litellm_llm.default\n  - name: sql_pairs_indexing\n    document_store: qdrant\n    embedder: litellm_embedder.default\n  - name: sql_pairs_retrieval\n    document_store: qdrant\n    embedder: litellm_embedder.default\n    llm: litellm_llm.default\n  - name: preprocess_sql_data\n    llm: litellm_llm.default\n  - name: sql_executor\n    engine: wren_ui\n  - name: chart_generation\n    llm: litellm_llm.default\n  - name: chart_adjustment\n    llm: litellm_llm.default\n  - name: user_guide_assistance\n    llm: litellm_llm.default\n  - name: sql_question_generation\n    llm: litellm_llm.default\n  - name: sql_generation_reasoning\n    llm: litellm_llm.default\n  - name: followup_sql_generation_reasoning\n    llm: litellm_llm.default\n  - name: sql_regeneration\n    llm: litellm_llm.default\n    engine: wren_ui\n  - name: instructions_indexing\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: instructions_retrieval\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: sql_functions_retrieval\n    engine: wren_ibis\n    document_store: qdrant\n  - name: project_meta_indexing\n    document_store: qdrant\n  - name: sql_tables_extraction\n    llm: litellm_llm.default\n  - name: sql_diagnosis\n    llm: litellm_llm.default\n\n---\nsettings:\n  doc_endpoint: https://docs.getwren.ai\n  is_oss: true\n  engine_timeout: 30\n  column_indexing_batch_size: 50\n  table_retrieval_size: 10\n  table_column_retrieval_size: 100\n  allow_intent_classification: true\n  allow_sql_generation_reasoning: true\n  allow_sql_functions_retrieval: true\n  enable_column_pruning: false\n  max_sql_correction_retries: 3\n  query_cache_maxsize: 1000\n  query_cache_ttl: 3600\n  langfuse_host: https://cloud.langfuse.com\n  langfuse_enable: true\n  logging_level: DEBUG\n  development: false\n  historical_question_retrieval_similarity_threshold: 0.9\n  sql_pairs_similarity_threshold: 0.7\n  sql_pairs_retrieval_max_size: 10\n  instructions_similarity_threshold: 0.7\n  instructions_top_k: 10"
+                  template: "type: llm\nprovider: litellm_llm\ntimeout: 120\nmodels:\n  - alias: default\n    model: gpt-4o-mini\n    context_window_size: 128000\n    kwargs:\n      max_tokens: 4096\n      n: 1\n      seed: 0\n      temperature: 0\n  - model: gpt-4o\n    context_window_size: 128000\n    kwargs:\n      max_tokens: 4096\n      n: 1\n      seed: 0\n      temperature: 0\n---\ntype: embedder\nprovider: litellm_embedder\nmodels:\n  - model: text-embedding-3-large\n    alias: default\n    timeout: 120\n\n---\ntype: engine\nprovider: wren_ui\nendpoint: http://wren-ui:3000\n\n---\ntype: engine\nprovider: wren_ibis\nendpoint: http://ibis-server:8000\n\n---\ntype: document_store\nprovider: qdrant\nlocation: http://qdrant:6333\nembedding_model_dim: 3072\ntimeout: 120\nrecreate_index: false \n\n---\ntype: pipeline\npipes:\n  - name: db_schema_indexing\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: historical_question_indexing\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: table_description_indexing\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: db_schema_retrieval\n    llm: litellm_llm.default\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: historical_question_retrieval\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: sql_generation\n    llm: litellm_llm.default\n    engine: wren_ui\n    document_store: qdrant\n  - name: sql_correction\n    llm: litellm_llm.default\n    engine: wren_ui\n    document_store: qdrant\n  - name: followup_sql_generation\n    llm: litellm_llm.default\n    engine: wren_ui\n    document_store: qdrant\n  - name: sql_answer\n    llm: litellm_llm.default\n  - name: semantics_description\n    llm: litellm_llm.default\n  - name: relationship_recommendation\n    llm: litellm_llm.default\n  - name: question_recommendation\n    llm: litellm_llm.default\n  - name: question_recommendation_sql_generation\n    llm: litellm_llm.default\n    engine: wren_ui\n    document_store: qdrant\n  - name: intent_classification\n    llm: litellm_llm.default\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: misleading_assistance\n    llm: litellm_llm.default\n  - name: data_assistance\n    llm: litellm_llm.default\n  - name: sql_pairs_indexing\n    document_store: qdrant\n    embedder: litellm_embedder.default\n  - name: sql_pairs_retrieval\n    document_store: qdrant\n    embedder: litellm_embedder.default\n    llm: litellm_llm.default\n  - name: preprocess_sql_data\n    llm: litellm_llm.default\n  - name: sql_executor\n    engine: wren_ui\n  - name: chart_generation\n    llm: litellm_llm.default\n  - name: chart_adjustment\n    llm: litellm_llm.default\n  - name: user_guide_assistance\n    llm: litellm_llm.default\n  - name: sql_question_generation\n    llm: litellm_llm.default\n  - name: sql_generation_reasoning\n    llm: litellm_llm.default\n  - name: followup_sql_generation_reasoning\n    llm: litellm_llm.default\n  - name: sql_regeneration\n    llm: litellm_llm.default\n    engine: wren_ui\n  - name: instructions_indexing\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: instructions_retrieval\n    embedder: litellm_embedder.default\n    document_store: qdrant\n  - name: sql_functions_retrieval\n    engine: wren_ibis\n    document_store: qdrant\n  - name: project_meta_indexing\n    document_store: qdrant\n  - name: sql_tables_extraction\n    llm: litellm_llm.default\n  - name: sql_diagnosis\n    llm: litellm_llm.default\n  - name: sql_knowledge_retrieval\n    engine: wren_ibis\n    document_store: qdrant\n\n---\nsettings:\n  doc_endpoint: https://docs.getwren.ai\n  is_oss: true\n  engine_timeout: 30\n  column_indexing_batch_size: 50\n  table_retrieval_size: 10\n  table_column_retrieval_size: 100\n  allow_intent_classification: true\n  allow_sql_generation_reasoning: true\n  allow_sql_functions_retrieval: true\n  enable_column_pruning: false\n  max_sql_correction_retries: 3\n  query_cache_maxsize: 1000\n  query_cache_ttl: 3600\n  langfuse_host: https://cloud.langfuse.com\n  langfuse_enable: true\n  logging_level: DEBUG\n  development: false\n  historical_question_retrieval_similarity_threshold: 0.9\n  sql_pairs_similarity_threshold: 0.7\n  sql_pairs_retrieval_max_size: 10\n  instructions_similarity_threshold: 0.7\n  instructions_top_k: 10"
                   permission: null
                   envsubst: null
             portForwarding:
@@ -130,7 +164,7 @@ spec:
           template: PREBUILT_V2
           spec:
             source:
-                image: qdrant/qdrant:latest
+                image: qdrant/qdrant:v1.11.0
             ports:
                 - id: http
                   port: 6333
@@ -144,9 +178,6 @@ spec:
                 - id: snapshots
                   dir: /qdrant/snapshots
             env:
-                PUBLIC_DOMAIN:
-                    default: werfof34g
-                    expose: false
                 QDRANT__LOG_LEVEL:
                     default: INFO
                     expose: false
@@ -160,6 +191,10 @@ localization:
               type: DOMAIN
               name: 網域
               description: 你的 Wren AI 網域
+            - key: OPENAI_API_KEY
+              type: PASSWORD
+              name: OpenAI API 金鑰
+              description: 用於 AI 功能的 OpenAI API 金鑰
     zh-CN:
         description: ⚡️ GenBI（生成式商业智能）使用自然语言查询任何数据库，生成准确的 SQL（文本转 SQL）、图表（文本转图表）并在几秒钟内提供 AI 驱动的洞察。
         variables:
@@ -167,6 +202,10 @@ localization:
               type: DOMAIN
               name: 域名
               description: 你的 Wren AI 域名
+            - key: OPENAI_API_KEY
+              type: PASSWORD
+              name: OpenAI API 密钥
+              description: 用于 AI 功能的 OpenAI API 密钥
     ja-JP:
         description: ⚡️ GenBI（生成的BI）は、自然言語で任意のデータベースをクエリし、正確なSQL（テキストからSQL）、チャート（テキストからチャート）、AI駆動のインサイトを数秒で生成します。
         variables:
@@ -174,6 +213,10 @@ localization:
               type: DOMAIN
               name: ドメイン
               description: Wren AI のドメイン
+            - key: OPENAI_API_KEY
+              type: PASSWORD
+              name: OpenAI API キー
+              description: AI機能用のOpenAI APIキー
     es-ES:
         description: ⚡️ GenBI (BI Generativa) consulta cualquier base de datos en lenguaje natural, genera SQL preciso (Texto a SQL), gráficos (Texto a gráficos) e información impulsada por IA en segundos.
         variables:
@@ -181,6 +224,10 @@ localization:
               type: DOMAIN
               name: Dominio
               description: El dominio de tu Wren AI
+            - key: OPENAI_API_KEY
+              type: PASSWORD
+              name: Clave de API de OpenAI
+              description: Tu clave de API de OpenAI para funciones de IA
     id-ID:
         description: ⚡️ GenBI (BI Generatif) melakukan kueri database apa pun dalam bahasa alami, menghasilkan SQL yang akurat (Teks ke SQL), grafik (Teks ke grafik), dan wawasan yang didukung AI dalam hitungan detik.
         variables:
@@ -188,3 +235,7 @@ localization:
               type: DOMAIN
               name: Domain
               description: Domain Wren AI Anda
+            - key: OPENAI_API_KEY
+              type: PASSWORD
+              name: Kunci API OpenAI
+              description: Kunci API OpenAI Anda untuk fitur AI
