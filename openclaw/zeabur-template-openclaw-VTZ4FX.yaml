@@ -185,8 +185,8 @@ spec:
       1. Go to **Settings** → **Command**, change to: `/opt/openclaw/rescue.sh` (or `sleep infinity` for older versions without commands)
       2. Go to **Settings** → **Health Check**, disable it (rescue mode won't respond to health checks)
       3. Restart service - container will run without starting OpenClaw
-      4. Open **Command** tab to access the container
-      5. Fix the config file at `/home/node/.openclaw/openclaw.json`
+      4. Open **Files** tab to access the file browser
+      5. Check **Logs** to find the error. Example: `Invalid config at /home/node/.openclaw/openclaw.json: - agents.list.0: Unrecognized key: "allowModels"` — fix the config at `/home/node/.openclaw/openclaw.json` in the file browser, or open **Command** and run `openclaw doctor --fix` to remove unrecognized keys automatically
       6. Change startup command back to: `/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh`
          - Older versions (without commands): `node dist/index.js gateway --allow-unconfigured --bind "${OPENCLAW_GATEWAY_BIND}" --port "${OPENCLAW_GATEWAY_PORT}" --token "${OPENCLAW_GATEWAY_TOKEN}"`
       7. Re-enable health check and restart service
@@ -676,8 +676,8 @@ localization:
       1. 前往**設定** → **啟動指令**，改成：`/opt/openclaw/rescue.sh`（舊版沒有這些指令，可用 `sleep infinity`）
       2. 前往**設定** → **健康檢查**，關閉它（救援模式不會回應健康檢查）
       3. 重新啟動服務 - 容器會運行但不啟動 OpenClaw
-      4. 開啟**指令**頁籤進入容器
-      5. 修復設定檔 `/home/node/.openclaw/openclaw.json`
+      4. 開啟**檔案**頁籤進入檔案瀏覽器
+      5. 從**紀錄**中查看錯誤原因，例如：`Invalid config at /home/node/.openclaw/openclaw.json: - agents.list.0: Unrecognized key: "allowModels"` — 在檔案瀏覽器中修復 `/home/node/.openclaw/openclaw.json`，或開啟**指令**執行 `openclaw doctor --fix` 自動移除無法識別的設定項
       6. 將啟動指令改回：`/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh`
          - 舊版（沒有這些指令）：`node dist/index.js gateway --allow-unconfigured --bind "${OPENCLAW_GATEWAY_BIND}" --port "${OPENCLAW_GATEWAY_PORT}" --token "${OPENCLAW_GATEWAY_TOKEN}"`
       7. 重新開啟健康檢查並重新啟動服務
@@ -881,8 +881,8 @@ localization:
       1. 前往**设置** → **启动命令**，改成：`/opt/openclaw/rescue.sh`（旧版没有这些命令，可用 `sleep infinity`）
       2. 前往**设置** → **健康检查**，关闭它（救援模式不会响应健康检查）
       3. 重新启动服务 - 容器会运行但不启动 OpenClaw
-      4. 打开**命令**页签进入容器
-      5. 修复配置文件 `/home/node/.openclaw/openclaw.json`
+      4. 打开**文件**页签进入文件浏览器
+      5. 从**日志**中查看错误原因，例如：`Invalid config at /home/node/.openclaw/openclaw.json: - agents.list.0: Unrecognized key: "allowModels"` — 在文件浏览器中修复 `/home/node/.openclaw/openclaw.json`，或打开**命令**执行 `openclaw doctor --fix` 自动移除无法识别的配置项
       6. 将启动命令改回：`/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh`
          - 旧版（没有这些命令）：`node dist/index.js gateway --allow-unconfigured --bind "${OPENCLAW_GATEWAY_BIND}" --port "${OPENCLAW_GATEWAY_PORT}" --token "${OPENCLAW_GATEWAY_TOKEN}"`
       7. 重新开启健康检查并重新启动服务
@@ -1086,8 +1086,8 @@ localization:
       1. **設定** → **コマンド** に移動、変更：`/opt/openclaw/rescue.sh`（旧バージョンはコマンドがないため `sleep infinity` を使用）
       2. **設定** → **ヘルスチェック** に移動、無効化（レスキューモードはヘルスチェックに応答しません）
       3. サービスを再起動 - コンテナは実行されますが OpenClaw は起動しません
-      4. **コマンド** タブを開いてコンテナにアクセス
-      5. 設定ファイル `/home/node/.openclaw/openclaw.json` を修正
+      4. **ファイル** タブを開いてファイルブラウザにアクセス
+      5. **ログ**でエラー原因を確認。例：`Invalid config at /home/node/.openclaw/openclaw.json: - agents.list.0: Unrecognized key: "allowModels"` — ファイルブラウザで `/home/node/.openclaw/openclaw.json` を修正するか、**コマンド**を開いて `openclaw doctor --fix` を実行して認識できないキーを自動削除
       6. スタートコマンドを戻す：`/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh`
          - 旧バージョン（コマンドなし）：`node dist/index.js gateway --allow-unconfigured --bind "${OPENCLAW_GATEWAY_BIND}" --port "${OPENCLAW_GATEWAY_PORT}" --token "${OPENCLAW_GATEWAY_TOKEN}"`
       7. ヘルスチェックを再有効化してサービスを再起動
