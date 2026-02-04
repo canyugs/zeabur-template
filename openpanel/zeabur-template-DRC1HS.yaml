@@ -198,7 +198,7 @@ spec:
           template: PREBUILT_V2
           spec:
             source:
-                image: clickhouse/clickhouse-server:25.8-alpine
+                image: clickhouse/clickhouse-server:25.10.2.65
             ports:
                 - id: http
                   port: 8123
