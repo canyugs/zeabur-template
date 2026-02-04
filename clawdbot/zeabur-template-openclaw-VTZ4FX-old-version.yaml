@@ -1,0 +1,500 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: "OpenClaw \U0001F99E"
+spec:
+    description: "OpenClaw \U0001F99E (formerly Clawdbot, Moltbot) is a personal AI assistant that runs locally and connects to multiple messaging platforms (WhatsApp, Telegram, Slack, Discord, etc.) via a WebSocket-based Gateway architecture.\n"
+    coverImage: https://raw.githubusercontent.com/openclaw/openclaw/main/docs/assets/openclaw-logo-text.png
+    icon: https://raw.githubusercontent.com/openclaw/openclaw/main/docs/assets/pixel-lobster.svg
+    variables:
+        - key: PUBLIC_DOMAIN
+          type: DOMAIN
+          name: Domain
+          description: What domain do you want to bind openclaw to?
+        - key: ZEABUR_AI_HUB_API_KEY
+          type: AI_HUB_KEY
+          name: Zeabur AI Hub API Key (Recommended)
+          description: Your Zeabur AI Hub API key for using Gemini/GPT/Claude/DeepSeek via AI Hub (optional, can be configured later)
+    tags:
+        - AI
+        - Assistant
+        - Chatbot
+        - WhatsApp
+        - Telegram
+        - Slack
+        - Discord
+    readme: "# OpenClaw \U0001F99E\nOpenClaw \U0001F99E (formerly Clawdbot, Moltbot) is a personal AI assistant that runs locally and connects to multiple messaging platforms via a WebSocket-based Gateway architecture.\n\n⚠️ This template uses `ghcr.io/openclaw/openclaw:2026.1.30`. OpenClaw \U0001F99E is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues.\n\n⚠️ If you encounter any issues, feel free to check the [GitHub issues](https://github.com/openclaw/openclaw/issues) for solutions or to report new ones. For Zeabur platform-related issues, please contact Zeabur support.\n\n⚠️ macOS-specific software and packages (e.g. Homebrew) are not supported in this container environment. Please look for alternative solutions.\n\n---\n\n## Recommended Resources\nOpenClaw \U0001F99E is CPU-intensive. Resource requirements may vary depending on the tools and features you use.\n- **Dedicated Server**: 2+ vCPU, 2+ GB - highly recommended for stable performance\n\n## Feature Extensions\n- **Browser**: If you need browser features (web browsing, screenshots, etc.), deploy the [Browser Template](https://zeabur.com/templates/H8L4G1)\n\n## Usage\n1. After deployment, copy \"Web UI (with token)\" URL from the **Instructions** tab and paste it into your browser (first login requires token, after that you can access directly)\n2. **Configure AI model** (choose one):\n   - **Zeabur AI Hub**: If you entered the API Key during deployment, go directly to step 3. You can also add `ZEABUR_AI_HUB_API_KEY` later via **Variables** tab in Zeabur dashboard (restart service after adding).\n   - **Other providers** (Anthropic, OpenAI, etc.): Go to Settings to add your API key\n3. Go to the **Chat** page to test if your AI model is working\n4. (Optional) Set up messaging platforms like Telegram, WhatsApp, etc.\n\nFor AI model configuration, see the [official documentation](https://docs.openclaw.ai/providers).\n\n## Telegram Bot Setup\n**Getting your bot token from BotFather:**\n1. Open Telegram and search for [@BotFather](https://t.me/BotFather)\n2. Send `/newbot` to create a new bot\n3. Follow the prompts to set a name and username for your bot\n4. BotFather will send you a token (e.g., `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`)\n\n**Adding the token to Zeabur:**\n1. Go to your service's **Environment Variables** tab in Zeabur dashboard\n2. Add `TELEGRAM_BOT_TOKEN` with your bot token\n3. Restart the service\n\n**Pairing your Telegram account:**\n1. Send `/start` to your bot in Telegram\n2. The bot will reply with a pairing code (e.g., `JN4MSY23`)\n3. Approve the pairing using one of these methods:\n   - **Web Chat**: In the OpenClaw web interface chat box, type `openclaw pairing approve telegram <code>`\n   - **Terminal**: Open **Command** in Zeabur dashboard, run `openclaw pairing approve telegram <code>`\n4. You'll see: `Approved telegram sender <user-id>.`\n5. Now you can chat with the bot!\n\n## WhatsApp Setup\n**Step 1: Configure WhatsApp channel**\nAdd the following configuration via OpenClaw Web UI (Settings → Config) or paste it to chat:\n```json\n\"channels\": {\n  \"whatsapp\": {\n    \"selfChatMode\": true,\n    \"dmPolicy\": \"allowlist\",\n    \"allowFrom\": [\"+15551234567\"]\n  }\n}\n```\nReplace `+15551234567` with your WhatsApp phone number (with country code). Restart the service after saving.\n\n**Step 2: Link WhatsApp**\n1. Open **Command** in Zeabur dashboard to access the container terminal\n2. Run: `openclaw channels login`\n3. A QR code will appear - scan it with WhatsApp on your phone\n4. Connection complete! You can now message yourself on WhatsApp to chat with OpenClaw\n\nFor other messaging platforms (Discord, Slack, etc.), see the [Channels documentation](https://docs.openclaw.ai/channels).\n\n## AI Model Configuration\n**Switch model for current conversation** (via chat commands):\n- `/models` - View available models\n- `/model <model-id>` - Switch model for this conversation only\n\n**Change default model** (via Web UI Settings):\n- Go to Settings → Agents → Default model to set the default model for all new conversations\n\n**Add AI providers** (via Web UI Settings or environment variables):\n- Add API keys for other AI providers (e.g., Anthropic, OpenAI)\n\nFor detailed configuration, see the [official documentation](https://docs.openclaw.ai/providers).\n\n## Data Persistence\nAll data is stored under `/home/node`:\n- `/home/node/.openclaw` - Configuration, sessions, devices, and credentials\n- `/home/node/.openclaw/workspace` - Workspace and memory files\n\n## Backup & Restore\n\U0001F4A1 **Tip:** We recommend creating a backup after completing your initial setup or making significant configuration changes.\n\n**Backup Methods** (both produce compressed files):\n- **Method 1: Zeabur Backup Service (Recommended)** - Use Zeabur's built-in backup feature. See [Zeabur Backup Documentation](https://zeabur.com/docs/data-management/backup). File structure: `data/data/.openclaw/...`\n- **Method 2: Manual Backup** - Open **Command** → Run `cd /home/node && tar -czvf backup.tar.gz .openclaw` → Download from **Files** tab\n\n**Restore**:\n- From Method 1 (e.g. `backup-6980cebef9b407ee4e87d608.tar.gz`):\n  1. Drag compressed file to `/home/node` folder in **Files** tab, file will appear in the list when upload is complete\n  2. Run `cd /home/node` in **Command**\n  3. `tar -xzvf <backup-file> --strip-components=2 -C /home/node`\n  4. `rm <backup-file>` to delete backup file\n  5. Restart service\n- From Method 2:\n  1. Drag compressed file to `/home/node` folder in **Files** tab, file will appear in the list when upload is complete\n  2. Run `cd /home/node` in **Command**\n  3. `tar -xzvf backup.tar.gz`\n  4. `rm backup.tar.gz` to delete backup file\n  5. Restart service\n\n⚠️ Restore will overwrite existing configuration and data on the new service. Remember to also restore related environment variables (e.g. `TELEGRAM_BOT_TOKEN`). Channel backup/restore has only been tested with Telegram and WhatsApp.\n\n## Migrating from Clawdbot / Moltbot\n**Old version data locations:**\n- **Clawdbot**: config `~/.clawdbot`, workspace `~/clawd`\n- **Moltbot**: config `~/.moltbot` or `~/.clawdbot`, workspace `~/clawd`\n\n**New OpenClaw location:** `/home/node/.openclaw` (includes config and workspace)\n\nOpenClaw has backward compatibility and will automatically read from `.clawdbot` and `.moltbot` folders, so you can extract directly without renaming.\n\n**Migration steps:**\n1. Backup data on your old service:\n   - Open **Command** in old service\n   - `cd /home/node && tar -czvf backup.tar.gz .clawdbot .moltbot clawd 2>/dev/null` (ignores missing folders)\n   - Download `backup.tar.gz` from **Files** tab\n2. Deploy this new OpenClaw template\n3. Restore backup to new service:\n   - Drag `backup.tar.gz` to `/home/node` folder in **Files** tab\n   - Open **Command**: `cd /home/node && tar -xzvf backup.tar.gz && rm backup.tar.gz`\n   - Restart service\n4. Your configuration, sessions, and credentials will be preserved\n\nThe `clawdbot` and `moltbot` CLI commands are still available for backward compatibility.\n\n## Zeabur-Specific Configuration\nThis template disables mDNS/Bonjour (`OPENCLAW_DISABLE_BONJOUR=1`) because Zeabur container hostnames can exceed the 63-byte DNS label limit. mDNS is only used for local network discovery (like AirPlay/Chromecast) and is not needed in cloud environments where services connect via internal DNS.\n\n## Documentation\n- Documentation: https://docs.openclaw.ai\n- GitHub: https://github.com/openclaw/openclaw\n\n## Changelog\n**2026/2/2**\n- Add AI model configuration section (global vs conversation settings)\n- Add migration guide from Clawdbot / Moltbot with data paths\n- Add backup & restore section with Zeabur backup service\n- Add tip to backup after initial setup\n- Remove Google Gemini CLI patch (fixed upstream)\n- Remove ANTHROPIC_API_KEY and OPENAI_API_KEY from deployment variables to prevent OpenClaw from detecting empty API keys and failing (can be configured later via Web UI or environment variables)\n\nTo change the image version, go to **Settings** tab → **Service Image Source** → modify `ghcr.io/openclaw/openclaw:<tag>`.\n"
+    resourceUsage:
+        cpu: 2
+        memory: 2048
+    services:
+        - name: OpenClaw
+          icon: https://raw.githubusercontent.com/openclaw/openclaw/main/docs/assets/pixel-lobster.svg
+          template: PREBUILT
+          spec:
+            source:
+                image: ghcr.io/openclaw/openclaw:2026.1.30
+                command:
+                    - /bin/sh
+                    - -c
+                    - |
+                      echo "=== Setting up openclaw command ==="
+                      # Setup openclaw command (moltbot and clawdbot also work for backward compatibility)
+                      WORKDIR="$(pwd)"
+                      mkdir -p /home/node/bin
+                      cat > /home/node/bin/openclaw << SCRIPT
+                      #!/bin/sh
+                      exec node ${WORKDIR}/dist/index.js "\$@"
+                      SCRIPT
+                      chmod +x /home/node/bin/openclaw
+                      ln -sf /home/node/bin/openclaw /home/node/bin/moltbot
+                      ln -sf /home/node/bin/openclaw /home/node/bin/clawdbot
+                      export PATH="/home/node/bin:$PATH"
+                      echo "openclaw command ready at /home/node/bin/openclaw"
+
+                      # Create initial config (only if not exists)
+                      # openclaw reads from ~/.openclaw/openclaw.json
+                      CONFIG_DIR="/home/node/.openclaw"
+                      CONFIG_FILE="$CONFIG_DIR/openclaw.json"
+                      mkdir -p "$CONFIG_DIR"
+                      chmod 700 "$CONFIG_DIR"
+
+                      if [ ! -f "$CONFIG_FILE" ]; then
+                        echo "Creating initial config..."
+
+                        # Build config JSON dynamically
+                        CONFIG_JSON='{"gateway":{"controlUi":{"allowInsecureAuth":true}}}'
+
+                        # Add Zeabur AI Hub if configured
+                        if [ -n "${ZEABUR_AI_HUB_API_KEY}" ]; then
+                          CONFIG_JSON=$(echo "$CONFIG_JSON" | node -e "
+                            const fs = require('fs');
+                            let config = JSON.parse(fs.readFileSync(0, 'utf8'));
+                            config.agents = { defaults: { model: { primary: 'zeabur-ai/gpt-5-mini' } } };
+                            config.models = { providers: { 'zeabur-ai': {
+                              baseUrl: 'https://hnd1.aihub.zeabur.ai/v1',
+                              apiKey: process.env.ZEABUR_AI_HUB_API_KEY,
+                              api: 'openai-completions',
+                              models: [
+                                {
+                                  id: 'gemini-3-pro-image-preview',
+                                  name: 'Gemini 3 Pro Image Preview (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 2, output: 120, cacheRead: 0, cacheWrite: 0 },
+                                  contextWindow: 1000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gemini-3-pro-preview',
+                                  name: 'Gemini 3 Pro Preview (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 2, output: 12, cacheRead: 0.2, cacheWrite: 0 },
+                                  contextWindow: 1000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gpt-5',
+                                  name: 'GPT-5 (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 1.25, output: 10, cacheRead: 0.13, cacheWrite: 0 },
+                                  contextWindow: 400000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'claude-sonnet-4-5',
+                                  name: 'Claude Sonnet 4.5 (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 3.3, output: 16.5, cacheRead: 0.33, cacheWrite: 0 },
+                                  contextWindow: 1000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gemini-3-flash-preview',
+                                  name: 'Gemini 3 Flash Preview (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 0.5, output: 3, cacheRead: 0.05, cacheWrite: 0 },
+                                  contextWindow: 1000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gpt-5-mini',
+                                  name: 'GPT-5 Mini (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 0.25, output: 2, cacheRead: 0.03, cacheWrite: 0 },
+                                  contextWindow: 400000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'claude-haiku-4-5',
+                                  name: 'Claude Haiku 4.5 (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 1.1, output: 5.5, cacheRead: 0.11, cacheWrite: 0 },
+                                  contextWindow: 1000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gemini-2.5-pro',
+                                  name: 'Gemini 2.5 Pro (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 1.25, output: 10, cacheRead: 0.125, cacheWrite: 0 },
+                                  contextWindow: 1000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gemini-2.5-flash',
+                                  name: 'Gemini 2.5 Flash (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 0.3, output: 2.5, cacheRead: 0.03, cacheWrite: 0 },
+                                  contextWindow: 1000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gemini-2.5-flash-lite',
+                                  name: 'Gemini 2.5 Flash Lite (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 0.1, output: 0.4, cacheRead: 0.01, cacheWrite: 0 },
+                                  contextWindow: 1000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gemini-2.5-flash-image',
+                                  name: 'Gemini 2.5 Flash Image (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 0.3, output: 30, cacheRead: 0, cacheWrite: 0 },
+                                  contextWindow: 1000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'deepseek-v3.2',
+                                  name: 'DeepSeek V3.2 (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text'],
+                                  cost: { input: 0.27, output: 0.4, cacheRead: 0.216, cacheWrite: 0 },
+                                  contextWindow: 164000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gpt-4.1',
+                                  name: 'GPT-4.1 (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 2, output: 8, cacheRead: 0, cacheWrite: 0 },
+                                  contextWindow: 1048576,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gpt-4.1-mini',
+                                  name: 'GPT-4.1 mini (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 0.4, output: 1.6, cacheRead: 0.1, cacheWrite: 0 },
+                                  contextWindow: 1048576,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gpt-4o',
+                                  name: 'GPT-4o (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 2.5, output: 10, cacheRead: 1.25, cacheWrite: 0 },
+                                  contextWindow: 128000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gpt-4o-mini',
+                                  name: 'GPT-4o mini (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 0.15, output: 0.6, cacheRead: 0.075, cacheWrite: 0 },
+                                  contextWindow: 128000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'gpt-oss-120b',
+                                  name: 'GPT OSS 120B (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text'],
+                                  cost: { input: 0.35, output: 0.75, cacheRead: 0, cacheWrite: 0 },
+                                  contextWindow: 131072,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'grok-4-fast-non-reasoning',
+                                  name: 'Grok 4 Fast (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 0.2, output: 0.5, cacheRead: 0.05, cacheWrite: 0 },
+                                  contextWindow: 2000000,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'glm-4.6',
+                                  name: 'GLM-4.6 (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text', 'image'],
+                                  cost: { input: 0.45, output: 1.9, cacheRead: 0.11, cacheWrite: 0 },
+                                  contextWindow: 204800,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'llama-3.3-70b',
+                                  name: 'Llama 3.3 70B (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text'],
+                                  cost: { input: 0.85, output: 1.2, cacheRead: 0, cacheWrite: 0 },
+                                  contextWindow: 65536,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'qwen-3-32',
+                                  name: 'Qwen 3 32B (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text'],
+                                  cost: { input: 0.4, output: 0.8, cacheRead: 0, cacheWrite: 0 },
+                                  contextWindow: 32768,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'qwen3-next',
+                                  name: 'Qwen 3 Next 80B (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text'],
+                                  cost: { input: 0.14, output: 1.1, cacheRead: 0, cacheWrite: 0 },
+                                  contextWindow: 32768,
+                                  maxTokens: 8192
+                                },
+                                {
+                                  id: 'kimi-k2-thinking',
+                                  name: 'Kimi K2 Thinking (Zeabur AI Hub)',
+                                  reasoning: false,
+                                  input: ['text'],
+                                  cost: { input: 0.55, output: 2.5, cacheRead: 0, cacheWrite: 0 },
+                                  contextWindow: 131072,
+                                  maxTokens: 8192
+                                }
+                              ]
+                            }}};
+                            console.log(JSON.stringify(config));
+                          ")
+                        fi
+
+                        # Write formatted config
+                        echo "$CONFIG_JSON" | node -e "
+                          const fs = require('fs');
+                          const config = JSON.parse(fs.readFileSync(0, 'utf8'));
+                          console.log(JSON.stringify(config, null, 2));
+                        " > "$CONFIG_FILE"
+                        chmod 600 "$CONFIG_FILE"
+                      else
+                        echo "Config exists, checking for updates..."
+                        # Add Zeabur AI Hub provider if API key is set but provider doesn't exist
+                        if [ -n "${ZEABUR_AI_HUB_API_KEY}" ]; then
+                          node -e "
+                            const fs = require('fs');
+                            const configPath = '$CONFIG_FILE';
+
+                            try {
+                              const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+
+                              // Check if zeabur-ai provider already exists
+                              if (!config.models?.providers?.['zeabur-ai']) {
+                                console.log('Adding Zeabur AI Hub provider...');
+
+                                // Initialize models.providers if needed
+                                if (!config.models) config.models = {};
+                                if (!config.models.providers) config.models.providers = {};
+
+                                // Add zeabur-ai provider
+                                config.models.providers['zeabur-ai'] = {
+                                  baseUrl: 'https://hnd1.aihub.zeabur.ai/v1',
+                                  apiKey: process.env.ZEABUR_AI_HUB_API_KEY,
+                                  api: 'openai-completions',
+                                  models: [
+                                    { id: 'gemini-3-pro-image-preview', name: 'Gemini 3 Pro Image Preview (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 2, output: 120, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                                    { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro Preview (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 2, output: 12, cacheRead: 0.2, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                                    { id: 'gpt-5', name: 'GPT-5 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 1.25, output: 10, cacheRead: 0.13, cacheWrite: 0 }, contextWindow: 400000, maxTokens: 8192 },
+                                    { id: 'claude-sonnet-4-5', name: 'Claude Sonnet 4.5 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 3.3, output: 16.5, cacheRead: 0.33, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                                    { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.5, output: 3, cacheRead: 0.05, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                                    { id: 'gpt-5-mini', name: 'GPT-5 Mini (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.25, output: 2, cacheRead: 0.03, cacheWrite: 0 }, contextWindow: 400000, maxTokens: 8192 },
+                                    { id: 'claude-haiku-4-5', name: 'Claude Haiku 4.5 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 1.1, output: 5.5, cacheRead: 0.11, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                                    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 1.25, output: 10, cacheRead: 0.125, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                                    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.3, output: 2.5, cacheRead: 0.03, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                                    { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.1, output: 0.4, cacheRead: 0.01, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                                    { id: 'gemini-2.5-flash-image', name: 'Gemini 2.5 Flash Image (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.3, output: 30, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 8192 },
+                                    { id: 'deepseek-v3.2', name: 'DeepSeek V3.2 (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.27, output: 0.4, cacheRead: 0.216, cacheWrite: 0 }, contextWindow: 164000, maxTokens: 8192 },
+                                    { id: 'gpt-4.1', name: 'GPT-4.1 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 2, output: 8, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1048576, maxTokens: 8192 },
+                                    { id: 'gpt-4.1-mini', name: 'GPT-4.1 mini (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.4, output: 1.6, cacheRead: 0.1, cacheWrite: 0 }, contextWindow: 1048576, maxTokens: 8192 },
+                                    { id: 'gpt-4o', name: 'GPT-4o (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 2.5, output: 10, cacheRead: 1.25, cacheWrite: 0 }, contextWindow: 128000, maxTokens: 8192 },
+                                    { id: 'gpt-4o-mini', name: 'GPT-4o mini (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.15, output: 0.6, cacheRead: 0.075, cacheWrite: 0 }, contextWindow: 128000, maxTokens: 8192 },
+                                    { id: 'gpt-oss-120b', name: 'GPT OSS 120B (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.35, output: 0.75, cacheRead: 0, cacheWrite: 0 }, contextWindow: 131072, maxTokens: 8192 },
+                                    { id: 'grok-4-fast-non-reasoning', name: 'Grok 4 Fast (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.2, output: 0.5, cacheRead: 0.05, cacheWrite: 0 }, contextWindow: 2000000, maxTokens: 8192 },
+                                    { id: 'glm-4.6', name: 'GLM-4.6 (Zeabur AI Hub)', reasoning: false, input: ['text', 'image'], cost: { input: 0.45, output: 1.9, cacheRead: 0.11, cacheWrite: 0 }, contextWindow: 204800, maxTokens: 8192 },
+                                    { id: 'llama-3.3-70b', name: 'Llama 3.3 70B (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.85, output: 1.2, cacheRead: 0, cacheWrite: 0 }, contextWindow: 65536, maxTokens: 8192 },
+                                    { id: 'qwen-3-32', name: 'Qwen 3 32B (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.4, output: 0.8, cacheRead: 0, cacheWrite: 0 }, contextWindow: 32768, maxTokens: 8192 },
+                                    { id: 'qwen3-next', name: 'Qwen 3 Next 80B (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.14, output: 1.1, cacheRead: 0, cacheWrite: 0 }, contextWindow: 32768, maxTokens: 8192 },
+                                    { id: 'kimi-k2-thinking', name: 'Kimi K2 Thinking (Zeabur AI Hub)', reasoning: false, input: ['text'], cost: { input: 0.55, output: 2.5, cacheRead: 0, cacheWrite: 0 }, contextWindow: 131072, maxTokens: 8192 }
+                                  ]
+                                };
+
+                                // Only set default model if user hasn't configured any model
+                                if (!config.agents?.defaults?.model?.primary) {
+                                  if (!config.agents) config.agents = {};
+                                  if (!config.agents.defaults) config.agents.defaults = {};
+                                  config.agents.defaults.model = { primary: 'zeabur-ai/gpt-5-mini' };
+                                  console.log('Default model set to zeabur-ai/gpt-5-mini.');
+                                } else {
+                                  console.log('Keeping existing default model: ' + config.agents.defaults.model.primary);
+                                }
+
+                                fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                                console.log('Zeabur AI Hub provider added.');
+                              } else {
+                                console.log('Zeabur AI Hub provider already configured.');
+                                // Only set default model if user hasn't configured any model
+                                if (!config.agents?.defaults?.model?.primary) {
+                                  if (!config.agents) config.agents = {};
+                                  if (!config.agents.defaults) config.agents.defaults = {};
+                                  config.agents.defaults.model = { primary: 'zeabur-ai/gpt-5-mini' };
+                                  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                                  console.log('Default model set to zeabur-ai/gpt-5-mini.');
+                                } else {
+                                  console.log('Keeping existing default model: ' + config.agents.defaults.model.primary);
+                                }
+                              }
+                            } catch (err) {
+                              console.error('Warning: Failed to update config for Zeabur AI Hub:', err.message);
+                              console.error('You may need to configure the provider manually via Web UI.');
+                            }
+                          "
+                        fi
+                        # Ensure secure permissions on existing config
+                        chmod 600 "$CONFIG_FILE" 2>/dev/null || true
+                      fi
+
+                      # Initialize workspace with memory files
+                      echo "=== Initializing workspace ==="
+                      WORKSPACE_DIR="${OPENCLAW_WORKSPACE_DIR}"
+                      mkdir -p "$WORKSPACE_DIR/memory"
+                      if [ ! -f "$WORKSPACE_DIR/MEMORY.md" ]; then
+                        echo "Creating MEMORY.md..."
+                        echo "# Memory" > "$WORKSPACE_DIR/MEMORY.md"
+                        echo "" >> "$WORKSPACE_DIR/MEMORY.md"
+                        echo "This file stores long-term memories. The AI will write important information here." >> "$WORKSPACE_DIR/MEMORY.md"
+                      else
+                        echo "MEMORY.md already exists"
+                      fi
+                      echo "Workspace ready at $WORKSPACE_DIR"
+
+                      exec node dist/index.js gateway --allow-unconfigured --bind "${OPENCLAW_GATEWAY_BIND}" --port "${OPENCLAW_GATEWAY_PORT}" --token "${OPENCLAW_GATEWAY_TOKEN}"
+            ports:
+                - id: web
+                  port: 18789
+                  type: HTTP
+            volumes:
+                - id: data
+                  dir: /home/node
+            instructions:
+                - title: Web UI (with token)
+                  content: ${ZEABUR_WEB_URL}?token=${OPENCLAW_GATEWAY_TOKEN}
+                - title: Gateway Token
+                  content: ${OPENCLAW_GATEWAY_TOKEN}
+            env:
+                HOME:
+                    default: /home/node
+                NODE_ENV:
+                    default: production
+                NODE_OPTIONS:
+                    default: --max-old-space-size=1024
+                OPENCLAW_DISABLE_BONJOUR:
+                    default: "1"
+                OPENCLAW_GATEWAY_BIND:
+                    default: lan
+                OPENCLAW_GATEWAY_PORT:
+                    default: "18789"
+                OPENCLAW_GATEWAY_TOKEN:
+                    default: ${PASSWORD}
+                OPENCLAW_STATE_DIR:
+                    default: /home/node/.openclaw
+                OPENCLAW_WORKSPACE_DIR:
+                    default: /home/node/.openclaw/workspace
+                PATH:
+                    default: /home/node/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+                ZEABUR_AI_HUB_API_KEY:
+                    default: ${ZEABUR_AI_HUB_API_KEY}
+            healthCheck:
+                type: TCP
+                port: web
+          domainKey: PUBLIC_DOMAIN
+localization:
+    es-ES:
+        description: "OpenClaw \U0001F99E (anteriormente Clawdbot, Moltbot) es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería (WhatsApp, Telegram, Slack, Discord, etc.) a través de una arquitectura Gateway basada en WebSocket."
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: STRING
+              name: Dominio
+              description: ¿Qué dominio desea vincular a OpenClaw?
+            - key: ZEABUR_AI_HUB_API_KEY
+              type: STRING
+              name: Clave API de Zeabur AI Hub (Recomendado)
+              description: Su clave API de Zeabur AI Hub para usar Gemini/GPT/Claude/DeepSeek a través de AI Hub (opcional, puede configurarse después)
+        readme: "# OpenClaw \U0001F99E\nOpenClaw \U0001F99E (anteriormente Clawdbot, Moltbot) es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería a través de una arquitectura Gateway basada en WebSocket.\n\n⚠️ Esta plantilla usa `ghcr.io/openclaw/openclaw:2026.1.30`. OpenClaw \U0001F99E está en desarrollo rápido, por lo que puede haber errores no descubiertos. Cambiar de versión tampoco garantiza estabilidad.\n\n⚠️ Si encuentra algún problema, no dude en consultar los [GitHub issues](https://github.com/openclaw/openclaw/issues) para buscar soluciones o reportar nuevos problemas. Para problemas relacionados con la plataforma Zeabur, contacte al soporte de Zeabur.\n\n⚠️ El software y paquetes específicos de macOS (como Homebrew) no son compatibles en este entorno de contenedor. Por favor busque soluciones alternativas.\n\n---\n\n## Recursos Recomendados\nOpenClaw \U0001F99E consume muchos recursos de CPU. Los requisitos pueden variar según las herramientas y funciones que utilice.\n- **Clúster Compartido**: 1000 m (1 vCPU), 1024 Mi (1 GB) - para pruebas\n- **Servidor Dedicado**: 2+ vCPU, 2+ GB - altamente recomendado para rendimiento estable\n\n## Extensiones de Funciones\n- **Navegador**: Si necesita funciones del navegador (navegación web, capturas de pantalla, etc.), despliegue la [Plantilla Browser](https://zeabur.com/templates/H8L4G1)\n\n## Uso\n1. Después del despliegue, copie la URL \"Web UI (with token)\" de la pestaña **Instrucciones** y péguela en su navegador (el primer inicio de sesión requiere token, después puede acceder directamente)\n2. **Configure el modelo de AI** (elija uno):\n   - **Zeabur AI Hub**: Si ingresó la API Key durante el despliegue, vaya directamente al paso 3. También puede agregar `ZEABUR_AI_HUB_API_KEY` después en la pestaña **Variables** del panel de Zeabur (reinicie el servicio después de agregar).\n   - **Otros proveedores** (Anthropic, OpenAI, etc.): Vaya a Settings para agregar su clave API\n3. Vaya a la página **Chat** para probar si su modelo de AI funciona\n4. (Opcional) Configure plataformas de mensajería como Telegram, WhatsApp, etc.\n\nPara configuración de modelos de AI, consulte la [documentación oficial](https://docs.openclaw.ai/providers).\n\n## Configuración de Bot de Telegram\n**Obtener el token de BotFather:**\n1. Abra Telegram y busque [@BotFather](https://t.me/BotFather)\n2. Envíe `/newbot` para crear un nuevo bot\n3. Siga las instrucciones para configurar el nombre y nombre de usuario del bot\n4. BotFather le enviará un token (ej: `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`)\n\n**Agregar el token a Zeabur:**\n1. Vaya a la pestaña **Variable** de su servicio en el panel de Zeabur\n2. Agregue `TELEGRAM_BOT_TOKEN` con su token de bot\n3. Reinicie el servicio\n\n**Vincular su cuenta de Telegram:**\n1. Envíe `/start` a su bot en Telegram\n2. El bot responderá con un código de emparejamiento (ej. `JN4MSY23`)\n3. Apruebe el emparejamiento usando uno de estos métodos:\n   - **Chat Web**: En la interfaz web de OpenClaw, escriba `openclaw pairing approve telegram <código>`\n   - **Terminal**: Abra **Comando** en el panel de Zeabur, ejecute `openclaw pairing approve telegram <código>`\n4. Verá: `Approved telegram sender <user-id>.`\n5. ¡Ahora puede chatear con el bot!\n\n## Configuración de WhatsApp\n**Paso 1: Configurar canal de WhatsApp**\nAgregue la siguiente configuración a través de OpenClaw Web UI (Settings → Config) o péguela en el chat:\n```json\n\"channels\": {\n  \"whatsapp\": {\n    \"selfChatMode\": true,\n    \"dmPolicy\": \"allowlist\",\n    \"allowFrom\": [\"+15551234567\"]\n  }\n}\n```\nReemplace `+15551234567` con su número de teléfono de WhatsApp (con código de país). Reinicie el servicio después de guardar.\n\n**Paso 2: Vincular WhatsApp**\n1. Abra **Comando** en el panel de Zeabur para acceder a la terminal del contenedor\n2. Ejecute: `openclaw channels login`\n3. Aparecerá un código QR - escanéelo con WhatsApp en su teléfono\n4. ¡Conexión completa! Ahora puede enviarse mensajes a sí mismo en WhatsApp para chatear con OpenClaw\n\nPara otras plataformas de mensajería (Discord, Slack, etc.), consulte la [documentación de Canales](https://docs.openclaw.ai/channels).\n\n## Configuración de Modelos de AI\n**Cambiar modelo para la conversación actual** (a través de comandos de chat):\n- `/models` - Ver modelos disponibles\n- `/model <model-id>` - Cambiar modelo solo para esta conversación\n\n**Cambiar modelo predeterminado** (a través de Web UI Settings):\n- Ir a Settings → Agents → Default model para establecer el modelo predeterminado para todas las conversaciones nuevas\n\n**Agregar proveedores de AI** (a través de Web UI Settings o variables de entorno):\n- Agregar claves API de otros proveedores de AI (por ejemplo, Anthropic, OpenAI)\n\nPara configuración detallada, consulte la [documentación oficial](https://docs.openclaw.ai/providers).\n\n## Persistencia de Datos\nTodos los datos se almacenan en `/home/node`:\n- `/home/node/.openclaw` - Configuración, sesiones, dispositivos y credenciales\n- `/home/node/.openclaw/workspace` - Espacio de trabajo y archivos de memoria\n\n## Copia de Seguridad y Restauración\n\U0001F4A1 **Consejo:** Recomendamos crear una copia de seguridad después de completar la configuración inicial o realizar cambios importantes.\n\n**Métodos de Copia de Seguridad** (ambos producen archivos comprimidos):\n- **Método 1: Servicio de Zeabur (Recomendado)** - Use la función integrada de Zeabur. Consulte la [Documentación de Zeabur](https://zeabur.com/docs/es-ES/data-management/backup). Estructura: `data/data/.openclaw/...`\n- **Método 2: Manual** - Abra **Comando** → Ejecute `cd /home/node && tar -czvf backup.tar.gz .openclaw` → Descargue desde **Archivos**\n\n**Restauración**:\n- Desde Método 1 (ej. `backup-6980cebef9b407ee4e87d608.tar.gz`):\n  1. Arrastre el archivo comprimido a `/home/node` en **Archivos**, el archivo aparecerá en la lista cuando se complete la carga\n  2. Ejecute `cd /home/node` en **Comando**\n  3. `tar -xzvf <archivo-backup> --strip-components=2 -C /home/node`\n  4. `rm <archivo-backup>` para eliminar el archivo\n  5. Reinicie el servicio\n- Desde Método 2:\n  1. Arrastre el archivo comprimido a `/home/node` en **Archivos**, el archivo aparecerá en la lista cuando se complete la carga\n  2. Ejecute `cd /home/node` en **Comando**\n  3. `tar -xzvf backup.tar.gz`\n  4. `rm backup.tar.gz` para eliminar el archivo\n  5. Reinicie el servicio\n\n⚠️ La restauración sobrescribirá la configuración y los datos existentes en el nuevo servicio. Recuerde también restaurar las variables de entorno relacionadas (ej. `TELEGRAM_BOT_TOKEN`). La copia de seguridad/restauración de canales solo se ha probado con Telegram y WhatsApp.\n\n## Migración desde Clawdbot / Moltbot\n**Ubicaciones de datos de versiones anteriores:**\n- **Clawdbot**: config `~/.clawdbot`, workspace `~/clawd`\n- **Moltbot**: config `~/.moltbot` o `~/.clawdbot`, workspace `~/clawd`\n\n**Nueva ubicación de OpenClaw:** `/home/node/.openclaw` (incluye config y workspace)\n\nOpenClaw tiene compatibilidad hacia atrás y leerá automáticamente las carpetas `.clawdbot` y `.moltbot`, puede extraer directamente sin renombrar.\n\n**Pasos de migración:**\n1. Haga copia de seguridad en su servicio antiguo:\n   - Abra **Comando** en el servicio antiguo\n   - `cd /home/node && tar -czvf backup.tar.gz .clawdbot .moltbot clawd 2>/dev/null` (ignora carpetas inexistentes)\n   - Descargue `backup.tar.gz` desde **Archivos**\n2. Despliegue esta nueva plantilla de OpenClaw\n3. Restaure en el nuevo servicio:\n   - Arrastre `backup.tar.gz` a la carpeta `/home/node` en **Archivos**\n   - Abra **Comando**: `cd /home/node && tar -xzvf backup.tar.gz && rm backup.tar.gz`\n   - Reinicie el servicio\n4. Su configuración, historial de conversaciones y credenciales se conservarán\n\nLos comandos CLI `clawdbot` y `moltbot` siguen disponibles para compatibilidad.\n\n## Configuración Específica de Zeabur\nEsta plantilla deshabilita mDNS/Bonjour (`OPENCLAW_DISABLE_BONJOUR=1`) porque los nombres de host de los contenedores de Zeabur pueden exceder el límite de 63 bytes de las etiquetas DNS. mDNS solo se usa para el descubrimiento de red local (como AirPlay/Chromecast) y no es necesario en entornos de nube donde los servicios se conectan a través de DNS interno.\n\n## Documentación\n- Documentación: https://docs.openclaw.ai\n- GitHub: https://github.com/openclaw/openclaw\n\n## Registro de Cambios\n**2026/2/2**\n- Añadir sección de configuración de modelos de AI (global vs conversación)\n- Añadir guía de migración desde Clawdbot / Moltbot con rutas de datos\n- Añadir sección de copia de seguridad y restauración con servicio de Zeabur\n- Añadir consejo de hacer copia de seguridad después de la configuración inicial\n- Eliminar parche de Google Gemini CLI (corregido en upstream)\n- Eliminar variables ANTHROPIC_API_KEY y OPENAI_API_KEY del despliegue para evitar que OpenClaw detecte claves API vacías y falle (configurable después via Web UI o variables de entorno)\n\nPara cambiar la versión de imagen, vaya a **Configuración** → **Fuente de imagen del servicio** → modifique `ghcr.io/openclaw/openclaw:<tag>`.\n"
+    id-ID:
+        description: "OpenClaw \U0001F99E (sebelumnya Clawdbot, Moltbot) adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan (WhatsApp, Telegram, Slack, Discord, dll.) melalui arsitektur Gateway berbasis WebSocket."
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: STRING
+              name: Domain
+              description: Domain apa yang ingin Anda ikat ke OpenClaw?
+            - key: ZEABUR_AI_HUB_API_KEY
+              type: STRING
+              name: Kunci API Zeabur AI Hub (Direkomendasikan)
+              description: Kunci API Zeabur AI Hub Anda untuk menggunakan Gemini/GPT/Claude/DeepSeek melalui AI Hub (opsional, dapat dikonfigurasi nanti)
+        readme: "# OpenClaw \U0001F99E\nOpenClaw \U0001F99E (sebelumnya Clawdbot, Moltbot) adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan melalui arsitektur Gateway berbasis WebSocket.\n\n⚠️ Template ini menggunakan `ghcr.io/openclaw/openclaw:2026.1.30`. OpenClaw \U0001F99E sedang dalam pengembangan cepat, jadi mungkin ada bug yang belum ditemukan. Mengubah versi juga tidak menjamin stabilitas.\n\n⚠️ Jika Anda mengalami masalah, silakan kunjungi [GitHub issues](https://github.com/openclaw/openclaw/issues) untuk mencari solusi atau melaporkan masalah baru. Untuk masalah terkait platform Zeabur, silakan hubungi dukungan Zeabur.\n\n⚠️ Software dan paket khusus macOS (seperti Homebrew) tidak didukung di lingkungan container ini. Silakan cari solusi alternatif.\n\n---\n\n## Sumber Daya yang Direkomendasikan\nOpenClaw \U0001F99E adalah aplikasi yang intensif CPU. Kebutuhan sumber daya dapat bervariasi tergantung pada alat dan fitur yang Anda gunakan.\n- **Kluster Bersama**: 1000 m (1 vCPU), 1024 Mi (1 GB) - untuk pengujian\n- **Server Khusus**: 2+ vCPU, 2+ GB - sangat direkomendasikan untuk performa stabil\n\n## Ekstensi Fitur\n- **Browser**: Jika Anda memerlukan fitur browser (browsing web, screenshot, dll.), deploy [Template Browser](https://zeabur.com/templates/H8L4G1)\n\n## Penggunaan\n1. Setelah deploy, salin URL \"Web UI (with token)\" dari tab **Instruksi** dan tempelkan di browser Anda (login pertama memerlukan token, setelah itu bisa langsung akses URL)\n2. **Konfigurasi model AI** (pilih salah satu):\n   - **Zeabur AI Hub**: Jika sudah memasukkan API Key saat deploy, langsung ke langkah 3. Bisa juga menambahkan `ZEABUR_AI_HUB_API_KEY` nanti di tab **Variables** dashboard Zeabur (restart layanan setelah menambahkan).\n   - **Penyedia lain** (Anthropic, OpenAI, dll.): Buka Settings untuk menambahkan kunci API\n3. Buka halaman **Chat** untuk menguji apakah model AI Anda berfungsi\n4. (Opsional) Atur platform pesan seperti Telegram, WhatsApp, dll.\n\nUntuk konfigurasi model AI, lihat [dokumentasi resmi](https://docs.openclaw.ai/providers).\n\n## Pengaturan Bot Telegram\n**Mendapatkan token dari BotFather:**\n1. Buka Telegram dan cari [@BotFather](https://t.me/BotFather)\n2. Kirim `/newbot` untuk membuat bot baru\n3. Ikuti petunjuk untuk mengatur nama dan username bot\n4. BotFather akan mengirimkan token (contoh: `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`)\n\n**Menambahkan token ke Zeabur:**\n1. Buka tab **Variabel** layanan Anda di dashboard Zeabur\n2. Tambahkan `TELEGRAM_BOT_TOKEN` dengan token bot Anda\n3. Restart layanan\n\n**Menghubungkan akun Telegram Anda:**\n1. Kirim `/start` ke bot Anda di Telegram\n2. Bot akan membalas dengan kode pairing (mis. `JN4MSY23`)\n3. Setujui pairing menggunakan salah satu metode berikut:\n   - **Web Chat**: Di antarmuka web OpenClaw, ketik `openclaw pairing approve telegram <kode>`\n   - **Terminal**: Buka **Command** di dashboard Zeabur, jalankan `openclaw pairing approve telegram <kode>`\n4. Anda akan melihat: `Approved telegram sender <user-id>.`\n5. Sekarang Anda dapat mengobrol dengan bot!\n\n## Pengaturan WhatsApp\n**Langkah 1: Konfigurasi kanal WhatsApp**\nTambahkan konfigurasi berikut melalui OpenClaw Web UI (Settings → Config) atau tempelkan ke chat:\n```json\n\"channels\": {\n  \"whatsapp\": {\n    \"selfChatMode\": true,\n    \"dmPolicy\": \"allowlist\",\n    \"allowFrom\": [\"+15551234567\"]\n  }\n}\n```\nGanti `+15551234567` dengan nomor telepon WhatsApp Anda (dengan kode negara). Restart layanan setelah menyimpan.\n\n**Langkah 2: Hubungkan WhatsApp**\n1. Buka **Command** di dashboard Zeabur untuk mengakses terminal container\n2. Jalankan: `openclaw channels login`\n3. QR Code akan muncul - pindai dengan WhatsApp di ponsel Anda\n4. Koneksi selesai! Sekarang Anda dapat mengirim pesan ke diri sendiri di WhatsApp untuk mengobrol dengan OpenClaw\n\nUntuk platform perpesanan lainnya (Discord, Slack, dll.), lihat [dokumentasi Channels](https://docs.openclaw.ai/channels).\n\n## Konfigurasi Model AI\n**Beralih model untuk percakapan saat ini** (melalui perintah chat):\n- `/models` - Melihat model yang tersedia\n- `/model <model-id>` - Beralih model hanya untuk percakapan ini\n\n**Mengubah model default** (melalui Web UI Settings):\n- Buka Settings → Agents → Default model untuk mengatur model default untuk semua percakapan baru\n\n**Menambah penyedia AI** (melalui Web UI Settings atau variabel lingkungan):\n- Menambahkan kunci API dari penyedia AI lain (misalnya Anthropic, OpenAI)\n\nUntuk konfigurasi detail, lihat [dokumentasi resmi](https://docs.openclaw.ai/providers).\n\n## Persistensi Data\nSemua data disimpan di `/home/node`:\n- `/home/node/.openclaw` - Konfigurasi, sesi, perangkat, dan kredensial\n- `/home/node/.openclaw/workspace` - Ruang kerja dan file memori\n\n## Cadangan & Pemulihan\n\U0001F4A1 **Tips:** Kami merekomendasikan untuk membuat cadangan setelah menyelesaikan pengaturan awal atau melakukan perubahan konfigurasi penting.\n\n**Metode Cadangan** (keduanya menghasilkan file terkompresi):\n- **Metode 1: Layanan Zeabur (Direkomendasikan)** - Gunakan fitur cadangan bawaan Zeabur. Lihat [Dokumentasi Zeabur](https://zeabur.com/docs/data-management/backup). Struktur: `data/data/.openclaw/...`\n- **Metode 2: Manual** - Buka **Command** → Jalankan `cd /home/node && tar -czvf backup.tar.gz .openclaw` → Unduh dari **Files**\n\n**Pemulihan**:\n- Dari Metode 1 (contoh: `backup-6980cebef9b407ee4e87d608.tar.gz`):\n  1. Seret file terkompresi ke folder `/home/node` di **Files**, file akan muncul di daftar setelah upload selesai\n  2. Jalankan `cd /home/node` di **Command**\n  3. `tar -xzvf <nama-file-backup> --strip-components=2 -C /home/node`\n  4. `rm <nama-file-backup>` untuk menghapus file backup\n  5. Restart layanan\n- Dari Metode 2:\n  1. Seret file terkompresi ke folder `/home/node` di **Files**, file akan muncul di daftar setelah upload selesai\n  2. Jalankan `cd /home/node` di **Command**\n  3. `tar -xzvf backup.tar.gz`\n  4. `rm backup.tar.gz` untuk menghapus file backup\n  5. Restart layanan\n\n⚠️ Pemulihan akan menimpa konfigurasi dan data yang ada di layanan baru. Jangan lupa untuk juga mengatur kembali variabel lingkungan terkait (contoh: `TELEGRAM_BOT_TOKEN`). Cadangan/pemulihan channel hanya diuji dengan Telegram dan WhatsApp.\n\n## Migrasi dari Clawdbot / Moltbot\n**Lokasi data versi lama:**\n- **Clawdbot**: config `~/.clawdbot`, workspace `~/clawd`\n- **Moltbot**: config `~/.moltbot` atau `~/.clawdbot`, workspace `~/clawd`\n\n**Lokasi OpenClaw baru:** `/home/node/.openclaw` (termasuk config dan workspace)\n\nOpenClaw memiliki kompatibilitas mundur dan akan otomatis membaca folder `.clawdbot` dan `.moltbot`, cukup ekstrak langsung tanpa perlu mengganti nama.\n\n**Langkah migrasi:**\n1. Cadangkan data di layanan lama Anda:\n   - Buka **Command** di layanan lama\n   - `cd /home/node && tar -czvf backup.tar.gz .clawdbot .moltbot clawd 2>/dev/null` (mengabaikan folder yang tidak ada)\n   - Unduh `backup.tar.gz` dari **Files**\n2. Deploy template OpenClaw baru ini\n3. Pulihkan ke layanan baru:\n   - Seret `backup.tar.gz` ke folder `/home/node` di **Files**\n   - Buka **Command**: `cd /home/node && tar -xzvf backup.tar.gz && rm backup.tar.gz`\n   - Restart layanan\n4. Konfigurasi, riwayat percakapan, dan kredensial Anda akan dipertahankan\n\nPerintah CLI `clawdbot` dan `moltbot` masih tersedia untuk kompatibilitas.\n\n## Konfigurasi Khusus Zeabur\nTemplate ini menonaktifkan mDNS/Bonjour (`OPENCLAW_DISABLE_BONJOUR=1`) karena nama host container Zeabur dapat melebihi batas label DNS 63 byte. mDNS hanya digunakan untuk penemuan jaringan lokal (seperti AirPlay/Chromecast) dan tidak diperlukan di lingkungan cloud di mana layanan terhubung melalui DNS internal.\n\n## Dokumentasi\n- Dokumentasi: https://docs.openclaw.ai\n- GitHub: https://github.com/openclaw/openclaw\n\n## Catatan Perubahan\n**2026/2/2**\n- Tambah bagian konfigurasi model AI (global vs percakapan)\n- Tambah panduan migrasi dari Clawdbot / Moltbot dengan jalur data\n- Tambah bagian cadangan & pemulihan dengan layanan Zeabur\n- Tambah tips untuk membuat cadangan setelah pengaturan awal\n- Hapus patch Google Gemini CLI (sudah diperbaiki di upstream)\n- Hapus variabel ANTHROPIC_API_KEY dan OPENAI_API_KEY dari deployment untuk mencegah OpenClaw mendeteksi API Key kosong dan gagal (dapat dikonfigurasi nanti via Web UI atau variabel lingkungan)\n\nUntuk mengubah versi image, buka **Settings** → **Service Image Source** → ubah `ghcr.io/openclaw/openclaw:<tag>`.\n"
+    ja-JP:
+        description: "OpenClaw \U0001F99E（旧 Clawdbot、Moltbot）は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォーム（WhatsApp、Telegram、Slack、Discord など）に接続する個人用 AI アシスタントです。"
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: STRING
+              name: ドメイン
+              description: OpenClaw にバインドするドメインは？
+            - key: ZEABUR_AI_HUB_API_KEY
+              type: STRING
+              name: Zeabur AI Hub API キー（推奨）
+              description: Zeabur AI Hub API キー、AI Hub 経由で Gemini/GPT/Claude/DeepSeek を使用（任意、後で設定可能）
+        readme: "# OpenClaw \U0001F99E\nOpenClaw \U0001F99E（旧 Clawdbot、Moltbot）は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォームに接続する個人用 AI アシスタントです。\n\n⚠️ 本テンプレートは `ghcr.io/openclaw/openclaw:2026.1.30` を使用しています。OpenClaw \U0001F99E は急速に開発中のため、未発見のバグがある可能性があります。バージョンを変更した場合も安定性を保証できません。\n\n⚠️ 問題が発生した場合は、[GitHub issues](https://github.com/openclaw/openclaw/issues) で解決策を探したり、新しい問題を報告したりしてください。Zeabur プラットフォーム関連の問題については、Zeabur サポートにお問い合わせください。\n\n⚠️ macOS 固有のソフトウェアやパッケージ（Homebrew など）はこのコンテナ環境ではサポートされていません。代替ソリューションをお探しください。\n\n---\n\n## 推奨リソース\nOpenClaw \U0001F99E は CPU 集約型アプリです。使用するツールや機能によってリソース要件が異なる場合があります。\n- **専用サーバー**：2+ vCPU、2+ GB - 安定したパフォーマンスのために強く推奨\n\n## 機能拡張\n- **ブラウザ**：ブラウザ機能（Web ブラウジング、スクリーンショットなど）が必要な場合は、[Browser テンプレート](https://zeabur.com/templates/H8L4G1)をデプロイしてください\n\n## 使用方法\n1. デプロイ後、**指示**タブの「Web UI (with token)」URL をコピーしてブラウザに貼り付けて開く（初回ログインは token が必要、以降は直接 URL にアクセス可能）\n2. **AI モデルを設定**（いずれかを選択）：\n   - **Zeabur AI Hub**：デプロイ時に API Key を入力済みの場合、ステップ 3 へ進む。後から Zeabur ダッシュボードの**変数**タブで `ZEABUR_AI_HUB_API_KEY` を追加も可能（追加後はサービスを再起動）。\n   - **他のプロバイダー**（Anthropic、OpenAI など）：Settings で API キーを追加\n3. **Chat** ページで AI モデルが正常に動作しているかテスト\n4. （オプション）Telegram、WhatsApp などのメッセージングプラットフォームを設定\n\nAI モデル設定については[公式ドキュメント](https://docs.openclaw.ai/providers)をご覧ください。\n\n## Telegram ボット設定\n**BotFather からトークンを取得：**\n1. Telegram を開いて [@BotFather](https://t.me/BotFather) を検索\n2. `/newbot` を送信して新しいボットを作成\n3. プロンプトに従ってボットの名前とユーザー名を設定\n4. BotFather がトークンを送信します（例：`123456789:ABCdefGHIjklMNOpqrsTUVwxyz`）\n\n**Zeabur にトークンを追加：**\n1. Zeabur ダッシュボードのサービス**変数**タブに移動\n2. `TELEGRAM_BOT_TOKEN` を追加してトークンを入力\n3. サービスを再起動\n\n**Telegram アカウントのペアリング：**\n1. Telegram でボットに `/start` を送信\n2. ボットがペアリングコードを返信（例：`JN4MSY23`）\n3. 以下のいずれかの方法でペアリングを承認：\n   - **Web Chat**：OpenClaw のウェブインターフェースのチャットボックスに `openclaw pairing approve telegram <コード>` を入力\n   - **ターミナル**：Zeabur ダッシュボードの**コマンド**を開き、`openclaw pairing approve telegram <コード>` を実行\n4. `Approved telegram sender <user-id>.` と表示されればペアリング完了\n5. ボットとの会話を開始できます！\n\n## WhatsApp セットアップ\n**ステップ 1：WhatsApp チャンネルを設定**\nOpenClaw Web UI（Settings → Config）またはチャットに貼り付けて以下の設定を追加：\n```json\n\"channels\": {\n  \"whatsapp\": {\n    \"selfChatMode\": true,\n    \"dmPolicy\": \"allowlist\",\n    \"allowFrom\": [\"+15551234567\"]\n  }\n}\n```\n`+15551234567` をあなたの WhatsApp 電話番号（国番号付き）に置き換えてください。保存後にサービスを再起動してください。\n\n**ステップ 2：WhatsApp をリンク**\n1. Zeabur ダッシュボードで**コマンド**を開いてコンテナターミナルにアクセス\n2. 実行：`openclaw channels login`\n3. QR コードが表示されます - スマートフォンの WhatsApp でスキャンしてください\n4. 接続完了！WhatsApp で自分自身にメッセージを送ると OpenClaw と会話できます\n\nその他のメッセージングプラットフォーム（Discord、Slack など）については、[Channels ドキュメント](https://docs.openclaw.ai/channels)をご覧ください。\n\n## AI モデル設定\n**現在の会話のモデルを切り替え**（チャットコマンド）：\n- `/models` - 利用可能なモデルを表示\n- `/model <model-id>` - この会話のみモデルを切り替え\n\n**デフォルトモデルの変更**（Web UI Settings）：\n- Settings → Agents → Default model ですべての新しい会話のデフォルトモデルを設定\n\n**AI プロバイダーの追加**（Web UI Settings または環境変数）：\n- 他の AI プロバイダーの API キーを追加（Anthropic、OpenAI など）\n\n詳細な設定については、[公式ドキュメント](https://docs.openclaw.ai/providers)をご覧ください。\n\n## データ永続化\nすべてのデータは `/home/node` に保存：\n- `/home/node/.openclaw` - 設定、セッション、デバイス、認証情報\n- `/home/node/.openclaw/workspace` - ワークスペースとメモリファイル\n\n## バックアップと復元\n\U0001F4A1 **ヒント：** 初期設定完了後や重要な設定変更後にバックアップを作成することをお勧めします。\n\n**バックアップ方法**（どちらも圧縮ファイルを生成）：\n- **方法1：Zeabur バックアップサービス（推奨）** - Zeabur の組み込みバックアップ機能を使用。[Zeabur バックアップドキュメント](https://zeabur.com/docs/ja-JP/data-management/backup)を参照。ファイル構造：`data/data/.openclaw/...`\n- **方法2：手動バックアップ** - **コマンド**を開く → `cd /home/node && tar -czvf backup.tar.gz .openclaw` を実行 → **ファイル**タブからダウンロード\n\n**復元**：\n- 方法1のバックアップ（例：`backup-6980cebef9b407ee4e87d608.tar.gz`）：\n  1. **ファイル**タブで圧縮ファイルを `/home/node` フォルダにドラッグ、アップロード完了後にリストに表示されます\n  2. **コマンド**で `cd /home/node` を実行\n  3. `tar -xzvf <バックアップファイル名> --strip-components=2 -C /home/node`\n  4. `rm <バックアップファイル名>` でバックアップファイルを削除\n  5. サービスを再起動\n- 方法2のバックアップ：\n  1. **ファイル**タブで圧縮ファイルを `/home/node` フォルダにドラッグ、アップロード完了後にリストに表示されます\n  2. **コマンド**で `cd /home/node` を実行\n  3. `tar -xzvf backup.tar.gz`\n  4. `rm backup.tar.gz` でバックアップファイルを削除\n  5. サービスを再起動\n\n⚠️ 復元すると、新サービス上の既存の設定とデータが上書きされます。関連する環境変数（例：`TELEGRAM_BOT_TOKEN`）も忘れずに設定してください。チャンネルのバックアップ復元は現在 Telegram と WhatsApp でのみテスト済みです。\n\n## Clawdbot / Moltbot からの移行\n**旧バージョンのデータ場所：**\n- **Clawdbot**：設定 `~/.clawdbot`、ワークスペース `~/clawd`\n- **Moltbot**：設定 `~/.moltbot` または `~/.clawdbot`、ワークスペース `~/clawd`\n\n**新しい OpenClaw の場所：**`/home/node/.openclaw`（設定とワークスペースを含む）\n\nOpenClaw は下位互換性があり、`.clawdbot` と `.moltbot` フォルダを自動的に読み取ります。そのまま解凍するだけで使用でき、名前変更は不要です。\n\n**移行手順：**\n1. 旧サービスでデータをバックアップ：\n   - 旧サービスで**コマンド**を開く\n   - `cd /home/node && tar -czvf backup.tar.gz .clawdbot .moltbot clawd 2>/dev/null`（存在しないフォルダは無視）\n   - **ファイル**タブから `backup.tar.gz` をダウンロード\n2. この新しい OpenClaw テンプレートをデプロイ\n3. バックアップを新サービスに復元：\n   - `backup.tar.gz` を**ファイル**タブの `/home/node` フォルダにドラッグ\n   - **コマンド**を開く：`cd /home/node && tar -xzvf backup.tar.gz && rm backup.tar.gz`\n   - サービスを再起動\n4. 設定、会話履歴、認証情報は保持されます\n\n下位互換性のため、`clawdbot` と `moltbot` CLI コマンドは引き続き使用可能です。\n\n## Zeabur 固有の設定\nこのテンプレートでは mDNS/Bonjour を無効化しています（`OPENCLAW_DISABLE_BONJOUR=1`）。Zeabur コンテナのホスト名が 63 バイトの DNS ラベル制限を超える可能性があるためです。mDNS はローカルネットワーク検出（AirPlay/Chromecast のような）にのみ使用され、クラウド環境ではサービスは内部 DNS を通じて接続するため、この機能は不要です。\n\n## ドキュメント\n- ドキュメント：https://docs.openclaw.ai\n- GitHub：https://github.com/openclaw/openclaw\n\n## 変更履歴\n**2026/2/2**\n- AI モデル設定セクションを追加（グローバル vs 会話ごとの設定）\n- Clawdbot / Moltbot からの移行ガイドとデータパスを追加\n- バックアップと復元セクションを追加、Zeabur バックアップサービス対応\n- 初期設定完了後のバックアップ推奨を追加\n- Google Gemini CLI パッチを削除（上流で修正済み）\n- デプロイ時の ANTHROPIC_API_KEY と OPENAI_API_KEY 変数を削除、OpenClaw が空の API Key を検出して実行に失敗するのを防止（後で Web UI または環境変数から設定可能）\n\nイメージバージョンを変更するには、**設定**タブ → **サービスイメージソース** → `ghcr.io/openclaw/openclaw:<tag>` を編集してください。\n"
+    zh-CN:
+        description: "OpenClaw \U0001F99E（原 Clawdbot、Moltbot）是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台（WhatsApp、Telegram、Slack、Discord 等）。"
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: STRING
+              name: 域名
+              description: 您想要绑定 OpenClaw 的域名是？
+            - key: ZEABUR_AI_HUB_API_KEY
+              type: STRING
+              name: Zeabur AI Hub API 密钥（推荐）
+              description: 您的 Zeabur AI Hub API 密钥，通过 AI Hub 使用 Gemini/GPT/Claude/DeepSeek（选填，可之后再设定）
+        readme: "# OpenClaw \U0001F99E\nOpenClaw \U0001F99E（原 Clawdbot、Moltbot）是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台。\n\n⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.1.30`。OpenClaw \U0001F99E 正在快速开发中，可能存在尚未发现的 bug。更改版本后也无法确保稳定性。\n\n⚠️ 如果遇到任何问题，欢迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 寻找解决方案或回报新问题。Zeabur 平台相关问题请联系 Zeabur 支持。\n\n⚠️ macOS 特有的软件与套件（如 Homebrew）无法在此容器环境中使用，请寻找其他替代方案。\n\n---\n\n## 建议资源配置\nOpenClaw \U0001F99E 是 CPU 密集型应用。资源需求可能因使用的工具和功能而异。\n- **专用服务器**：2+ vCPU、2+ GB - 强烈推荐，以获得稳定性能\n\n## 功能扩充\n- **浏览器**：如需浏览器功能（网页浏览、截图等），请部署 [Browser 模板](https://zeabur.com/templates/H8L4G1)\n\n## 使用方式\n1. 部署完成后，在**使用说明**页签复制「Web UI (with token)」网址，贴到浏览器打开（首次登录需要 token，之后可直接打开网址）\n2. **设置 AI 模型**（二选一）：\n   - **Zeabur AI Hub**：若部署时已输入 API Key，直接前往步骤 3。也可之后在 Zeabur 控制台的**变量**页签添加 `ZEABUR_AI_HUB_API_KEY`（添加后记得重新启动服务）。\n   - **其他供应商**（Anthropic、OpenAI 等）：前往 Settings 添加 API 密钥\n3. 前往 **Chat** 页面测试 AI 模型是否正常运作\n4. （可选）设置 Telegram、WhatsApp 等通讯平台\n\nAI 模型设置请参阅[官方文档](https://docs.openclaw.ai/providers)。\n\n## Telegram 机器人设置\n**从 BotFather 获取 Token：**\n1. 打开 Telegram 并搜索 [@BotFather](https://t.me/BotFather)\n2. 发送 `/newbot` 创建新机器人\n3. 按照提示设置机器人的名称和用户名\n4. BotFather 会发送 Token 给您（例如 `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`）\n\n**将 Token 添加到 Zeabur：**\n1. 前往 Zeabur 控制台的服务**环境变量**页签\n2. 添加 `TELEGRAM_BOT_TOKEN` 并填入您的 Token\n3. 重新启动服务\n\n**配对您的 Telegram 账号：**\n1. 在 Telegram 向您的机器人发送 `/start`\n2. 机器人会回复配对码（例如 `JN4MSY23`）\n3. 使用以下任一方式核准配对：\n   - **网页 Chat**：在 OpenClaw 网页界面的对话框输入 `openclaw pairing approve telegram <配对码>`\n   - **终端**：在 Zeabur 控制台打开**命令**进入容器终端，执行 `openclaw pairing approve telegram <配对码>`\n4. 看到 `Approved telegram sender <user-id>.` 表示配对成功\n5. 现在可以开始与机器人对话了！\n\n## WhatsApp 设置\n**步骤 1：配置 WhatsApp 频道**\n通过 OpenClaw Web UI（Settings → Config）或贴到对话框添加以下配置：\n```json\n\"channels\": {\n  \"whatsapp\": {\n    \"selfChatMode\": true,\n    \"dmPolicy\": \"allowlist\",\n    \"allowFrom\": [\"+15551234567\"]\n  }\n}\n```\n将 `+15551234567` 替换为您的 WhatsApp 电话号码（含国码）。保存后重新启动服务。\n\n**步骤 2：连接 WhatsApp**\n1. 在 Zeabur 控制台打开**命令**进入容器终端\n2. 执行：`openclaw channels login`\n3. 会出现 QR Code - 使用您手机上的 WhatsApp 扫描\n4. 连接完成！现在您可以在 WhatsApp 中给自己发消息来与 OpenClaw 对话\n\n如需设置其他通讯平台（Discord、Slack 等），请参阅 [Channels 文档](https://docs.openclaw.ai/channels)。\n\n## AI 模型设置\n**切换本次对话的模型**（通过聊天命令）：\n- `/models` - 查看可用模型\n- `/model <model-id>` - 仅在本次对话中切换模型\n\n**修改默认模型**（通过 Web UI Settings）：\n- 前往 Settings → Agents → Default model 设置所有新对话的默认模型\n\n**添加 AI 供应商**（通过 Web UI Settings 或环境变量）：\n- 添加其他 AI 供应商的 API 密钥（如 Anthropic、OpenAI 等）\n\n详细设置请参阅[官方文档](https://docs.openclaw.ai/providers)。\n\n## 数据持久化\n所有数据存储在 `/home/node`：\n- `/home/node/.openclaw` - 配置、会话、设备和凭证\n- `/home/node/.openclaw/workspace` - 工作区和记忆文件\n\n## 备份与还原\n\U0001F4A1 **建议：** 在完成初始设置或进行重大配置变更后，建议先创建备份。\n\n**备份方式**（两种都会产生压缩文件）：\n- **方法一：Zeabur 备份服务（推荐）** - 使用 Zeabur 内置的备份功能。请参阅 [Zeabur 备份文档](https://zeabur.com/docs/zh-CN/data-management/backup)。文件结构：`data/data/.openclaw/...`\n- **方法二：手动备份** - 打开**命令** → 执行 `cd /home/node && tar -czvf backup.tar.gz .openclaw` → 从**文件**页签下载\n\n**还原**：\n- 方法一的备份（例如 `backup-6980cebef9b407ee4e87d608.tar.gz`）：\n  1. 在**文件**页签将压缩文件拖移到 `/home/node` 文件夹，上传完成后会看到文件出现在列表中\n  2. 在**命令**执行 `cd /home/node`\n  3. `tar -xzvf <备份文件名> --strip-components=2 -C /home/node`\n  4. `rm <备份文件名>` 删除备份文件\n  5. 重新启动服务\n- 方法二的备份：\n  1. 在**文件**页签将压缩文件拖移到 `/home/node` 文件夹，上传完成后会看到文件出现在列表中\n  2. 在**命令**执行 `cd /home/node`\n  3. `tar -xzvf backup.tar.gz`\n  4. `rm backup.tar.gz` 删除备份文件\n  5. 重新启动服务\n\n⚠️ 还原会覆盖新服务上现有的配置和数据。记得也要将相关的环境变量（如 `TELEGRAM_BOT_TOKEN`）设置回去。Channel 的备份还原目前只测试过 Telegram 和 WhatsApp 可以成功还原。\n\n## 从 Clawdbot / Moltbot 迁移\n**旧版数据位置：**\n- **Clawdbot**：配置 `~/.clawdbot`、工作区 `~/clawd`\n- **Moltbot**：配置 `~/.moltbot` 或 `~/.clawdbot`、工作区 `~/clawd`\n\n**新版 OpenClaw 位置：**`/home/node/.openclaw`（包含配置和工作区）\n\nOpenClaw 具有向下兼容性，会自动读取 `.clawdbot` 和 `.moltbot` 文件夹，直接解压缩即可使用，不需要重命名。\n\n**迁移步骤：**\n1. 在旧服务上备份数据：\n   - 在旧服务打开**命令**\n   - `cd /home/node && tar -czvf backup.tar.gz .clawdbot .moltbot clawd 2>/dev/null`（会忽略不存在的文件夹）\n   - 从**文件**页签下载 `backup.tar.gz`\n2. 部署这个新的 OpenClaw 模板\n3. 将备份还原到新服务：\n   - 将 `backup.tar.gz` 拖移到**文件**页签的 `/home/node` 文件夹\n   - 打开**命令**：`cd /home/node && tar -xzvf backup.tar.gz && rm backup.tar.gz`\n   - 重新启动服务\n4. 您的配置、对话记录和凭证都会保留\n\n为了向下兼容，`clawdbot` 和 `moltbot` CLI 命令仍可使用。\n\n## Zeabur 专属配置\n此模板停用了 mDNS/Bonjour（`OPENCLAW_DISABLE_BONJOUR=1`），因为 Zeabur 容器主机名称可能超过 63 bytes 的 DNS 标签限制。mDNS 仅用于区域网络发现（类似 AirPlay/Chromecast），在云端环境中服务通过内部 DNS 连接，因此不需要此功能。\n\n## 文档\n- 文档：https://docs.openclaw.ai\n- GitHub：https://github.com/openclaw/openclaw\n\n## 更新日志\n**2026/2/2**\n- 新增 AI 模型设置区块（全局 vs 本次对话设置）\n- 新增从 Clawdbot / Moltbot 迁移指南及数据路径\n- 新增备份与还原区块，支持 Zeabur 备份服务\n- 新增初始设置完成后备份提醒\n- 移除 Google Gemini CLI patch（上游已修复）\n- 移除部署时的 ANTHROPIC_API_KEY 和 OPENAI_API_KEY 变量，避免 OpenClaw 检测到空的 API Key 然后执行失败（可之后通过 Web UI 或环境变量设置）\n\n如需更换镜像版本，请前往**设置**页签 → **服务镜像来源** → 修改 `ghcr.io/openclaw/openclaw:<tag>`。\n"
+    zh-TW:
+        description: "OpenClaw \U0001F99E（原 Clawdbot、Moltbot）是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台（WhatsApp、Telegram、Slack、Discord 等）。"
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: STRING
+              name: 網域
+              description: 您想要綁定 OpenClaw 的網域是？
+            - key: ZEABUR_AI_HUB_API_KEY
+              type: STRING
+              name: Zeabur AI Hub API 金鑰（推薦）
+              description: 您的 Zeabur AI Hub API 金鑰，透過 AI Hub 使用 Gemini/GPT/Claude/DeepSeek（選填，可之後再設定）
+        readme: "# OpenClaw \U0001F99E\nOpenClaw \U0001F99E（原 Clawdbot、Moltbot）是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台。\n\n⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.1.30`。OpenClaw \U0001F99E 正在快速開發中，可能存在尚未發現的 bug。更改版本後也無法確保穩定性。\n\n⚠️ 如果遇到任何問題，歡迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 尋找解決方案或回報新問題。Zeabur 平台相關問題請聯繫 Zeabur 支援。\n\n⚠️ macOS 特有的軟體與套件（如 Homebrew）無法在此容器環境中使用，請尋找其他替代方案。\n\n---\n\n## 建議資源配置\nOpenClaw \U0001F99E 是 CPU 密集型應用。資源需求可能因使用的工具和功能而異。\n- **專用伺服器**：2+ vCPU、2+ GB - 強烈推薦，以獲得穩定效能\n\n## 功能擴充\n- **瀏覽器**：如需瀏覽器功能（網頁瀏覽、截圖等），請部署 [Browser 模板](https://zeabur.com/templates/H8L4G1)\n\n## 使用方式\n1. 部署完成後，在**使用說明**頁籤複製「Web UI (with token)」網址，貼到瀏覽器開啟（首次登入需要 token，之後可直接開啟網址）\n2. **設定 AI 模型**（二擇一）：\n   - **Zeabur AI Hub**：若部署時已輸入 API Key，直接前往步驟 3。也可之後在 Zeabur 控制台的**變數**頁籤新增 `ZEABUR_AI_HUB_API_KEY`（新增後記得重新啟動服務）。\n   - **其他供應商**（Anthropic、OpenAI 等）：前往 Settings 新增 API 金鑰\n3. 前往 **Chat** 頁面測試 AI 模型是否正常運作\n4. （選擇性）設定 Telegram、WhatsApp 等通訊平台\n\nAI 模型設定請參閱[官方文件](https://docs.openclaw.ai/providers)。\n\n## Telegram 機器人設定\n**從 BotFather 取得 Token：**\n1. 開啟 Telegram 並搜尋 [@BotFather](https://t.me/BotFather)\n2. 發送 `/newbot` 建立新機器人\n3. 依照提示設定機器人的名稱和使用者名稱\n4. BotFather 會傳送 Token 給您（例如 `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`）\n\n**將 Token 加入 Zeabur：**\n1. 前往 Zeabur 控制台的服務**環境變數**頁籤\n2. 新增 `TELEGRAM_BOT_TOKEN` 並填入您的 Token\n3. 重新啟動服務\n\n**配對您的 Telegram 帳號：**\n1. 在 Telegram 向您的機器人發送 `/start`\n2. 機器人會回覆配對碼（例如 `JN4MSY23`）\n3. 使用以下任一方式核准配對：\n   - **網頁 Chat**：在 OpenClaw 網頁介面的對話框輸入 `openclaw pairing approve telegram <配對碼>`\n   - **終端機**：在 Zeabur 控制台開啟 **指令** 進入容器終端，執行 `openclaw pairing approve telegram <配對碼>`\n4. 看到 `Approved telegram sender <user-id>.` 表示配對成功\n5. 現在可以開始與機器人對話了！\n\n## WhatsApp 設定\n**步驟 1：設定 WhatsApp 頻道**\n透過 OpenClaw Web UI（Settings → Config）或貼到對話框新增以下設定：\n```json\n\"channels\": {\n  \"whatsapp\": {\n    \"selfChatMode\": true,\n    \"dmPolicy\": \"allowlist\",\n    \"allowFrom\": [\"+15551234567\"]\n  }\n}\n```\n將 `+15551234567` 替換為您的 WhatsApp 電話號碼（含國碼）。儲存後重新啟動服務。\n\n**步驟 2：連結 WhatsApp**\n1. 在 Zeabur 控制台開啟**指令**進入容器終端\n2. 執行：`openclaw channels login`\n3. 會出現 QR Code - 使用您手機上的 WhatsApp 掃描\n4. 連結完成！現在您可以在 WhatsApp 中傳訊息給自己來與 OpenClaw 對話\n\n如需設定其他通訊平台（Discord、Slack 等），請參閱 [Channels 文件](https://docs.openclaw.ai/channels)。\n\n## AI 模型設定\n**切換本次對話的模型**（透過聊天指令）：\n- `/models` - 查看可用模型\n- `/model <model-id>` - 僅在本次對話中切換模型\n\n**修改預設模型**（透過 Web UI Settings）：\n- 前往 Settings → Agents → Default model 設定所有新對話的預設模型\n\n**新增 AI 供應商**（透過 Web UI Settings 或環境變數）：\n- 新增其他 AI 供應商的 API 金鑰（如 Anthropic、OpenAI 等）\n\n詳細設定請參閱[官方文件](https://docs.openclaw.ai/providers)。\n\n## 資料持久化\n所有資料儲存在 `/home/node`：\n- `/home/node/.openclaw` - 設定、會話、裝置和憑證\n- `/home/node/.openclaw/workspace` - 工作區和記憶檔案\n\n## 備份與還原\n\U0001F4A1 **建議：** 在完成初始設定或進行重大設定變更後，建議先建立備份。\n\n**備份方式**（兩種都會產生壓縮檔）：\n- **方法一：Zeabur 備份服務（推薦）** - 使用 Zeabur 內建的備份功能。請參閱 [Zeabur 備份文件](https://zeabur.com/docs/zh-TW/data-management/backup)。檔案結構：`data/data/.openclaw/...`\n- **方法二：手動備份** - 開啟**指令** → 執行 `cd /home/node && tar -czvf backup.tar.gz .openclaw` → 從**檔案**頁籤下載\n\n**還原**：\n- 方法一的備份（例如 `backup-6980cebef9b407ee4e87d608.tar.gz`）：\n  1. 在**檔案**頁籤將壓縮檔拖移到 `/home/node` 資料夾，上傳完成後會看到檔案出現在清單中\n  2. 在**指令**執行 `cd /home/node`\n  3. `tar -xzvf <備份檔名> --strip-components=2 -C /home/node`\n  4. `rm <備份檔名>` 刪除備份檔\n  5. 重新啟動服務\n- 方法二的備份：\n  1. 在**檔案**頁籤將壓縮檔拖移到 `/home/node` 資料夾，上傳完成後會看到檔案出現在清單中\n  2. 在**指令**執行 `cd /home/node`\n  3. `tar -xzvf backup.tar.gz`\n  4. `rm backup.tar.gz` 刪除備份檔\n  5. 重新啟動服務\n\n⚠️ 還原會覆蓋新服務上現有的設定和資料。記得也要將相關的環境變數（如 `TELEGRAM_BOT_TOKEN`）設定回去。Channel 的備份還原目前只測試過 Telegram 和 WhatsApp 可以成功還原。\n\n## 從 Clawdbot / Moltbot 遷移\n**舊版資料位置：**\n- **Clawdbot**：設定 `~/.clawdbot`、工作區 `~/clawd`\n- **Moltbot**：設定 `~/.moltbot` 或 `~/.clawdbot`、工作區 `~/clawd`\n\n**新版 OpenClaw 位置：**`/home/node/.openclaw`（包含設定和工作區）\n\nOpenClaw 具有向下相容性，會自動讀取 `.clawdbot` 和 `.moltbot` 資料夾，直接解壓縮即可使用，不需要重新命名。\n\n**遷移步驟：**\n1. 在舊服務上備份資料：\n   - 在舊服務開啟**指令**\n   - `cd /home/node && tar -czvf backup.tar.gz .clawdbot .moltbot clawd 2>/dev/null`（會忽略不存在的資料夾）\n   - 從**檔案**頁籤下載 `backup.tar.gz`\n2. 部署這個新的 OpenClaw 模板\n3. 將備份還原到新服務：\n   - 將 `backup.tar.gz` 拖移到**檔案**頁籤的 `/home/node` 資料夾\n   - 開啟**指令**：`cd /home/node && tar -xzvf backup.tar.gz && rm backup.tar.gz`\n   - 重新啟動服務\n4. 您的設定、對話記錄和憑證都會保留\n\n為了向下相容，`clawdbot` 和 `moltbot` CLI 指令仍可使用。\n\n## Zeabur 專屬設定\n此模板停用了 mDNS/Bonjour（`OPENCLAW_DISABLE_BONJOUR=1`），因為 Zeabur 容器主機名稱可能超過 63 bytes 的 DNS 標籤限制。mDNS 僅用於區域網路發現（類似 AirPlay/Chromecast），在雲端環境中服務透過內部 DNS 連線，因此不需要此功能。\n\n## 文件\n- 文件：https://docs.openclaw.ai\n- GitHub：https://github.com/openclaw/openclaw\n\n## 更新日誌\n**2026/2/2**\n- 新增 AI 模型設定區塊（全域 vs 本次對話設定）\n- 新增從 Clawdbot / Moltbot 遷移指南及資料路徑\n- 新增備份與還原區塊，支援 Zeabur 備份服務\n- 新增初始設定完成後備份提醒\n- 移除 Google Gemini CLI patch（上游已修復）\n- 移除部署時的 ANTHROPIC_API_KEY 和 OPENAI_API_KEY 變數，避免 OpenClaw 偵測到空的 API Key 然後執行失敗（可之後透過 Web UI 或環境變數設定）\n\n如需更換映像檔版本，請前往**設定**頁籤 → **服務映像檔來源** → 修改 `ghcr.io/openclaw/openclaw:<tag>`。\n"
