@@ -41,8 +41,8 @@ spec:
       ---
 
       ## Recommended Resources
-      OpenClaw 🦞 is CPU-intensive. Resource requirements may vary depending on the tools and features you use.
-      - **Dedicated Server**: 2+ vCPU, 2+ GB - highly recommended for stable performance
+      - **Minimum**: 2 vCPU / 4 GB RAM
+      - **Recommended**: 4 vCPU / 8 GB RAM
 
       ## Feature Extensions
       - **Browser**: If you need browser features (web browsing, screenshots, etc.), deploy the [Browser Template](https://zeabur.com/templates/H8L4G1)
@@ -50,8 +50,8 @@ spec:
       ## Usage
       1. After deployment, copy "Web UI (with token)" URL from the **Instructions** tab and paste it into your browser (first login requires token, after that you can access directly)
       2. **Configure AI model** (choose one):
-         - **Zeabur AI Hub**: If you entered the API Key during deployment, go directly to step 3. You can also add `ZEABUR_AI_HUB_API_KEY` later via **Variables** tab in Zeabur dashboard (restart service after adding).
-         - **Other providers** (Anthropic, OpenAI, etc.): Go to Settings to add your API key
+         - **Zeabur AI Hub** (default model: `gpt-5-mini`): If you entered the API Key during deployment, go directly to step 3. You can also add `ZEABUR_AI_HUB_API_KEY` later via **Variables** tab in Zeabur dashboard (restart service after adding).
+         - **Other providers** (Anthropic, OpenAI, etc.): If you did not enter a Zeabur AI Hub API Key, the default model is `anthropic/claude-opus-4-5`. Go to Web UI Settings or add API key via environment variables. See: https://docs.openclaw.ai/providers/anthropic
       3. Go to the **Chat** page to test if your AI model is working
       4. (Optional) Set up messaging platforms like Telegram, WhatsApp, etc.
 
@@ -101,15 +101,26 @@ spec:
       For other messaging platforms (Discord, Slack, etc.), see the [Channels documentation](https://docs.openclaw.ai/channels).
 
       ## AI Model Configuration
+
+      **Verify your setup:**
+      1. Your default model depends on deployment:
+         - With Zeabur AI Hub API Key → default model: `zeabur-ai/gpt-5-mini`
+         - Without → default model: `anthropic/claude-opus-4-5` (requires API key)
+      2. Open **Chat** page and send a test message
+      3. If you get a response → model is working
+      4. If you get an error → check that your API key is configured correctly
+
       **Switch model for current conversation** (via chat commands):
       - `/models` - View available models
-      - `/model <model-id>` - Switch model for this conversation only
+      - `/model <model-id>` - Switch model for this conversation only (does not affect other conversations)
 
-      **Change default model** (via Web UI Settings):
-      - Go to Settings → Agents → Default model to set the default model for all new conversations
+      **Change default model for all new conversations** (via Web UI Settings):
+      - Go to Settings → Agents → Default model
+      - **Tip:** Set a low-cost model as default (e.g., `gemini-2.5-flash-lite`, `gpt-5-nano`). If a model becomes unavailable, use `/new` to start a new conversation with the default model.
 
       **Add AI providers** (via Web UI Settings or environment variables):
       - Add API keys for other AI providers (e.g., Anthropic, OpenAI)
+      - See: https://docs.openclaw.ai/providers
 
       **Modify Zeabur AI Hub models** (via Zeabur dashboard):
       - Go to **Settings** → **Configs** → Edit `/opt/openclaw/providers/zeabur-ai-hub.json5`
@@ -122,8 +133,6 @@ spec:
       { "id": "glm-4.7-flash", "name": "GLM-4.7 Flash", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 1, "cacheRead": 0.06, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
       { "id": "kimi-2.5", "name": "Kimi 2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
       ```
-
-      For detailed configuration, see the [official documentation](https://docs.openclaw.ai/providers).
 
       ## Data Persistence
       All data is stored under `/home/node`:
@@ -184,9 +193,12 @@ spec:
 
       **Update version:** Go to **Settings** → **Service Image Source** → modify `ghcr.io/openclaw/openclaw:<tag>`.
 
-      ## Zeabur-Specific Configuration
-      **Recommended resources:** Minimum 2 vCPU / 4 GB RAM, recommended 4 vCPU / 8 GB RAM.
+      **Health check error `Startup probe failed: dial tcp ... connect: connection refused`?** This means the service hasn't finished starting yet or the port is not ready. OpenClaw may need more time to start, especially on first launch. Try:
+      1. Wait a few minutes — the service may still be initializing
+      2. If the error persists, increase resources (minimum 2 vCPU / 4 GB RAM, recommended 4 vCPU / 8 GB RAM)
+      3. If the service keeps restarting, disable **Health Check** temporarily to prevent restart loops, then check logs for the actual error
 
+      ## Zeabur-Specific Configuration
       This template disables mDNS/Bonjour (`OPENCLAW_DISABLE_BONJOUR=1`) because Zeabur container hostnames can exceed the 63-byte DNS label limit. mDNS is only used for local network discovery (like AirPlay/Chromecast) and is not needed in cloud environments where services connect via internal DNS.
 
       ## Documentation
@@ -259,8 +271,12 @@ spec:
                 mkdir -p "$CONFIG_DIR" "$PROVIDERS_DIR"
                 chmod 700 "$CONFIG_DIR"
 
+                # Check if API key is a real value (not an unresolved template variable like '${ZEABUR_AI_HUB_API_KEY}')
+                HAS_AI_HUB_KEY=false
+                case "${ZEABUR_AI_HUB_API_KEY}" in '${'*'}') ;; '') ;; *) HAS_AI_HUB_KEY=true ;; esac
+
                 # Copy provider config from /opt (injected by Zeabur configs) if API key is set
-                if [ -n "${ZEABUR_AI_HUB_API_KEY}" ] && [ ! -f "$PROVIDERS_DIR/zeabur-ai-hub.json5" ]; then
+                if [ "$HAS_AI_HUB_KEY" = true ] && [ ! -f "$PROVIDERS_DIR/zeabur-ai-hub.json5" ]; then
                   if [ -f /opt/openclaw/providers/zeabur-ai-hub.json5 ]; then
                     cp /opt/openclaw/providers/zeabur-ai-hub.json5 "$PROVIDERS_DIR/"
                     echo "Copied Zeabur AI Hub provider config"
@@ -270,7 +286,7 @@ spec:
                 # Create initial config (only if not exists)
                 if [ ! -f "$CONFIG_FILE" ]; then
                   echo "Creating initial config..."
-                  if [ -n "${ZEABUR_AI_HUB_API_KEY}" ]; then
+                  if [ "$HAS_AI_HUB_KEY" = true ]; then
                     cat > "$CONFIG_FILE" << 'EOF'
                 {
                   "gateway": { "controlUi": { "allowInsecureAuth": true } },
@@ -291,7 +307,7 @@ spec:
                 else
                   echo "Config exists, checking for updates..."
                   # Add Zeabur AI Hub provider via $include if API key is set but provider not configured
-                  if [ -n "${ZEABUR_AI_HUB_API_KEY}" ]; then
+                  if [ "$HAS_AI_HUB_KEY" = true ]; then
                     node -e "
                       const fs = require('fs');
                       const configPath = '$CONFIG_FILE';
@@ -516,8 +532,8 @@ localization:
       ---
 
       ## 建議資源配置
-      OpenClaw 🦞 是 CPU 密集型應用。資源需求可能因使用的工具和功能而異。
-      - **專用伺服器**：2+ vCPU、2+ GB - 強烈推薦，以獲得穩定效能
+      - **最低配置**：2 vCPU / 4 GB RAM
+      - **建議配置**：4 vCPU / 8 GB RAM
 
       ## 功能擴充
       - **瀏覽器**：如需瀏覽器功能（網頁瀏覽、截圖等），請部署 [Browser 模板](https://zeabur.com/templates/H8L4G1)
@@ -525,8 +541,8 @@ localization:
       ## 使用方式
       1. 部署完成後，在**使用說明**頁籤複製「Web UI (with token)」網址，貼到瀏覽器開啟（首次登入需要 token，之後可直接開啟網址）
       2. **設定 AI 模型**（二擇一）：
-         - **Zeabur AI Hub**：若部署時已輸入 API Key，直接前往步驟 3。也可之後在 Zeabur 控制台的**變數**頁籤新增 `ZEABUR_AI_HUB_API_KEY`（新增後記得重新啟動服務）。
-         - **其他供應商**（Anthropic、OpenAI 等）：前往 Settings 新增 API 金鑰
+         - **Zeabur AI Hub**（預設模型：`gpt-5-mini`）：若部署時已輸入 API Key，直接前往步驟 3。也可之後在 Zeabur 控制台的**變數**頁籤新增 `ZEABUR_AI_HUB_API_KEY`（新增後記得重新啟動服務）。
+         - **其他供應商**（Anthropic、OpenAI 等）：若未輸入 Zeabur AI Hub API Key，預設模型為 `anthropic/claude-opus-4-5`。前往 Web UI Settings 或環境變數新增 API 金鑰。詳情請見：https://docs.openclaw.ai/providers/anthropic
       3. 前往 **Chat** 頁面測試 AI 模型是否正常運作
       4. （選擇性）設定 Telegram、WhatsApp 等通訊平台
 
@@ -576,15 +592,26 @@ localization:
       如需設定其他通訊平台（Discord、Slack 等），請參閱 [Channels 文件](https://docs.openclaw.ai/channels)。
 
       ## AI 模型設定
+
+      **確認模型是否正常運作：**
+      1. 預設模型取決於部署方式：
+         - 有填 Zeabur AI Hub API Key → 預設模型：`zeabur-ai/gpt-5-mini`
+         - 沒有填 → 預設模型：`anthropic/claude-opus-4-5`（需要 API 金鑰）
+      2. 開啟 **Chat** 頁面，發送一則測試訊息
+      3. 如果收到回覆 → 模型正常運作
+      4. 如果出現錯誤 → 確認 API 金鑰是否正確設定
+
       **切換本次對話的模型**（透過聊天指令）：
       - `/models` - 查看可用模型
-      - `/model <model-id>` - 僅在本次對話中切換模型
+      - `/model <model-id>` - 僅在本次對話中切換模型（不影響其他對話）
 
-      **修改預設模型**（透過 Web UI Settings）：
-      - 前往 Settings → Agents → Default model 設定所有新對話的預設模型
+      **修改所有新對話的預設模型**（透過 Web UI Settings）：
+      - 前往 Settings → Agents → Default model
+      - **建議：** 將低費用的模型設為預設（如 `gemini-2.5-flash-lite`、`gpt-5-nano`）。當模型無法使用時，可用 `/new` 開啟新對話，自動切回預設模型。
 
       **新增 AI 供應商**（透過 Web UI Settings 或環境變數）：
       - 新增其他 AI 供應商的 API 金鑰（如 Anthropic、OpenAI 等）
+      - 請見：https://docs.openclaw.ai/providers
 
       **修改 Zeabur AI Hub 模型**（透過 Zeabur 控制台）：
       - 前往**設定** → **設定檔** → 編輯 `/opt/openclaw/providers/zeabur-ai-hub.json5`
@@ -597,8 +624,6 @@ localization:
       { "id": "glm-4.7-flash", "name": "GLM-4.7 Flash", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 1, "cacheRead": 0.06, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
       { "id": "kimi-2.5", "name": "Kimi 2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
       ```
-
-      詳細設定請參閱[官方文件](https://docs.openclaw.ai/providers)。
 
       ## 資料持久化
       所有資料儲存在 `/home/node`：
@@ -659,9 +684,12 @@ localization:
 
       **更新版本：** 前往**設定** → **服務映像檔來源** → 修改 `ghcr.io/openclaw/openclaw:<tag>`。
 
-      ## Zeabur 專屬設定
-      **建議資源配置：** 最低 2 vCPU / 4 GB RAM，建議 4 vCPU / 8 GB RAM。
+      **健康檢查錯誤 `Startup probe failed: dial tcp ... connect: connection refused`？** 表示服務尚未啟動完成或埠號未就緒。OpenClaw 可能需要更多時間啟動，特別是首次啟動時。嘗試：
+      1. 等待幾分鐘 — 服務可能仍在初始化中
+      2. 如果錯誤持續，增加資源配置（最低 2 vCPU / 4 GB RAM，建議 4 vCPU / 8 GB RAM）
+      3. 如果服務不斷重啟，暫時關閉**健康檢查**以防止重啟循環，再查看日誌找出實際錯誤
 
+      ## Zeabur 專屬設定
       此模板停用了 mDNS/Bonjour（`OPENCLAW_DISABLE_BONJOUR=1`），因為 Zeabur 容器主機名稱可能超過 63 bytes 的 DNS 標籤限制。mDNS 僅用於區域網路發現（類似 AirPlay/Chromecast），在雲端環境中服務透過內部 DNS 連線，因此不需要此功能。
 
       ## 文件
@@ -709,8 +737,8 @@ localization:
       ---
 
       ## 建议资源配置
-      OpenClaw 🦞 是 CPU 密集型应用。资源需求可能因使用的工具和功能而异。
-      - **专用服务器**：2+ vCPU、2+ GB - 强烈推荐，以获得稳定性能
+      - **最低配置**：2 vCPU / 4 GB RAM
+      - **建议配置**：4 vCPU / 8 GB RAM
 
       ## 功能扩充
       - **浏览器**：如需浏览器功能（网页浏览、截图等），请部署 [Browser 模板](https://zeabur.com/templates/H8L4G1)
@@ -718,8 +746,8 @@ localization:
       ## 使用方式
       1. 部署完成后，在**使用说明**页签复制「Web UI (with token)」网址，贴到浏览器打开（首次登录需要 token，之后可直接打开网址）
       2. **设置 AI 模型**（二选一）：
-         - **Zeabur AI Hub**：若部署时已输入 API Key，直接前往步骤 3。也可之后在 Zeabur 控制台的**变量**页签添加 `ZEABUR_AI_HUB_API_KEY`（添加后记得重新启动服务）。
-         - **其他供应商**（Anthropic、OpenAI 等）：前往 Settings 添加 API 密钥
+         - **Zeabur AI Hub**（默认模型：`gpt-5-mini`）：若部署时已输入 API Key，直接前往步骤 3。也可之后在 Zeabur 控制台的**变量**页签添加 `ZEABUR_AI_HUB_API_KEY`（添加后记得重新启动服务）。
+         - **其他供应商**（Anthropic、OpenAI 等）：若未输入 Zeabur AI Hub API Key，默认模型为 `anthropic/claude-opus-4-5`。前往 Web UI Settings 或环境变量添加 API 密钥。详情请见：https://docs.openclaw.ai/providers/anthropic
       3. 前往 **Chat** 页面测试 AI 模型是否正常运作
       4. （可选）设置 Telegram、WhatsApp 等通讯平台
 
@@ -769,15 +797,26 @@ localization:
       如需设置其他通讯平台（Discord、Slack 等），请参阅 [Channels 文档](https://docs.openclaw.ai/channels)。
 
       ## AI 模型设置
+
+      **确认模型是否正常运作：**
+      1. 默认模型取决于部署方式：
+         - 有填 Zeabur AI Hub API Key → 默认模型：`zeabur-ai/gpt-5-mini`
+         - 没有填 → 默认模型：`anthropic/claude-opus-4-5`（需要 API 密钥）
+      2. 打开 **Chat** 页面，发送一条测试消息
+      3. 如果收到回复 → 模型正常运作
+      4. 如果出现错误 → 确认 API 密钥是否正确设置
+
       **切换本次对话的模型**（通过聊天命令）：
       - `/models` - 查看可用模型
-      - `/model <model-id>` - 仅在本次对话中切换模型
+      - `/model <model-id>` - 仅在本次对话中切换模型（不影响其他对话）
 
-      **修改默认模型**（通过 Web UI Settings）：
-      - 前往 Settings → Agents → Default model 设置所有新对话的默认模型
+      **修改所有新对话的默认模型**（通过 Web UI Settings）：
+      - 前往 Settings → Agents → Default model
+      - **建议：** 将低费用的模型设为默认（如 `gemini-2.5-flash-lite`、`gpt-5-nano`）。当模型无法使用时，可用 `/new` 开启新对话，自动切回默认模型。
 
       **添加 AI 供应商**（通过 Web UI Settings 或环境变量）：
       - 添加其他 AI 供应商的 API 密钥（如 Anthropic、OpenAI 等）
+      - 请见：https://docs.openclaw.ai/providers
 
       **修改 Zeabur AI Hub 模型**（通过 Zeabur 控制台）：
       - 前往**设置** → **配置文件** → 编辑 `/opt/openclaw/providers/zeabur-ai-hub.json5`
@@ -790,8 +829,6 @@ localization:
       { "id": "glm-4.7-flash", "name": "GLM-4.7 Flash", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 1, "cacheRead": 0.06, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
       { "id": "kimi-2.5", "name": "Kimi 2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
       ```
-
-      详细设置请参阅[官方文档](https://docs.openclaw.ai/providers)。
 
       ## 数据持久化
       所有数据存储在 `/home/node`：
@@ -852,9 +889,12 @@ localization:
 
       **更新版本：** 前往**设置** → **服务镜像来源** → 修改 `ghcr.io/openclaw/openclaw:<tag>`。
 
-      ## Zeabur 专属配置
-      **建议资源配置：** 最低 2 vCPU / 4 GB RAM，建议 4 vCPU / 8 GB RAM。
+      **健康检查错误 `Startup probe failed: dial tcp ... connect: connection refused`？** 表示服务尚未启动完成或端口未就绪。OpenClaw 可能需要更多时间启动，特别是首次启动时。尝试：
+      1. 等待几分钟 — 服务可能仍在初始化中
+      2. 如果错误持续，增加资源配置（最低 2 vCPU / 4 GB RAM，建议 4 vCPU / 8 GB RAM）
+      3. 如果服务不断重启，暂时关闭**健康检查**以防止重启循环，再查看日志找出实际错误
 
+      ## Zeabur 专属配置
       此模板停用了 mDNS/Bonjour（`OPENCLAW_DISABLE_BONJOUR=1`），因为 Zeabur 容器主机名称可能超过 63 bytes 的 DNS 标签限制。mDNS 仅用于区域网络发现（类似 AirPlay/Chromecast），在云端环境中服务通过内部 DNS 连接，因此不需要此功能。
 
       ## 文档
@@ -902,8 +942,8 @@ localization:
       ---
 
       ## 推奨リソース
-      OpenClaw 🦞 は CPU 集約型アプリです。使用するツールや機能によってリソース要件が異なる場合があります。
-      - **専用サーバー**：2+ vCPU、2+ GB - 安定したパフォーマンスのために強く推奨
+      - **最小構成**：2 vCPU / 4 GB RAM
+      - **推奨構成**：4 vCPU / 8 GB RAM
 
       ## 機能拡張
       - **ブラウザ**：ブラウザ機能（Web ブラウジング、スクリーンショットなど）が必要な場合は、[Browser テンプレート](https://zeabur.com/templates/H8L4G1)をデプロイしてください
@@ -911,8 +951,8 @@ localization:
       ## 使用方法
       1. デプロイ後、**指示**タブの「Web UI (with token)」URL をコピーしてブラウザに貼り付けて開く（初回ログインは token が必要、以降は直接 URL にアクセス可能）
       2. **AI モデルを設定**（いずれかを選択）：
-         - **Zeabur AI Hub**：デプロイ時に API Key を入力済みの場合、ステップ 3 へ進む。後から Zeabur ダッシュボードの**変数**タブで `ZEABUR_AI_HUB_API_KEY` を追加も可能（追加後はサービスを再起動）。
-         - **他のプロバイダー**（Anthropic、OpenAI など）：Settings で API キーを追加
+         - **Zeabur AI Hub**（デフォルトモデル：`gpt-5-mini`）：デプロイ時に API Key を入力済みの場合、ステップ 3 へ進む。後から Zeabur ダッシュボードの**変数**タブで `ZEABUR_AI_HUB_API_KEY` を追加も可能（追加後はサービスを再起動）。
+         - **他のプロバイダー**（Anthropic、OpenAI など）：Zeabur AI Hub API Key を入力しなかった場合、デフォルトモデルは `anthropic/claude-opus-4-5` です。Web UI Settings または環境変数で API キーを追加してください。詳細：https://docs.openclaw.ai/providers/anthropic
       3. **Chat** ページで AI モデルが正常に動作しているかテスト
       4. （オプション）Telegram、WhatsApp などのメッセージングプラットフォームを設定
 
@@ -962,18 +1002,29 @@ localization:
       その他のメッセージングプラットフォーム（Discord、Slack など）については、[Channels ドキュメント](https://docs.openclaw.ai/channels)をご覧ください。
 
       ## AI モデル設定
-      **現在の会話のモデルを切り替え**（チャットコマンド）：
+
+      **セットアップの確認：**
+      1. デフォルトモデルはデプロイ方法に依存します：
+         - Zeabur AI Hub API Key を入力した場合 → デフォルトモデル：`zeabur-ai/gpt-5-mini`
+         - 入力しなかった場合 → デフォルトモデル：`anthropic/claude-opus-4-5`（API キーが必要）
+      2. **Chat** ページを開き、テストメッセージを送信
+      3. 返答があれば → モデルは正常に動作しています
+      4. エラーが出た場合 → API キーが正しく設定されているか確認
+
+      **現在の会話のモデルを切り替え**（チャットコマンドで）：
       - `/models` - 利用可能なモデルを表示
-      - `/model <model-id>` - この会話のみモデルを切り替え
+      - `/model <model-id>` - この会話のみモデルを切り替え（他の会話には影響しません）
 
-      **デフォルトモデルの変更**（Web UI Settings）：
-      - Settings → Agents → Default model ですべての新しい会話のデフォルトモデルを設定
+      **全ての新しい会話のデフォルトモデルを変更**（Web UI Settings で）：
+      - Settings → Agents → Default model
+      - **ヒント：** 低コストのモデルをデフォルトに設定しましょう（例：`gemini-2.5-flash-lite`、`gpt-5-nano`）。モデルが使用できなくなった場合、`/new` で新しい会話を開始すればデフォルトモデルに自動的に戻ります。
 
-      **AI プロバイダーの追加**（Web UI Settings または環境変数）：
-      - 他の AI プロバイダーの API キーを追加（Anthropic、OpenAI など）
+      **AI プロバイダーを追加**（Web UI Settings または環境変数で）：
+      - 他の AI プロバイダーの API キーを追加（例：Anthropic、OpenAI）
+      - 詳細：https://docs.openclaw.ai/providers
 
-      **Zeabur AI Hub モデルの変更**（Zeabur ダッシュボード）：
-      - **設定** → **Configs** → `/opt/openclaw/providers/zeabur-ai-hub.json5` を編集
+      **Zeabur AI Hub モデルを変更**（Zeabur ダッシュボードで）：
+      - **設定** → **設定ファイル** → `/opt/openclaw/providers/zeabur-ai-hub.json5` を編集
       - 旧バージョン（コマンドなし）：**ファイル** タブまたは Web UI Settings で `/home/node/.openclaw/openclaw.json` を編集。以下を `models.providers.zeabur-ai.models` 配列に追加：
       ```json
       { "id": "gpt-5.2", "name": "GPT-5.2", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.5, "output": 12, "cacheRead": 0.15, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
@@ -983,8 +1034,6 @@ localization:
       { "id": "glm-4.7-flash", "name": "GLM-4.7 Flash", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 1, "cacheRead": 0.06, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
       { "id": "kimi-2.5", "name": "Kimi 2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
       ```
-
-      詳細な設定については、[公式ドキュメント](https://docs.openclaw.ai/providers)をご覧ください。
 
       ## データ永続化
       すべてのデータは `/home/node` に保存：
@@ -1045,9 +1094,12 @@ localization:
 
       **バージョン更新：** **設定**タブ → **サービスイメージソース** → `ghcr.io/openclaw/openclaw:<tag>` を編集してください。
 
-      ## Zeabur 固有の設定
-      **推奨リソース：** 最小 2 vCPU / 4 GB RAM、推奨 4 vCPU / 8 GB RAM。
+      **ヘルスチェックエラー `Startup probe failed: dial tcp ... connect: connection refused`？** サービスがまだ起動完了していないか、ポートが準備できていません。OpenClaw は起動に時間がかかる場合があります（特に初回起動時）。対処法：
+      1. 数分待つ — サービスがまだ初期化中の可能性があります
+      2. エラーが続く場合、リソースを増やす（最小 2 vCPU / 4 GB RAM、推奨 4 vCPU / 8 GB RAM）
+      3. サービスが繰り返し再起動する場合、**ヘルスチェック**を一時的に無効化して再起動ループを防ぎ、ログで実際のエラーを確認
 
+      ## Zeabur 固有の設定
       このテンプレートでは mDNS/Bonjour を無効化しています（`OPENCLAW_DISABLE_BONJOUR=1`）。Zeabur コンテナのホスト名が 63 バイトの DNS ラベル制限を超える可能性があるためです。mDNS はローカルネットワーク検出（AirPlay/Chromecast のような）にのみ使用され、クラウド環境ではサービスは内部 DNS を通じて接続するため、この機能は不要です。
 
       ## ドキュメント
@@ -1095,9 +1147,8 @@ localization:
       ---
 
       ## Recursos Recomendados
-      OpenClaw 🦞 consume muchos recursos de CPU. Los requisitos pueden variar según las herramientas y funciones que utilice.
-      - **Clúster Compartido**: 1000 m (1 vCPU), 1024 Mi (1 GB) - para pruebas
-      - **Servidor Dedicado**: 2+ vCPU, 2+ GB - altamente recomendado para rendimiento estable
+      - **Mínimo**: 2 vCPU / 4 GB RAM
+      - **Recomendado**: 4 vCPU / 8 GB RAM
 
       ## Extensiones de Funciones
       - **Navegador**: Si necesita funciones del navegador (navegación web, capturas de pantalla, etc.), despliegue la [Plantilla Browser](https://zeabur.com/templates/H8L4G1)
@@ -1105,8 +1156,8 @@ localization:
       ## Uso
       1. Después del despliegue, copie la URL "Web UI (with token)" de la pestaña **Instrucciones** y péguela en su navegador (el primer inicio de sesión requiere token, después puede acceder directamente)
       2. **Configure el modelo de AI** (elija uno):
-         - **Zeabur AI Hub**: Si ingresó la API Key durante el despliegue, vaya directamente al paso 3. También puede agregar `ZEABUR_AI_HUB_API_KEY` después en la pestaña **Variables** del panel de Zeabur (reinicie el servicio después de agregar).
-         - **Otros proveedores** (Anthropic, OpenAI, etc.): Vaya a Settings para agregar su clave API
+         - **Zeabur AI Hub** (modelo predeterminado: `gpt-5-mini`): Si ingresó la API Key durante el despliegue, vaya directamente al paso 3. También puede agregar `ZEABUR_AI_HUB_API_KEY` después en la pestaña **Variables** del panel de Zeabur (reinicie el servicio después de agregar).
+         - **Otros proveedores** (Anthropic, OpenAI, etc.): Si no ingresó una API Key de Zeabur AI Hub, el modelo predeterminado es `anthropic/claude-opus-4-5`. Vaya a Web UI Settings o agregue la clave API mediante variables de entorno. Más info: https://docs.openclaw.ai/providers/anthropic
       3. Vaya a la página **Chat** para probar si su modelo de AI funciona
       4. (Opcional) Configure plataformas de mensajería como Telegram, WhatsApp, etc.
 
@@ -1155,19 +1206,30 @@ localization:
 
       Para otras plataformas de mensajería (Discord, Slack, etc.), consulte la [documentación de Canales](https://docs.openclaw.ai/channels).
 
-      ## Configuración de Modelos de AI
-      **Cambiar modelo para la conversación actual** (a través de comandos de chat):
+      ## Configuración del Modelo de AI
+
+      **Verifique su configuración:**
+      1. El modelo predeterminado depende del despliegue:
+         - Con Zeabur AI Hub API Key → modelo predeterminado: `zeabur-ai/gpt-5-mini`
+         - Sin → modelo predeterminado: `anthropic/claude-opus-4-5` (requiere clave API)
+      2. Abra la página **Chat** y envíe un mensaje de prueba
+      3. Si recibe una respuesta → el modelo funciona correctamente
+      4. Si obtiene un error → verifique que su clave API esté configurada correctamente
+
+      **Cambiar modelo para la conversación actual** (mediante comandos de chat):
       - `/models` - Ver modelos disponibles
-      - `/model <model-id>` - Cambiar modelo solo para esta conversación
+      - `/model <model-id>` - Cambiar modelo solo para esta conversación (no afecta otras conversaciones)
 
-      **Cambiar modelo predeterminado** (a través de Web UI Settings):
-      - Ir a Settings → Agents → Default model para establecer el modelo predeterminado para todas las conversaciones nuevas
+      **Cambiar modelo predeterminado para todas las conversaciones nuevas** (vía Web UI Settings):
+      - Ir a Settings → Agents → Default model
+      - **Consejo:** Establezca un modelo de bajo costo como predeterminado (ej. `gemini-2.5-flash-lite`, `gpt-5-nano`). Si un modelo deja de estar disponible, use `/new` para iniciar una nueva conversación con el modelo predeterminado.
 
-      **Agregar proveedores de AI** (a través de Web UI Settings o variables de entorno):
-      - Agregar claves API de otros proveedores de AI (por ejemplo, Anthropic, OpenAI)
+      **Agregar proveedores de AI** (vía Web UI Settings o variables de entorno):
+      - Agregar claves API de otros proveedores (ej. Anthropic, OpenAI)
+      - Más info: https://docs.openclaw.ai/providers
 
       **Modificar modelos de Zeabur AI Hub** (vía panel de Zeabur):
-      - Vaya a **Configuración** → **Configs** → Edite `/opt/openclaw/providers/zeabur-ai-hub.json5`
+      - Ir a **Configuración** → **Archivos de configuración** → Editar `/opt/openclaw/providers/zeabur-ai-hub.json5`
       - Versiones anteriores (sin comandos): Edite `/home/node/.openclaw/openclaw.json` vía pestaña **Archivos** o Web UI Settings. Agregue lo siguiente al array `models.providers.zeabur-ai.models`:
       ```json
       { "id": "gpt-5.2", "name": "GPT-5.2", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.5, "output": 12, "cacheRead": 0.15, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
@@ -1177,8 +1239,6 @@ localization:
       { "id": "glm-4.7-flash", "name": "GLM-4.7 Flash", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 1, "cacheRead": 0.06, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
       { "id": "kimi-2.5", "name": "Kimi 2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
       ```
-
-      Para configuración detallada, consulte la [documentación oficial](https://docs.openclaw.ai/providers).
 
       ## Persistencia de Datos
       Todos los datos se almacenan en `/home/node`:
@@ -1239,9 +1299,12 @@ localization:
 
       **Actualizar versión:** Vaya a **Configuración** → **Fuente de imagen del servicio** → modifique `ghcr.io/openclaw/openclaw:<tag>`.
 
-      ## Configuración Específica de Zeabur
-      **Recursos recomendados:** Mínimo 2 vCPU / 4 GB RAM, recomendado 4 vCPU / 8 GB RAM.
+      **¿Error de health check `Startup probe failed: dial tcp ... connect: connection refused`?** Significa que el servicio aún no ha terminado de iniciar o el puerto no está listo. OpenClaw puede necesitar más tiempo para iniciar, especialmente en el primer arranque. Intente:
+      1. Espere unos minutos — el servicio puede estar aún inicializándose
+      2. Si el error persiste, aumente los recursos (mínimo 2 vCPU / 4 GB RAM, recomendado 4 vCPU / 8 GB RAM)
+      3. Si el servicio sigue reiniciándose, desactive **Health Check** temporalmente para prevenir bucles de reinicio, luego revise los logs para encontrar el error real
 
+      ## Configuración Específica de Zeabur
       Esta plantilla deshabilita mDNS/Bonjour (`OPENCLAW_DISABLE_BONJOUR=1`) porque los nombres de host de los contenedores de Zeabur pueden exceder el límite de 63 bytes de las etiquetas DNS. mDNS solo se usa para el descubrimiento de red local (como AirPlay/Chromecast) y no es necesario en entornos de nube donde los servicios se conectan a través de DNS interno.
 
       ## Documentación
@@ -1289,9 +1352,8 @@ localization:
       ---
 
       ## Sumber Daya yang Direkomendasikan
-      OpenClaw 🦞 adalah aplikasi yang intensif CPU. Kebutuhan sumber daya dapat bervariasi tergantung pada alat dan fitur yang Anda gunakan.
-      - **Kluster Bersama**: 1000 m (1 vCPU), 1024 Mi (1 GB) - untuk pengujian
-      - **Server Khusus**: 2+ vCPU, 2+ GB - sangat direkomendasikan untuk performa stabil
+      - **Minimum**: 2 vCPU / 4 GB RAM
+      - **Disarankan**: 4 vCPU / 8 GB RAM
 
       ## Ekstensi Fitur
       - **Browser**: Jika Anda memerlukan fitur browser (browsing web, screenshot, dll.), deploy [Template Browser](https://zeabur.com/templates/H8L4G1)
@@ -1299,8 +1361,8 @@ localization:
       ## Penggunaan
       1. Setelah deploy, salin URL "Web UI (with token)" dari tab **Instruksi** dan tempelkan di browser Anda (login pertama memerlukan token, setelah itu bisa langsung akses URL)
       2. **Konfigurasi model AI** (pilih salah satu):
-         - **Zeabur AI Hub**: Jika sudah memasukkan API Key saat deploy, langsung ke langkah 3. Bisa juga menambahkan `ZEABUR_AI_HUB_API_KEY` nanti di tab **Variables** dashboard Zeabur (restart layanan setelah menambahkan).
-         - **Penyedia lain** (Anthropic, OpenAI, dll.): Buka Settings untuk menambahkan kunci API
+         - **Zeabur AI Hub** (model default: `gpt-5-mini`): Jika sudah memasukkan API Key saat deploy, langsung ke langkah 3. Bisa juga menambahkan `ZEABUR_AI_HUB_API_KEY` nanti di tab **Variables** dashboard Zeabur (restart layanan setelah menambahkan).
+         - **Penyedia lain** (Anthropic, OpenAI, dll.): Jika tidak memasukkan API Key Zeabur AI Hub, model default adalah `anthropic/claude-opus-4-5`. Buka Web UI Settings atau tambahkan kunci API melalui variabel lingkungan. Info: https://docs.openclaw.ai/providers/anthropic
       3. Buka halaman **Chat** untuk menguji apakah model AI Anda berfungsi
       4. (Opsional) Atur platform pesan seperti Telegram, WhatsApp, dll.
 
@@ -1350,17 +1412,28 @@ localization:
       Untuk platform perpesanan lainnya (Discord, Slack, dll.), lihat [dokumentasi Channels](https://docs.openclaw.ai/channels).
 
       ## Konfigurasi Model AI
-      **Beralih model untuk percakapan saat ini** (melalui perintah chat):
-      - `/models` - Melihat model yang tersedia
-      - `/model <model-id>` - Beralih model hanya untuk percakapan ini
 
-      **Mengubah model default** (melalui Web UI Settings):
-      - Buka Settings → Agents → Default model untuk mengatur model default untuk semua percakapan baru
+      **Verifikasi setup Anda:**
+      1. Model default tergantung pada cara deploy:
+         - Dengan Zeabur AI Hub API Key → model default: `zeabur-ai/gpt-5-mini`
+         - Tanpa → model default: `anthropic/claude-opus-4-5` (memerlukan kunci API)
+      2. Buka halaman **Chat** dan kirim pesan percobaan
+      3. Jika mendapat balasan → model berfungsi dengan baik
+      4. Jika ada error → pastikan kunci API sudah dikonfigurasi dengan benar
 
-      **Menambah penyedia AI** (melalui Web UI Settings atau variabel lingkungan):
-      - Menambahkan kunci API dari penyedia AI lain (misalnya Anthropic, OpenAI)
+      **Ganti model untuk percakapan saat ini** (melalui perintah chat):
+      - `/models` - Lihat model yang tersedia
+      - `/model <model-id>` - Ganti model hanya untuk percakapan ini (tidak mempengaruhi percakapan lain)
 
-      **Mengubah model Zeabur AI Hub** (via dashboard Zeabur):
+      **Ganti model default untuk semua percakapan baru** (via Web UI Settings):
+      - Buka Settings → Agents → Default model
+      - **Tips:** Tetapkan model berbiaya rendah sebagai default (misal: `gemini-2.5-flash-lite`, `gpt-5-nano`). Jika model tidak tersedia, gunakan `/new` untuk memulai percakapan baru dengan model default.
+
+      **Tambah penyedia AI** (via Web UI Settings atau variabel lingkungan):
+      - Tambahkan kunci API penyedia lain (misal: Anthropic, OpenAI)
+      - Info: https://docs.openclaw.ai/providers
+
+      **Modifikasi model Zeabur AI Hub** (via dashboard Zeabur):
       - Buka **Settings** → **Configs** → Edit `/opt/openclaw/providers/zeabur-ai-hub.json5`
       - Versi lama (tanpa perintah): Edit `/home/node/.openclaw/openclaw.json` via tab **Files** atau Web UI Settings. Tambahkan berikut ke array `models.providers.zeabur-ai.models`:
       ```json
@@ -1371,8 +1444,6 @@ localization:
       { "id": "glm-4.7-flash", "name": "GLM-4.7 Flash", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 1, "cacheRead": 0.06, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
       { "id": "kimi-2.5", "name": "Kimi 2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
       ```
-
-      Untuk konfigurasi detail, lihat [dokumentasi resmi](https://docs.openclaw.ai/providers).
 
       ## Persistensi Data
       Semua data disimpan di `/home/node`:
@@ -1433,9 +1504,12 @@ localization:
 
       **Perbarui versi:** Buka **Settings** → **Service Image Source** → ubah `ghcr.io/openclaw/openclaw:<tag>`.
 
-      ## Konfigurasi Khusus Zeabur
-      **Sumber daya yang disarankan:** Minimum 2 vCPU / 4 GB RAM, disarankan 4 vCPU / 8 GB RAM.
+      **Error health check `Startup probe failed: dial tcp ... connect: connection refused`?** Ini berarti layanan belum selesai memulai atau port belum siap. OpenClaw mungkin memerlukan lebih banyak waktu untuk memulai, terutama pada peluncuran pertama. Coba:
+      1. Tunggu beberapa menit — layanan mungkin masih dalam proses inisialisasi
+      2. Jika error berlanjut, tingkatkan sumber daya (minimum 2 vCPU / 4 GB RAM, disarankan 4 vCPU / 8 GB RAM)
+      3. Jika layanan terus restart, nonaktifkan **Health Check** sementara untuk mencegah loop restart, lalu periksa log untuk menemukan error sebenarnya
 
+      ## Konfigurasi Khusus Zeabur
       Template ini menonaktifkan mDNS/Bonjour (`OPENCLAW_DISABLE_BONJOUR=1`) karena nama host container Zeabur dapat melebihi batas label DNS 63 byte. mDNS hanya digunakan untuk penemuan jaringan lokal (seperti AirPlay/Chromecast) dan tidak diperlukan di lingkungan cloud di mana layanan terhubung melalui DNS internal.
 
       ## Dokumentasi
