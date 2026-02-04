@@ -127,6 +127,27 @@ spec:
                   include proxy.conf;
                 }
 
+                location /explore {
+                  proxy_pass http://web:3000;
+                  include proxy.conf;
+                }
+
+                location /e/ {
+                  proxy_pass http://plugin-daemon:5002;
+                  proxy_set_header Dify-Hook-Url $scheme://$host$request_uri;
+                  include proxy.conf;
+                }
+
+                location /mcp {
+                  proxy_pass http://api:5001;
+                  include proxy.conf;
+                }
+
+                location /triggers {
+                  proxy_pass http://api:5001;
+                  include proxy.conf;
+                }
+
                 location / {
                   proxy_pass http://web:3000;
                   include proxy.conf;
@@ -380,6 +401,8 @@ spec:
             default: WVF5YThaHlkYwhGUSmCRgsX3tD5ngdN8pkih
           WEAVIATE_ENDPOINT:
             default: http://weaviate:8080
+          TRIGGER_URL:
+            default: ${DIFY_GATEWAY_URL}
           SSRF_PROXY_HTTP_URL:
             default: http://ssrf-proxy:3128
           SSRF_PROXY_HTTPS_URL:
