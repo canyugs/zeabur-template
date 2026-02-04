@@ -1,0 +1,355 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: Rocket.Chat
+spec:
+    description: |
+        Open-source team communication platform with real-time messaging, video conferencing, file sharing, and extensive integrations. A self-hosted alternative to Slack with full data control.
+    icon: https://raw.githubusercontent.com/RocketChat/Rocket.Chat.Artwork/master/Logos/icon.svg
+    coverImage: https://raw.githubusercontent.com/RocketChat/Rocket.Chat.Artwork/master/Logos/2020/png/logo-horizontal-red.png
+    tags:
+        - Communication
+        - Collaboration
+    variables:
+        - key: PUBLIC_DOMAIN
+          type: DOMAIN
+          name: Rocket.Chat Domain
+          description: The public domain used to access your Rocket.Chat instance.
+    readme: |
+        # Rocket.Chat
+
+        Open-source team communication platform with real-time messaging, video conferencing, file sharing, and extensive integrations.
+
+        ## Getting Started
+
+        1. After deployment, wait for all services to be ready (MongoDB replica set initialization takes ~30 seconds).
+        2. Access Rocket.Chat via your configured domain.
+        3. Complete the setup wizard to create your admin account.
+
+        **Startup Check:** Check the **rocketchat** service logs for: `SERVER RUNNING` message.
+
+        **Recommended Resources:** 2C4G (2 vCPU, 4GB RAM) for rocketchat service.
+
+        ## Features
+
+        - Real-time messaging with channels, threads, and direct messages
+        - Video and audio conferencing
+        - File sharing and search
+        - Extensive integrations and marketplace apps
+        - End-to-end encryption
+        - LDAP / SAML / OAuth authentication
+        - Customizable with bots and APIs
+
+        -> Website: https://rocket.chat
+        -> Source Code: https://github.com/RocketChat/Rocket.Chat
+    services:
+        # ===================
+        # MongoDB with Replica Set
+        # ===================
+        - name: mongodb
+          icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/mongodb.svg
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: mongo:8.0
+                command:
+                    - bash
+                    - /scripts/start-mongo.sh
+            ports:
+                - id: database
+                  port: 27017
+                  type: TCP
+            volumes:
+                - id: data
+                  dir: /data/db
+            env:
+                MONGODB_HOST:
+                    default: ${CONTAINER_HOSTNAME}
+                    expose: true
+                    readonly: true
+                MONGODB_PORT:
+                    default: ${DATABASE_PORT}
+                    expose: true
+                    readonly: true
+            configs:
+                - path: /scripts/start-mongo.sh
+                  template: |
+                    #!/bin/bash
+                    set -e
+
+                    mongod --replSet rs0 --bind_ip_all --fork --logpath /var/log/mongod.log
+
+                    for i in $(seq 1 30); do
+                      mongosh --quiet --eval "db.adminCommand('ping')" > /dev/null 2>&1 && break
+                      sleep 2
+                    done
+
+                    mongosh --quiet --eval "
+                      try { rs.status(); }
+                      catch(e) { rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'localhost:27017'}]}); }
+                    "
+
+                    for i in $(seq 1 15); do
+                      mongosh --quiet --eval "rs.status().myState" 2>/dev/null | grep -q 1 && break
+                      sleep 2
+                    done
+
+                    mongosh --quiet --eval "db.adminCommand({shutdown: 1})" || true
+                    sleep 2
+                    exec mongod --replSet rs0 --bind_ip_all
+                  permission: 493
+                  envsubst: false
+            healthCheck:
+                type: TCP
+                port: database
+
+        # ===================
+        # Rocket.Chat
+        # ===================
+        - name: rocketchat
+          icon: https://raw.githubusercontent.com/RocketChat/Rocket.Chat.Artwork/master/Logos/icon.svg
+          dependencies:
+            - mongodb
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: registry.rocket.chat/rocketchat/rocket.chat:7.5.0
+            ports:
+                - id: web
+                  port: 3000
+                  type: HTTP
+            volumes:
+                - id: uploads
+                  dir: /app/uploads
+            env:
+                ROOT_URL:
+                    default: ${ZEABUR_WEB_URL}
+                    readonly: true
+                PORT:
+                    default: "3000"
+                MONGO_URL:
+                    default: mongodb://${MONGODB_HOST}:27017/rocketchat?replicaSet=rs0
+                    readonly: true
+                MONGO_OPLOG_URL:
+                    default: mongodb://${MONGODB_HOST}:27017/local?replicaSet=rs0
+                    readonly: true
+                DEPLOY_METHOD:
+                    default: docker
+                OVERWRITE_SETTING_Show_Setup_Wizard:
+                    default: pending
+            healthCheck:
+                type: TCP
+                port: web
+          domainKey: PUBLIC_DOMAIN
+localization:
+    en-US:
+        description: |
+            Open-source team communication platform with real-time messaging, video conferencing, file sharing, and extensive integrations. A self-hosted alternative to Slack with full data control.
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: DOMAIN
+              name: Rocket.Chat Domain
+              description: The public domain used to access your Rocket.Chat instance.
+        readme: |
+            # Rocket.Chat
+
+            Open-source team communication platform with real-time messaging, video conferencing, file sharing, and extensive integrations.
+
+            ## Getting Started
+
+            1. After deployment, wait for all services to be ready (MongoDB replica set initialization takes ~30 seconds).
+            2. Access Rocket.Chat via your configured domain.
+            3. Complete the setup wizard to create your admin account.
+
+            **Startup Check:** Check the **rocketchat** service logs for: `SERVER RUNNING` message.
+
+            **Recommended Resources:** 2C4G (2 vCPU, 4GB RAM) for rocketchat service.
+
+            ## Features
+
+            - Real-time messaging with channels, threads, and direct messages
+            - Video and audio conferencing
+            - File sharing and search
+            - Extensive integrations and marketplace apps
+            - End-to-end encryption
+            - LDAP / SAML / OAuth authentication
+            - Customizable with bots and APIs
+
+            -> Website: https://rocket.chat
+            -> Source Code: https://github.com/RocketChat/Rocket.Chat
+    zh-TW:
+        description: |
+            開源團隊通訊平台，支援即時訊息、視訊會議、檔案分享及豐富的整合功能。可完全自架的 Slack 替代方案，掌握完整資料控制權。
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: DOMAIN
+              name: Rocket.Chat 網域
+              description: 用來存取 Rocket.Chat 的公開網域。
+        readme: |
+            # Rocket.Chat
+
+            開源團隊通訊平台，支援即時訊息、視訊會議、檔案分享及豐富的整合功能。
+
+            ## 開始使用
+
+            1. 部署後，等待所有服務就緒（MongoDB 副本集初始化約需 30 秒）。
+            2. 透過設定的網域存取 Rocket.Chat。
+            3. 完成設定精靈以建立管理員帳號。
+
+            **啟動確認：** 在 **rocketchat** 服務日誌中確認出現 `SERVER RUNNING` 訊息。
+
+            **建議配置：** rocketchat 服務需 2C4G（2 vCPU, 4GB RAM）。
+
+            ## 功能特色
+
+            - 即時訊息，支援頻道、討論串和私訊
+            - 視訊和語音會議
+            - 檔案分享與搜尋
+            - 豐富的整合功能與應用商店
+            - 端對端加密
+            - LDAP / SAML / OAuth 驗證
+            - 支援機器人與 API 自訂
+
+            -> 官方網站：https://rocket.chat
+            -> 原始碼：https://github.com/RocketChat/Rocket.Chat
+    zh-CN:
+        description: |
+            开源团队通讯平台，支持即时消息、视频会议、文件共享及丰富的集成功能。可完全自托管的 Slack 替代方案，掌握完整数据控制权。
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: DOMAIN
+              name: Rocket.Chat 域名
+              description: 用于访问 Rocket.Chat 的公开域名。
+        readme: |
+            # Rocket.Chat
+
+            开源团队通讯平台，支持即时消息、视频会议、文件共享及丰富的集成功能。
+
+            ## 开始使用
+
+            1. 部署后，等待所有服务就绪（MongoDB 副本集初始化约需 30 秒）。
+            2. 通过配置的域名访问 Rocket.Chat。
+            3. 完成设置向导以创建管理员账号。
+
+            **启动确认：** 在 **rocketchat** 服务日志中确认出现 `SERVER RUNNING` 信息。
+
+            **推荐配置：** rocketchat 服务需 2C4G（2 vCPU, 4GB RAM）。
+
+            ## 功能特色
+
+            - 即时消息，支持频道、话题和私信
+            - 视频和语音会议
+            - 文件共享与搜索
+            - 丰富的集成功能与应用市场
+            - 端到端加密
+            - LDAP / SAML / OAuth 认证
+            - 支持机器人与 API 自定义
+
+            -> 官方网站：https://rocket.chat
+            -> 源代码：https://github.com/RocketChat/Rocket.Chat
+    ja-JP:
+        description: |
+            リアルタイムメッセージング、ビデオ会議、ファイル共有、豊富な連携機能を備えたオープンソースのチームコミュニケーションプラットフォーム。完全なデータ管理が可能なセルフホスト型 Slack 代替。
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: DOMAIN
+              name: Rocket.Chat ドメイン
+              description: Rocket.Chat にアクセスするためのパブリックドメイン。
+        readme: |
+            # Rocket.Chat
+
+            リアルタイムメッセージング、ビデオ会議、ファイル共有を備えたオープンソースのチームコミュニケーションプラットフォーム。
+
+            ## はじめに
+
+            1. デプロイ後、全サービスの準備が完了するまでお待ちください（MongoDB レプリカセットの初期化に約30秒かかります）。
+            2. 設定したドメインから Rocket.Chat にアクセスします。
+            3. セットアップウィザードを完了して管理者アカウントを作成します。
+
+            **起動確認：** **rocketchat** サービスのログで `SERVER RUNNING` メッセージを確認してください。
+
+            **推奨リソース：** rocketchat サービスに 2C4G（2 vCPU、4GB RAM）。
+
+            ## 主な機能
+
+            - チャンネル、スレッド、ダイレクトメッセージによるリアルタイムメッセージング
+            - ビデオ・音声会議
+            - ファイル共有と検索
+            - 豊富な連携とマーケットプレイスアプリ
+            - エンドツーエンド暗号化
+            - LDAP / SAML / OAuth 認証
+            - ボットと API によるカスタマイズ
+
+            -> ウェブサイト: https://rocket.chat
+            -> ソースコード: https://github.com/RocketChat/Rocket.Chat
+    es-ES:
+        description: |
+            Plataforma de comunicación de equipo de código abierto con mensajería en tiempo real, videoconferencia, uso compartido de archivos e integraciones extensivas. Una alternativa autoalojada a Slack con control total de datos.
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: DOMAIN
+              name: Dominio de Rocket.Chat
+              description: El dominio público para acceder a tu instancia de Rocket.Chat.
+        readme: |
+            # Rocket.Chat
+
+            Plataforma de comunicación de equipo de código abierto con mensajería en tiempo real, videoconferencia, uso compartido de archivos e integraciones extensivas.
+
+            ## Primeros Pasos
+
+            1. Después del despliegue, espere a que todos los servicios estén listos (la inicialización del replica set de MongoDB tarda ~30 segundos).
+            2. Acceda a Rocket.Chat mediante su dominio configurado.
+            3. Complete el asistente de configuración para crear su cuenta de administrador.
+
+            **Verificación de inicio:** Verifique en los logs del servicio **rocketchat** el mensaje `SERVER RUNNING`.
+
+            **Recursos recomendados:** 2C4G (2 vCPU, 4GB RAM) para el servicio rocketchat.
+
+            ## Funcionalidades
+
+            - Mensajería en tiempo real con canales, hilos y mensajes directos
+            - Videoconferencia y audioconferencia
+            - Uso compartido de archivos y búsqueda
+            - Integraciones extensivas y aplicaciones del marketplace
+            - Cifrado de extremo a extremo
+            - Autenticación LDAP / SAML / OAuth
+            - Personalizable con bots y APIs
+
+            -> Sitio web: https://rocket.chat
+            -> Código fuente: https://github.com/RocketChat/Rocket.Chat
+    id-ID:
+        description: |
+            Platform komunikasi tim open-source dengan pesan real-time, konferensi video, berbagi file, dan integrasi yang luas. Alternatif Slack yang bisa di-hosting sendiri dengan kontrol data penuh.
+        variables:
+            - key: PUBLIC_DOMAIN
+              type: DOMAIN
+              name: Domain Rocket.Chat
+              description: Domain publik untuk mengakses instansi Rocket.Chat Anda.
+        readme: |
+            # Rocket.Chat
+
+            Platform komunikasi tim open-source dengan pesan real-time, konferensi video, berbagi file, dan integrasi yang luas.
+
+            ## Memulai
+
+            1. Setelah deployment, tunggu semua layanan siap (inisialisasi MongoDB replica set membutuhkan ~30 detik).
+            2. Akses Rocket.Chat melalui domain yang telah dikonfigurasi.
+            3. Selesaikan wizard setup untuk membuat akun admin Anda.
+
+            **Pemeriksaan Startup:** Periksa log layanan **rocketchat** untuk pesan `SERVER RUNNING`.
+
+            **Sumber Daya yang Disarankan:** 2C4G (2 vCPU, 4GB RAM) untuk layanan rocketchat.
+
+            ## Fitur
+
+            - Pesan real-time dengan channel, thread, dan pesan langsung
+            - Konferensi video dan audio
+            - Berbagi file dan pencarian
+            - Integrasi luas dan aplikasi marketplace
+            - Enkripsi end-to-end
+            - Autentikasi LDAP / SAML / OAuth
+            - Dapat disesuaikan dengan bot dan API
+
+            -> Situs web: https://rocket.chat
+            -> Kode sumber: https://github.com/RocketChat/Rocket.Chat
