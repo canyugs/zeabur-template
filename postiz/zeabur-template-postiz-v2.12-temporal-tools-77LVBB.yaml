@@ -1,0 +1,77 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: Postiz v2.12+ Temporal Tools
+spec:
+    description: Optional add-on for Postiz v2.12 - includes Temporal UI for workflow monitoring and Admin Tools for management.
+    icon: https://avatars.githubusercontent.com/u/56493103
+    variables:
+        - key: TEMPORAL_TOOLS_DOMAIN
+          type: DOMAIN
+          name: Temporal UI Domain
+          description: Domain for accessing the Temporal UI dashboard.
+    readme: |-
+        # Postiz Temporal Tools
+
+        Optional add-on for **Postiz v2.12** template. Provides workflow monitoring and administration capabilities.
+
+        **This template cannot work standalone.** You must deploy **Postiz v2.12** template first, then deploy this add-on in the same project.
+
+        ## Included Services
+
+        - **temporal-ui** - Web dashboard for monitoring workflows, viewing task queues, and debugging
+        - **temporal-admin-tools** - CLI tools for Temporal administration
+
+        ## Setup
+
+        After deployment, you need to configure `TEMPORAL_GRPC_ADDRESS` to point to your existing Temporal service.
+
+        **Note:** These tools are optional. Postiz core functionality works without them.
+    services:
+        - name: temporal-ui
+          icon: https://avatars.githubusercontent.com/u/56493103
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: temporalio/ui:2.34.0
+            ports:
+                - id: web
+                  port: 8080
+                  type: HTTP
+            env:
+                TEMPORAL_ADDRESS:
+                    default: ${TEMPORAL_GRPC_ADDRESS}
+                TEMPORAL_CORS_ORIGINS:
+                    default: http://localhost:3000
+          domainKey: TEMPORAL_TOOLS_DOMAIN
+
+        - name: temporal-admin-tools
+          icon: https://avatars.githubusercontent.com/u/56493103
+          template: PREBUILT_V2
+          spec:
+            source:
+                image: temporalio/admin-tools:1.28.1
+                command:
+                    - /bin/sh
+                    - -c
+                    - "sleep infinity"
+            env:
+                TEMPORAL_ADDRESS:
+                    default: ${TEMPORAL_GRPC_ADDRESS}
+localization:
+    en-US:
+        description: Optional add-on for Postiz v2.12 - includes Temporal UI for workflow monitoring and Admin Tools for management.
+        readme: "# Postiz Temporal Tools\n\nOptional add-on for **Postiz v2.12** template. Provides workflow monitoring and administration capabilities.\n\n**This template cannot work standalone.** You must deploy **Postiz v2.12** template first, then deploy this add-on in the same project.\n\n## Included Services\n\n- **temporal-ui** - Web dashboard for monitoring workflows, viewing task queues, and debugging\n- **temporal-admin-tools** - CLI tools for Temporal administration\n\n## Setup\n\nAfter deployment, you need to configure `TEMPORAL_GRPC_ADDRESS` to point to your existing Temporal service.\n\n**Note:** These tools are optional. Postiz core functionality works without them."
+    zh-TW:
+        description: Postiz v2.12 的附屬模板 - 包含 Temporal UI 工作流監控介面和管理工具。
+        readme: "# Postiz Temporal Tools\n\n**Postiz v2.12** 模板的附屬套件，提供工作流監控和管理功能。\n\n**此模板無法單獨運作。** 必須先部署 **Postiz v2.12** 模板，再於同一專案中部署此附屬套件。\n\n## 包含服務\n\n- **temporal-ui** - 網頁儀表板，可監控工作流、查看任務佇列和除錯\n- **temporal-admin-tools** - Temporal 管理用的 CLI 工具\n\n## 設定\n\n部署後，需要設定 `TEMPORAL_GRPC_ADDRESS` 指向現有的 Temporal 服務。\n\n**備註：** 這些工具是可選的，Postiz 核心功能不需要它們也能運作。"
+    zh-CN:
+        description: Postiz v2.12 的附属模板 - 包含 Temporal UI 工作流监控界面和管理工具。
+        readme: "# Postiz Temporal Tools\n\n**Postiz v2.12** 模板的附属套件，提供工作流监控和管理功能。\n\n**此模板无法单独运作。** 必须先部署 **Postiz v2.12** 模板，再于同一项目中部署此附属套件。\n\n## 包含服务\n\n- **temporal-ui** - 网页仪表板，可监控工作流、查看任务队列和调试\n- **temporal-admin-tools** - Temporal 管理用的 CLI 工具\n\n## 设置\n\n部署后，需要设置 `TEMPORAL_GRPC_ADDRESS` 指向现有的 Temporal 服务。\n\n**备注：** 这些工具是可选的，Postiz 核心功能不需要它们也能运作。"
+    ja-JP:
+        description: Postiz v2.12 用のオプションアドオン - ワークフロー監視用の Temporal UI と管理ツールを含みます。
+        readme: "# Postiz Temporal Tools\n\n**Postiz v2.12** テンプレート用のオプションアドオンです。ワークフロー監視と管理機能を提供します。\n\n**このテンプレートは単独では動作しません。** 先に **Postiz v2.12** テンプレートをデプロイし、同じプロジェクト内でこのアドオンをデプロイしてください。\n\n## 含まれるサービス\n\n- **temporal-ui** - ワークフローの監視、タスクキューの表示、デバッグ用のWebダッシュボード\n- **temporal-admin-tools** - Temporal管理用のCLIツール\n\n## セットアップ\n\nデプロイ後、`TEMPORAL_GRPC_ADDRESS` を既存の Temporal サービスに向けて設定する必要があります。\n\n**備考：** これらのツールはオプションです。Postiz のコア機能はこれらなしで動作します。"
+    es-ES:
+        description: Complemento opcional para Postiz v2.12 - incluye Temporal UI para monitoreo de flujos y herramientas de administración.
+        readme: "# Postiz Temporal Tools\n\nComplemento opcional para la plantilla **Postiz v2.12**. Proporciona capacidades de monitoreo y administración de flujos de trabajo.\n\n**Esta plantilla no funciona de forma independiente.** Debe desplegar primero la plantilla **Postiz v2.12** y luego desplegar este complemento en el mismo proyecto.\n\n## Servicios incluidos\n\n- **temporal-ui** - Panel web para monitorear flujos de trabajo, ver colas de tareas y depurar\n- **temporal-admin-tools** - Herramientas CLI para administración de Temporal\n\n## Configuración\n\nDespués del despliegue, debe configurar `TEMPORAL_GRPC_ADDRESS` para apuntar a su servicio Temporal existente.\n\n**Nota:** Estas herramientas son opcionales. La funcionalidad principal de Postiz funciona sin ellas."
