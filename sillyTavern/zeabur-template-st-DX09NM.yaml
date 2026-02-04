@@ -122,33 +122,38 @@ spec:
                     enableCorsProxy: false
                     enableUserAccounts: false
                     enableDiscreetLogin: false
-                    cookieSecret: ${ST_COOKIE_SECRET}
                     disableCsrfProtection: false
                     securityOverride: false
                     sessionTimeout: ${ST_SESSION_TIMEOUT}
-                    autorun: true
-                    disableThumbnails: false
-                    thumbnailsQuality: 95
-                    avatarThumbnailsPng: false
+                    browserLaunch:
+                      enabled: false
+                    thumbnails:
+                      enabled: true
+                      format: jpg
+                      quality: 95
+                    backups:
+                      common:
+                        numberOfBackups: 50
+                      chat:
+                        enabled: true
                     allowKeysExposure: false
                     skipContentCheck: false
-                    disableChatBackup: false
-                    numberOfBackups: 50
                     whitelistImportDomains:
                       - localhost
                       - cdn.discordapp.com
                       - files.catbox.moe
                       - raw.githubusercontent.com
                     requestOverrides: []
-                    enableExtensions: true
-                    extras:
-                      disableAutoDownload: false
-                      classificationModel: Cohee/distilbert-base-uncased-go-emotions-onnx
-                      captioningModel: Xenova/vit-gpt2-image-captioning
-                      embeddingModel: Cohee/jina-embeddings-v2-base-en
-                      promptExpansionModel: Cohee/fooocus_expansion-onnx
-                      speechToTextModel: Xenova/whisper-small
-                      textToSpeechModel: Xenova/speecht5_tts
+                    extensions:
+                      enabled: true
+                      autoUpdate: true
+                      models:
+                        autoDownload: true
+                        classification: Cohee/distilbert-base-uncased-go-emotions-onnx
+                        captioning: Xenova/vit-gpt2-image-captioning
+                        embedding: Cohee/jina-embeddings-v2-base-en
+                        speechToText: Xenova/whisper-small
+                        textToSpeech: Xenova/speecht5_tts
                     openai:
                       randomizeUserId: false
                       captionSystemPrompt: ""
@@ -160,8 +165,6 @@ spec:
                 ST_USERNAME:
                     default: zeabur
                 ST_PASSWORD:
-                    default: ${PASSWORD}
-                ST_COOKIE_SECRET:
                     default: ${PASSWORD}
                 ST_SESSION_TIMEOUT:
                     default: "-1"
