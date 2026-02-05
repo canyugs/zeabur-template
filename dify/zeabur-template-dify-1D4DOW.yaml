@@ -52,6 +52,9 @@ spec:
     - name: nginx
       icon: https://www.svgrepo.com/show/373924/nginx.svg
       template: PREBUILT_V2
+      dependencies:
+        - api
+        - web
       spec:
         source:
           image: nginx:1.27
@@ -321,7 +324,7 @@ spec:
         - redis
       spec:
         source:
-          image: langgenius/dify-api:1.11.2
+          image: langgenius/dify-api:1.12.1
         ports:
           - id: api
             port: 5001
@@ -439,7 +442,7 @@ spec:
         - api
       spec:
         source:
-          image: langgenius/dify-api:1.11.2
+          image: langgenius/dify-api:1.12.1
         env:
           APP_WEB_URL:
             default: ${DIFY_GATEWAY_URL}
@@ -513,9 +516,9 @@ spec:
             default: http://ssrf-proxy:3128
           SSRF_PROXY_HTTPS_URL:
             default: http://ssrf-proxy:3128
-          PLUGIN_API_URL:
+          PLUGIN_DAEMON_URL:
             default: http://plugin-daemon:5002
-          PLUGIN_API_KEY:
+          PLUGIN_DAEMON_KEY:
             default: ${API_SECRET_KEY}
           INNER_API_KEY:
             default: ${API_SECRET_KEY}
@@ -525,7 +528,7 @@ spec:
       template: PREBUILT_V2
       spec:
         source:
-          image: langgenius/dify-web:1.11.2
+          image: langgenius/dify-web:1.12.1
         ports:
           - id: web
             port: 3000
@@ -541,7 +544,7 @@ spec:
       template: PREBUILT_V2
       spec:
         source:
-          image: semitechnologies/weaviate:1.26.3
+          image: semitechnologies/weaviate:1.27.0
         ports:
           - id: web
             port: 8080
@@ -658,7 +661,7 @@ spec:
         - api
       spec:
         source:
-          image: langgenius/dify-plugin-daemon:0.5.2-local
+          image: langgenius/dify-plugin-daemon:0.5.3-local
         ports:
           - id: web
             port: 5002
@@ -681,6 +684,8 @@ spec:
             default: ${API_SECRET_KEY}
           DIFY_INNER_API_URL:
             default: http://api:5001
+          ENDPOINT_URL_TEMPLATE:
+            default: ${DIFY_GATEWAY_URL}/e/{hook_id}
           MAX_PLUGIN_PACKAGE_SIZE:
             default: "52428800"
           PLATFORM:
