@@ -134,7 +134,7 @@ spec:
       { "id": "gpt-5-nano", "name": "GPT-5 Nano", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.1, "output": 0.8, "cacheRead": 0.01, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
       { "id": "glm-4.7", "name": "GLM-4.7", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.5, "output": 2, "cacheRead": 0.12, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
       { "id": "glm-4.7-flash", "name": "GLM-4.7 Flash", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 1, "cacheRead": 0.06, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
-      { "id": "kimi-2.5", "name": "Kimi 2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
+      { "id": "kimi-k2.5", "name": "Kimi K2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
       ```
 
       ## Data Persistence
@@ -213,7 +213,7 @@ spec:
       - Use Zeabur configs for startup scripts (easier to maintain)
       - Add `backup` and `restore` global commands
       - Add `rescue.sh` for troubleshooting when config is broken
-      - Add 6 new Zeabur AI Hub models: gpt-5.2, gpt-5.1, gpt-5-nano, glm-4.7, glm-4.7-flash, kimi-2.5
+      - Add 6 new Zeabur AI Hub models: gpt-5.2, gpt-5.1, gpt-5-nano, glm-4.7, glm-4.7-flash, kimi-k2.5
       - Add store compatibility setting for Zeabur AI Hub Claude models
 
       **2026/2/2**
@@ -630,7 +630,7 @@ spec:
                       { "id": "gpt-5-nano", "name": "GPT-5 Nano (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.1, "output": 0.8, "cacheRead": 0.01, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
                       { "id": "glm-4.7", "name": "GLM-4.7 (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.5, "output": 2, "cacheRead": 0.12, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
                       { "id": "glm-4.7-flash", "name": "GLM-4.7 Flash (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 1, "cacheRead": 0.06, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
-                      { "id": "kimi-2.5", "name": "Kimi 2.5 (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
+                      { "id": "kimi-k2.5", "name": "Kimi K2.5 (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
                     ]
                   }
                 }
@@ -791,7 +791,7 @@ localization:
       { "id": "gpt-5-nano", "name": "GPT-5 Nano", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.1, "output": 0.8, "cacheRead": 0.01, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
       { "id": "glm-4.7", "name": "GLM-4.7", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.5, "output": 2, "cacheRead": 0.12, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
       { "id": "glm-4.7-flash", "name": "GLM-4.7 Flash", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 1, "cacheRead": 0.06, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
-      { "id": "kimi-2.5", "name": "Kimi 2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
+      { "id": "kimi-k2.5", "name": "Kimi K2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
       ```
 
       ## 資料持久化
@@ -870,7 +870,7 @@ localization:
       - 使用 Zeabur configs 管理啟動腳本（更易維護）
       - 新增 `backup` 和 `restore` 全域指令
       - 新增 `rescue.sh` 救援模式，設定檔改壞時可用
-      - Zeabur AI Hub 新增 6 個模型：gpt-5.2, gpt-5.1, gpt-5-nano, glm-4.7, glm-4.7-flash, kimi-2.5
+      - Zeabur AI Hub 新增 6 個模型：gpt-5.2, gpt-5.1, gpt-5-nano, glm-4.7, glm-4.7-flash, kimi-k2.5
       - Zeabur AI Hub 的 Claude 模型加入 store 相容性設定
 
       **2026/2/2**
@@ -996,7 +996,7 @@ localization:
       { "id": "gpt-5-nano", "name": "GPT-5 Nano", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.1, "output": 0.8, "cacheRead": 0.01, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
       { "id": "glm-4.7", "name": "GLM-4.7", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.5, "output": 2, "cacheRead": 0.12, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
       { "id": "glm-4.7-flash", "name": "GLM-4.7 Flash", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 1, "cacheRead": 0.06, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
-      { "id": "kimi-2.5", "name": "Kimi 2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
+      { "id": "kimi-k2.5", "name": "Kimi K2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
       ```
 
       ## 数据持久化
@@ -1075,7 +1075,7 @@ localization:
       - 使用 Zeabur configs 管理启动脚本（更易维护）
       - 新增 `backup` 和 `restore` 全局命令
       - 新增 `rescue.sh` 救援模式，配置文件改坏时可用
-      - Zeabur AI Hub 新增 6 个模型：gpt-5.2, gpt-5.1, gpt-5-nano, glm-4.7, glm-4.7-flash, kimi-2.5
+      - Zeabur AI Hub 新增 6 个模型：gpt-5.2, gpt-5.1, gpt-5-nano, glm-4.7, glm-4.7-flash, kimi-k2.5
       - Zeabur AI Hub 的 Claude 模型加入 store 兼容性设置
 
       **2026/2/2**
@@ -1201,7 +1201,7 @@ localization:
       { "id": "gpt-5-nano", "name": "GPT-5 Nano", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.1, "output": 0.8, "cacheRead": 0.01, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
       { "id": "glm-4.7", "name": "GLM-4.7", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.5, "output": 2, "cacheRead": 0.12, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
       { "id": "glm-4.7-flash", "name": "GLM-4.7 Flash", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 1, "cacheRead": 0.06, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
-      { "id": "kimi-2.5", "name": "Kimi 2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
+      { "id": "kimi-k2.5", "name": "Kimi K2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
       ```
 
       ## データ永続化
@@ -1280,7 +1280,7 @@ localization:
       - Zeabur configs でスタートアップスクリプトを管理（メンテナンスが容易に）
       - `backup` と `restore` グローバルコマンドを追加
       - `rescue.sh` レスキューモードを追加（設定ファイルが壊れた時に使用）
-      - Zeabur AI Hub に 6 つのモデルを追加：gpt-5.2, gpt-5.1, gpt-5-nano, glm-4.7, glm-4.7-flash, kimi-2.5
+      - Zeabur AI Hub に 6 つのモデルを追加：gpt-5.2, gpt-5.1, gpt-5-nano, glm-4.7, glm-4.7-flash, kimi-k2.5
       - Zeabur AI Hub の Claude モデルに store 互換性設定を追加
 
       **2026/2/2**
@@ -1406,7 +1406,7 @@ localization:
       { "id": "gpt-5-nano", "name": "GPT-5 Nano", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.1, "output": 0.8, "cacheRead": 0.01, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
       { "id": "glm-4.7", "name": "GLM-4.7", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.5, "output": 2, "cacheRead": 0.12, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
       { "id": "glm-4.7-flash", "name": "GLM-4.7 Flash", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 1, "cacheRead": 0.06, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
-      { "id": "kimi-2.5", "name": "Kimi 2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
+      { "id": "kimi-k2.5", "name": "Kimi K2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
       ```
 
       ## Persistencia de Datos
@@ -1485,7 +1485,7 @@ localization:
       - Usar Zeabur configs para scripts de inicio (más fácil de mantener)
       - Añadir comandos globales `backup` y `restore`
       - Añadir `rescue.sh` modo de rescate para cuando la configuración está rota
-      - Añadir 6 nuevos modelos de Zeabur AI Hub: gpt-5.2, gpt-5.1, gpt-5-nano, glm-4.7, glm-4.7-flash, kimi-2.5
+      - Añadir 6 nuevos modelos de Zeabur AI Hub: gpt-5.2, gpt-5.1, gpt-5-nano, glm-4.7, glm-4.7-flash, kimi-k2.5
       - Añadir configuración de compatibilidad store para modelos Claude de Zeabur AI Hub
 
       **2026/2/2**
@@ -1611,7 +1611,7 @@ localization:
       { "id": "gpt-5-nano", "name": "GPT-5 Nano", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.1, "output": 0.8, "cacheRead": 0.01, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
       { "id": "glm-4.7", "name": "GLM-4.7", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.5, "output": 2, "cacheRead": 0.12, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
       { "id": "glm-4.7-flash", "name": "GLM-4.7 Flash", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 1, "cacheRead": 0.06, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
-      { "id": "kimi-2.5", "name": "Kimi 2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
+      { "id": "kimi-k2.5", "name": "Kimi K2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
       ```
 
       ## Persistensi Data
@@ -1690,7 +1690,7 @@ localization:
       - Menggunakan Zeabur configs untuk skrip startup (lebih mudah dipelihara)
       - Menambah perintah global `backup` dan `restore`
       - Menambah `rescue.sh` mode penyelamatan untuk ketika konfigurasi rusak
-      - Menambah 6 model Zeabur AI Hub baru: gpt-5.2, gpt-5.1, gpt-5-nano, glm-4.7, glm-4.7-flash, kimi-2.5
+      - Menambah 6 model Zeabur AI Hub baru: gpt-5.2, gpt-5.1, gpt-5-nano, glm-4.7, glm-4.7-flash, kimi-k2.5
       - Menambah pengaturan kompatibilitas store untuk model Claude Zeabur AI Hub
 
       **2026/2/2**
