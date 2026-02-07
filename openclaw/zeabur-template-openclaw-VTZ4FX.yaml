@@ -357,6 +357,18 @@ spec:
                   chmod 600 "$CONFIG_FILE" 2>/dev/null || true
                 fi
 
+                # Copy Zeabur image gen skill if API key is set
+                MANAGED_SKILLS_DIR="$CONFIG_DIR/skills"
+                if [ "$HAS_AI_HUB_KEY" = true ]; then
+                  SKILL_DIR="$MANAGED_SKILLS_DIR/zeabur-image-gen"
+                  if [ ! -d "$SKILL_DIR" ]; then
+                    mkdir -p "$SKILL_DIR/scripts"
+                    cp /opt/openclaw/skills/zeabur-image-gen/SKILL.md "$SKILL_DIR/"
+                    cp /opt/openclaw/skills/zeabur-image-gen/scripts/generate_image.mjs "$SKILL_DIR/scripts/"
+                    echo "Installed zeabur-image-gen skill"
+                  fi
+                fi
+
                 # Initialize workspace
                 mkdir -p "${OPENCLAW_WORKSPACE_DIR}"
                 if [ ! -f "${OPENCLAW_WORKSPACE_DIR}/MEMORY.md" ]; then
@@ -634,6 +646,170 @@ spec:
                     ]
                   }
                 }
+            - path: /opt/openclaw/skills/zeabur-image-gen/SKILL.md
+              envsubst: false
+              permission: 420
+              template: |
+                ---
+                name: zeabur-image-gen
+                description: Generate images via Zeabur AI Hub (OpenAI-compatible API) using Gemini image models.
+                homepage: https://zeabur.com/ai-hub
+                metadata:
+                  {
+                    "openclaw":
+                      {
+                        "emoji": "🎨",
+                        "requires": { "env": ["ZEABUR_AI_HUB_API_KEY"] },
+                        "primaryEnv": "ZEABUR_AI_HUB_API_KEY",
+                      },
+                  }
+                ---
+
+                # Zeabur Image Gen
+
+                Generate images via Zeabur AI Hub using Gemini image models through an OpenAI-compatible API.
+
+                ## Run
+
+                ```bash
+                node {baseDir}/scripts/generate_image.mjs --prompt "your image description" --filename "output.png"
+                ```
+
+                Useful flags:
+
+                ```bash
+                # Use a specific model
+                node {baseDir}/scripts/generate_image.mjs --prompt "a cat on the moon" --filename "cat-moon.png" --model gemini-2.5-flash-image
+
+                # Custom size
+                node {baseDir}/scripts/generate_image.mjs --prompt "sunset over the ocean" --filename "sunset.png" --size 1792x1024
+
+                # Use SFO1 endpoint (default is HND1 Tokyo)
+                node {baseDir}/scripts/generate_image.mjs --prompt "cherry blossoms" --filename "sakura.png" --endpoint sfo1
+                ```
+
+                ## Supported Models
+
+                - `gemini-3-pro-image-preview` (default) - higher quality
+                - `gemini-2.5-flash-image` - faster
+
+                ## API Key
+
+                - `ZEABUR_AI_HUB_API_KEY` env var
+                - Or set `skills."zeabur-image-gen".apiKey` / `skills."zeabur-image-gen".env.ZEABUR_AI_HUB_API_KEY` in `~/.openclaw/openclaw.json`
+
+                ## Notes
+
+                - Endpoints: `hnd1` (Tokyo, default), `sfo1` (San Francisco).
+                - Use timestamps in filenames: `yyyy-mm-dd-hh-mm-ss-name.png`.
+                - The script prints a `MEDIA:` line for OpenClaw to auto-attach on supported chat providers.
+                - Do not read the image back; report the saved path only.
+            - path: /opt/openclaw/skills/zeabur-image-gen/scripts/generate_image.mjs
+              envsubst: false
+              permission: 420
+              template: |
+                #!/usr/bin/env node
+                /**
+                 * Generate images using Zeabur AI Hub (OpenAI-compatible API).
+                 *
+                 * Usage:
+                 *   node generate_image.mjs --prompt "your image description" --filename "output.png"
+                 *   node generate_image.mjs --prompt "a cat" --filename "cat.png" --model gemini-2.5-flash-image
+                 */
+
+                import { parseArgs } from "node:util";
+                import { writeFile, mkdir } from "node:fs/promises";
+                import { resolve, dirname } from "node:path";
+
+                const ENDPOINTS = {
+                  hnd1: "https://hnd1.aihub.zeabur.ai",
+                  sfo1: "https://sfo1.aihub.zeabur.ai",
+                };
+
+                const DEFAULT_MODEL = "gemini-3-pro-image-preview";
+
+                const { values } = parseArgs({
+                  options: {
+                    prompt: { type: "string", short: "p" },
+                    filename: { type: "string", short: "f" },
+                    model: { type: "string", short: "m", default: DEFAULT_MODEL },
+                    size: { type: "string", short: "s", default: "1024x1024" },
+                    endpoint: { type: "string", short: "e", default: "hnd1" },
+                    "api-key": { type: "string", short: "k" },
+                  },
+                  strict: true,
+                });
+
+                if (!values.prompt || !values.filename) {
+                  console.error("Usage: node generate_image.mjs --prompt <text> --filename <path>");
+                  process.exit(1);
+                }
+
+                const apiKey = values["api-key"] || process.env.ZEABUR_AI_HUB_API_KEY;
+                if (!apiKey) {
+                  console.error("Error: No API key provided.");
+                  console.error("Please either:");
+                  console.error("  1. Provide --api-key argument");
+                  console.error("  2. Set ZEABUR_AI_HUB_API_KEY environment variable");
+                  process.exit(1);
+                }
+
+                const baseUrl = ENDPOINTS[values.endpoint];
+                if (!baseUrl) {
+                  console.error(`Error: Unknown endpoint "${values.endpoint}". Use: ${Object.keys(ENDPOINTS).join(", ")}`);
+                  process.exit(1);
+                }
+
+                const model = values.model;
+                const prompt = values.prompt;
+                const size = values.size;
+                const outputPath = resolve(values.filename);
+
+                await mkdir(dirname(outputPath), { recursive: true });
+
+                console.log(`Generating image with ${model} via ${values.endpoint}...`);
+                console.log(`Prompt: ${prompt}`);
+
+                const resp = await fetch(`${baseUrl}/v1/images/generations`, {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ model, prompt, size, n: 1 }),
+                  signal: AbortSignal.timeout(300_000),
+                });
+
+                if (!resp.ok) {
+                  const body = await resp.text();
+                  console.error(`Zeabur AI Hub API failed (${resp.status}): ${body}`);
+                  process.exit(1);
+                }
+
+                const res = await resp.json();
+
+                const entry = res.data?.[0];
+                const b64 = entry?.b64_json;
+                const url = entry?.url;
+
+                if (!b64 && !url) {
+                  console.error(`Error: Unexpected response: ${JSON.stringify(res).slice(0, 400)}`);
+                  process.exit(1);
+                }
+
+                if (b64) {
+                  await writeFile(outputPath, Buffer.from(b64, "base64"));
+                } else {
+                  const imgResp = await fetch(url);
+                  if (!imgResp.ok) {
+                    console.error(`Error: Failed to download image from URL (${imgResp.status})`);
+                    process.exit(1);
+                  }
+                  await writeFile(outputPath, Buffer.from(await imgResp.arrayBuffer()));
+                }
+
+                console.log(`\nImage saved: ${outputPath}`);
+                console.log(`MEDIA: ${outputPath}`);
           env:
             HOME:
               default: /home/node
