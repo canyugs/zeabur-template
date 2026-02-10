@@ -33,7 +33,7 @@ spec:
       # OpenClaw 🦞
       OpenClaw 🦞 (formerly Clawdbot, Moltbot) is a personal AI assistant that runs locally and connects to multiple messaging platforms via a WebSocket-based Gateway architecture.
 
-      ⚠️ This template uses `ghcr.io/openclaw/openclaw:2026.2.2`. OpenClaw 🦞 is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues.
+      ⚠️ This template uses `ghcr.io/openclaw/openclaw:2026.2.9`. OpenClaw 🦞 is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues.
 
       ⚠️ If you encounter any issues, feel free to check the [GitHub issues](https://github.com/openclaw/openclaw/issues) for solutions or to report new ones. For Zeabur platform-related issues, please contact Zeabur support.
 
@@ -209,6 +209,17 @@ spec:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Changelog
+      **2026/2/10**
+      - Fix image gen skill: switch from `/v1/images/generations` to `/v1/chat/completions` API, default model to `gemini-2.5-flash-image`
+      - Fix `gpt-oss-120b`, `llama-3.3-70b`, `qwen-3-32` HTTP 500: add `supportsStore: false` compat flag
+      - Fix `gpt-oss-120b` reasoning flag (set to `true`)
+      - Restore script now supports `.zip` format (Zeabur backup service)
+      - Sync channel env vars (`TELEGRAM_BOT_TOKEN`, `DISCORD_BOT_TOKEN`, `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`, `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_CHANNEL_SECRET`) into config at startup
+
+      **2026/2/7**
+      - Fix cron proactive notifications not delivered: auto-detect heartbeat target from configured channels at startup
+      - Initialize HEARTBEAT.md with actionable content for new deployments (prevents heartbeat skip on empty file)
+
       **2026/2/4**
       - Use Zeabur configs for startup scripts (easier to maintain)
       - Add `backup` and `restore` global commands
@@ -231,7 +242,7 @@ spec:
         domainKey: PUBLIC_DOMAIN
         spec:
           source:
-            image: ghcr.io/openclaw/openclaw:2026.2.2
+            image: ghcr.io/openclaw/openclaw:2026.2.9
             command:
               - /bin/sh
               - -c
@@ -369,10 +380,110 @@ spec:
                   fi
                 fi
 
+                # Sync channel env vars into config file so they're visible to config-based patches
+                if [ -f "$CONFIG_FILE" ]; then
+                  node -e "
+                    const fs = require('fs');
+                    const configPath = '$CONFIG_FILE';
+                    const envMap = [
+                      { env: 'TELEGRAM_BOT_TOKEN',        channel: 'telegram', key: 'botToken' },
+                      { env: 'DISCORD_BOT_TOKEN',         channel: 'discord',  key: 'token' },
+                      { env: 'SLACK_BOT_TOKEN',           channel: 'slack',    key: 'botToken' },
+                      { env: 'SLACK_APP_TOKEN',           channel: 'slack',    key: 'appToken' },
+                      { env: 'LINE_CHANNEL_ACCESS_TOKEN', channel: 'line',     key: 'channelAccessToken' },
+                      { env: 'LINE_CHANNEL_SECRET',       channel: 'line',     key: 'channelSecret' },
+                    ];
+                    try {
+                      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                      let changed = false;
+                      for (const { env, channel, key } of envMap) {
+                        const val = process.env[env];
+                        if (!val) continue;
+                        if (!config.channels) config.channels = {};
+                        if (!config.channels[channel]) config.channels[channel] = {};
+                        if (config.channels[channel][key]) {
+                          console.log(env + ': already set in config, skipping');
+                          continue;
+                        }
+                        config.channels[channel][key] = val;
+                        changed = true;
+                        console.log(env + ' -> channels.' + channel + '.' + key);
+                      }
+                      if (changed) {
+                        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                        console.log('Channel config updated from env vars');
+                      }
+                    } catch (err) {
+                      console.error('Warning: Failed to sync env vars to config:', err.message);
+                    }
+                  "
+                fi
+
+                # Patch heartbeat config: auto-detect channel and set explicit delivery target
+                # This fixes cron proactive notifications which require a resolved delivery target.
+                # Without this, heartbeat defaults to target:"last" which resolves to "none" if
+                # no one has messaged the bot yet.
+                # Reference: https://github.com/cloudflare/moltworker/blob/main/start-openclaw.sh
+                if [ -f "$CONFIG_FILE" ]; then
+                  node -e "
+                    const fs = require('fs');
+                    const configPath = '$CONFIG_FILE';
+                    try {
+                      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                      const channels = config.channels || {};
+                      const heartbeat = config.agents?.defaults?.heartbeat;
+
+                      // Skip if user already configured heartbeat target explicitly
+                      if (heartbeat?.target && heartbeat.target !== 'last') {
+                        console.log('Heartbeat target already set to: ' + heartbeat.target);
+                      } else {
+                        // Auto-detect first configured channel as heartbeat target
+                        const channelPriority = ['telegram', 'whatsapp', 'discord', 'slack', 'line'];
+                        let detected = null;
+                        for (const ch of channelPriority) {
+                          const chCfg = channels[ch];
+                          if (chCfg && (chCfg.enabled !== false)) {
+                            // Check channel has credentials configured
+                            if (ch === 'telegram' && chCfg.botToken) { detected = ch; break; }
+                            if (ch === 'whatsapp' && (chCfg.phoneNumberId || chCfg.enabled)) { detected = ch; break; }
+                            if (ch === 'discord' && chCfg.token) { detected = ch; break; }
+                            if (ch === 'slack' && chCfg.botToken) { detected = ch; break; }
+                            if (ch === 'line' && chCfg.channelAccessToken) { detected = ch; break; }
+                          }
+                        }
+                        if (detected) {
+                          if (!config.agents) config.agents = {};
+                          if (!config.agents.defaults) config.agents.defaults = {};
+                          config.agents.defaults.heartbeat = {
+                            ...(config.agents.defaults.heartbeat || {}),
+                            target: detected,
+                          };
+                          fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                          console.log('Heartbeat target auto-set to: ' + detected);
+                        } else {
+                          console.log('No channel detected, heartbeat target unchanged (last)');
+                        }
+                      }
+                    } catch (err) {
+                      console.error('Warning: Failed to patch heartbeat config:', err.message);
+                    }
+                  "
+                fi
+
                 # Initialize workspace
                 mkdir -p "${OPENCLAW_WORKSPACE_DIR}"
                 if [ ! -f "${OPENCLAW_WORKSPACE_DIR}/MEMORY.md" ]; then
                   echo "# Memory" > "${OPENCLAW_WORKSPACE_DIR}/MEMORY.md"
+                fi
+
+                # Ensure HEARTBEAT.md has actionable content for cron notifications.
+                # OpenClaw skips heartbeat when HEARTBEAT.md is effectively empty (only
+                # comments/headers), which silently blocks cron-triggered notifications.
+                # Only write for NEW workspaces to avoid overwriting existing user config.
+                HEARTBEAT_FILE="${OPENCLAW_WORKSPACE_DIR}/HEARTBEAT.md"
+                if [ ! -f "$HEARTBEAT_FILE" ]; then
+                  printf '%s\n' '# HEARTBEAT.md' '' 'Check for pending notifications, cron job results, and system events.' 'If nothing needs attention, reply HEARTBEAT_OK.' > "$HEARTBEAT_FILE"
+                  echo "HEARTBEAT.md initialized with actionable content"
                 fi
 
             - path: /opt/openclaw/start_gateway.sh
@@ -402,11 +513,14 @@ spec:
                 #!/bin/sh
                 set -e
                 if [ -z "$1" ]; then
-                  echo "Usage: /opt/openclaw/restore.sh <backup-file>"
+                  echo "Usage: restore <backup-file> [--strip N]"
+                  echo ""
+                  echo "Supports .tar.gz and .zip formats."
                   echo ""
                   echo "Examples:"
-                  echo "  /opt/openclaw/restore.sh backup-20260204-120000.tar.gz"
-                  echo "  /opt/openclaw/restore.sh backup-xxxxx.tar.gz --strip 2  # For Zeabur backup service files"
+                  echo "  restore backup-1430.tar.gz"
+                  echo "  restore backup-xxxxx.zip"
+                  echo "  restore backup-xxxxx.tar.gz --strip 2  # For Zeabur backup service files"
                   exit 1
                 fi
                 cd /home/node
@@ -415,13 +529,32 @@ spec:
                   echo "Error: File not found: $BACKUP_FILE"
                   exit 1
                 fi
-                if [ "$2" = "--strip" ] && [ -n "$3" ]; then
-                  echo "Restoring from $BACKUP_FILE (strip-components=$3)..."
-                  tar -xzvf "$BACKUP_FILE" --strip-components="$3" -C /home/node
-                else
-                  echo "Restoring from $BACKUP_FILE..."
-                  tar -xzvf "$BACKUP_FILE"
-                fi
+                case "$BACKUP_FILE" in
+                  *.zip)
+                    echo "Restoring from $BACKUP_FILE (zip)..."
+                    TMPDIR=$(mktemp -d)
+                    unzip -o "$BACKUP_FILE" -d "$TMPDIR"
+                    if [ -d "$TMPDIR/data" ]; then
+                      cp -a "$TMPDIR/data/." /home/node/
+                    else
+                      cp -a "$TMPDIR/." /home/node/
+                    fi
+                    rm -rf "$TMPDIR"
+                    ;;
+                  *.tar.gz|*.tgz)
+                    if [ "$2" = "--strip" ] && [ -n "$3" ]; then
+                      echo "Restoring from $BACKUP_FILE (strip-components=$3)..."
+                      tar -xzvf "$BACKUP_FILE" --strip-components="$3" -C /home/node
+                    else
+                      echo "Restoring from $BACKUP_FILE..."
+                      tar -xzvf "$BACKUP_FILE"
+                    fi
+                    ;;
+                  *)
+                    echo "Error: Unsupported format. Use .tar.gz or .zip"
+                    exit 1
+                    ;;
+                esac
                 echo ""
                 echo "=== Restore Complete ==="
                 echo "Please restart the service for changes to take effect."
@@ -630,11 +763,11 @@ spec:
                       { "id": "gpt-4.1-mini", "name": "GPT-4.1 mini (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.4, "output": 1.6, "cacheRead": 0.1, "cacheWrite": 0 }, "contextWindow": 1048576, "maxTokens": 8192 },
                       { "id": "gpt-4o", "name": "GPT-4o (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 2.5, "output": 10, "cacheRead": 1.25, "cacheWrite": 0 }, "contextWindow": 128000, "maxTokens": 8192 },
                       { "id": "gpt-4o-mini", "name": "GPT-4o mini (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.15, "output": 0.6, "cacheRead": 0.075, "cacheWrite": 0 }, "contextWindow": 128000, "maxTokens": 8192 },
-                      { "id": "gpt-oss-120b", "name": "GPT OSS 120B (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.35, "output": 0.75, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 },
+                      { "id": "gpt-oss-120b", "name": "GPT OSS 120B (Zeabur AI Hub)", "reasoning": true, "input": ["text"], "cost": { "input": 0.35, "output": 0.75, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192, "compat": { "supportsStore": false } },
                       { "id": "grok-4-fast-non-reasoning", "name": "Grok 4 Fast (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.2, "output": 0.5, "cacheRead": 0.05, "cacheWrite": 0 }, "contextWindow": 2000000, "maxTokens": 8192 },
                       { "id": "glm-4.6", "name": "GLM-4.6 (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.45, "output": 1.9, "cacheRead": 0.11, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
-                      { "id": "llama-3.3-70b", "name": "Llama 3.3 70B (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.85, "output": 1.2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 65536, "maxTokens": 8192 },
-                      { "id": "qwen-3-32", "name": "Qwen 3 32B (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.4, "output": 0.8, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 32768, "maxTokens": 8192 },
+                      { "id": "llama-3.3-70b", "name": "Llama 3.3 70B (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.85, "output": 1.2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 65536, "maxTokens": 8192, "compat": { "supportsStore": false } },
+                      { "id": "qwen-3-32", "name": "Qwen 3 32B (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.4, "output": 0.8, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 32768, "maxTokens": 8192, "compat": { "supportsStore": false } },
                       { "id": "qwen3-next", "name": "Qwen 3 Next 80B (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.14, "output": 1.1, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 32768, "maxTokens": 8192 },
                       { "id": "kimi-k2-thinking", "name": "Kimi K2 Thinking (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.55, "output": 2.5, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 },
                       { "id": "gpt-5.2", "name": "GPT-5.2 (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.5, "output": 12, "cacheRead": 0.15, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
@@ -652,7 +785,7 @@ spec:
               template: |
                 ---
                 name: zeabur-image-gen
-                description: Generate images via Zeabur AI Hub (OpenAI-compatible API) using Gemini image models.
+                description: Generate images via Zeabur AI Hub using Gemini image models.
                 homepage: https://zeabur.com/ai-hub
                 metadata:
                   {
@@ -667,7 +800,7 @@ spec:
 
                 # Zeabur Image Gen
 
-                Generate images via Zeabur AI Hub using Gemini image models through an OpenAI-compatible API.
+                Generate images via Zeabur AI Hub using Gemini image models.
 
                 ## Run
 
@@ -679,10 +812,7 @@ spec:
 
                 ```bash
                 # Use a specific model
-                node {baseDir}/scripts/generate_image.mjs --prompt "a cat on the moon" --filename "cat-moon.png" --model gemini-2.5-flash-image
-
-                # Custom size
-                node {baseDir}/scripts/generate_image.mjs --prompt "sunset over the ocean" --filename "sunset.png" --size 1792x1024
+                node {baseDir}/scripts/generate_image.mjs --prompt "a cat on the moon" --filename "cat-moon.png" --model gemini-3-pro-image-preview
 
                 # Use SFO1 endpoint (default is HND1 Tokyo)
                 node {baseDir}/scripts/generate_image.mjs --prompt "cherry blossoms" --filename "sakura.png" --endpoint sfo1
@@ -690,8 +820,8 @@ spec:
 
                 ## Supported Models
 
-                - `gemini-3-pro-image-preview` (default) - higher quality
-                - `gemini-2.5-flash-image` - faster
+                - `gemini-2.5-flash-image` (default) - faster
+                - `gemini-3-pro-image-preview` - higher quality
 
                 ## API Key
 
@@ -710,7 +840,7 @@ spec:
               template: |
                 #!/usr/bin/env node
                 /**
-                 * Generate images using Zeabur AI Hub (OpenAI-compatible API).
+                 * Generate images using Zeabur AI Hub via Chat Completions API.
                  *
                  * Usage:
                  *   node generate_image.mjs --prompt "your image description" --filename "output.png"
@@ -726,14 +856,13 @@ spec:
                   sfo1: "https://sfo1.aihub.zeabur.ai",
                 };
 
-                const DEFAULT_MODEL = "gemini-3-pro-image-preview";
+                const DEFAULT_MODEL = "gemini-2.5-flash-image";
 
                 const { values } = parseArgs({
                   options: {
                     prompt: { type: "string", short: "p" },
                     filename: { type: "string", short: "f" },
                     model: { type: "string", short: "m", default: DEFAULT_MODEL },
-                    size: { type: "string", short: "s", default: "1024x1024" },
                     endpoint: { type: "string", short: "e", default: "hnd1" },
                     "api-key": { type: "string", short: "k" },
                   },
@@ -748,7 +877,6 @@ spec:
                 const apiKey = values["api-key"] || process.env.ZEABUR_AI_HUB_API_KEY;
                 if (!apiKey) {
                   console.error("Error: No API key provided.");
-                  console.error("Please either:");
                   console.error("  1. Provide --api-key argument");
                   console.error("  2. Set ZEABUR_AI_HUB_API_KEY environment variable");
                   process.exit(1);
@@ -762,7 +890,6 @@ spec:
 
                 const model = values.model;
                 const prompt = values.prompt;
-                const size = values.size;
                 const outputPath = resolve(values.filename);
 
                 await mkdir(dirname(outputPath), { recursive: true });
@@ -770,13 +897,17 @@ spec:
                 console.log(`Generating image with ${model} via ${values.endpoint}...`);
                 console.log(`Prompt: ${prompt}`);
 
-                const resp = await fetch(`${baseUrl}/v1/images/generations`, {
+                const resp = await fetch(`${baseUrl}/v1/chat/completions`, {
                   method: "POST",
                   headers: {
                     Authorization: `Bearer ${apiKey}`,
                     "Content-Type": "application/json",
                   },
-                  body: JSON.stringify({ model, prompt, size, n: 1 }),
+                  body: JSON.stringify({
+                    model,
+                    messages: [{ role: "user", content: prompt }],
+                    stream: false,
+                  }),
                   signal: AbortSignal.timeout(300_000),
                 });
 
@@ -787,61 +918,44 @@ spec:
                 }
 
                 const res = await resp.json();
+                const msg = res.choices?.[0]?.message;
 
-                const entry = res.data?.[0];
-                const b64 = entry?.b64_json;
-                const url = entry?.url;
-
-                if (!b64 && !url) {
-                  console.error(`Error: Unexpected response: ${JSON.stringify(res).slice(0, 400)}`);
+                // Extract base64 image from response
+                const imgEntry = msg?.images?.[0]?.image_url?.url;
+                if (!imgEntry) {
+                  console.error("Error: No image in response.");
+                  console.error(`Response: ${JSON.stringify(res).slice(0, 400)}`);
                   process.exit(1);
                 }
 
-                if (b64) {
-                  await writeFile(outputPath, Buffer.from(b64, "base64"));
-                } else {
-                  const imgResp = await fetch(url);
-                  if (!imgResp.ok) {
-                    console.error(`Error: Failed to download image from URL (${imgResp.status})`);
-                    process.exit(1);
-                  }
-                  await writeFile(outputPath, Buffer.from(await imgResp.arrayBuffer()));
-                }
+                const b64 = imgEntry.replace(/^data:image\/\w+;base64,/, "");
+                await writeFile(outputPath, Buffer.from(b64, "base64"));
 
                 console.log(`\nImage saved: ${outputPath}`);
                 console.log(`MEDIA: ${outputPath}`);
           env:
             HOME:
               default: /home/node
-              readonly: true
             PATH:
               default: /home/node/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-              readonly: true
             NODE_ENV:
               default: production
-              readonly: true
             NODE_OPTIONS:
               default: --max-old-space-size=1024
-              readonly: true
             OPENCLAW_WORKSPACE_DIR:
               default: /home/node/.openclaw/workspace
-              readonly: true
             OPENCLAW_GATEWAY_PORT:
               default: "18789"
-              readonly: true
             OPENCLAW_GATEWAY_BIND:
               default: lan
-              readonly: true
             OPENCLAW_STATE_DIR:
               default: /home/node/.openclaw
-              readonly: true
             OPENCLAW_GATEWAY_TOKEN:
               default: ${PASSWORD}
             ZEABUR_AI_HUB_API_KEY:
               default: ${ZEABUR_AI_HUB_API_KEY}
             OPENCLAW_DISABLE_BONJOUR:
               default: "1"
-              readonly: true
           instructions:
             - type: TEXT
               title: Web UI (with token)
@@ -866,7 +980,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞（原 Clawdbot、Moltbot）是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台。
 
-      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.2.2`。OpenClaw 🦞 正在快速開發中，可能存在尚未發現的 bug。更改版本後也無法確保穩定性。
+      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.2.9`。OpenClaw 🦞 正在快速開發中，可能存在尚未發現的 bug。更改版本後也無法確保穩定性。
 
       ⚠️ 如果遇到任何問題，歡迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 尋找解決方案或回報新問題。Zeabur 平台相關問題請聯繫 Zeabur 支援。
 
@@ -1042,6 +1156,17 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 更新日誌
+      **2026/2/10**
+      - 修復生圖 skill：改用 `/v1/chat/completions` API，預設模型改為 `gemini-2.5-flash-image`
+      - 修復 `gpt-oss-120b`、`llama-3.3-70b`、`qwen-3-32` HTTP 500：加入 `supportsStore: false` 相容性設定
+      - 修正 `gpt-oss-120b` reasoning 標記（設為 `true`）
+      - 還原腳本支援 `.zip` 格式（Zeabur 備份服務）
+      - 啟動時將頻道環境變數（`TELEGRAM_BOT_TOKEN`、`DISCORD_BOT_TOKEN`、`SLACK_BOT_TOKEN`、`SLACK_APP_TOKEN`、`LINE_CHANNEL_ACCESS_TOKEN`、`LINE_CHANNEL_SECRET`）同步寫入設定檔
+
+      **2026/2/7**
+      - 修復 cron 排程無法主動送出通知：啟動時自動偵測已設定的頻道作為 heartbeat 投遞目標
+      - 新部署自動初始化 HEARTBEAT.md 含可執行內容（避免空檔導致 heartbeat 被跳過）
+
       **2026/2/4**
       - 使用 Zeabur configs 管理啟動腳本（更易維護）
       - 新增 `backup` 和 `restore` 全域指令
@@ -1071,7 +1196,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞（原 Clawdbot、Moltbot）是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台。
 
-      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.2.2`。OpenClaw 🦞 正在快速开发中，可能存在尚未发现的 bug。更改版本后也无法确保稳定性。
+      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.2.9`。OpenClaw 🦞 正在快速开发中，可能存在尚未发现的 bug。更改版本后也无法确保稳定性。
 
       ⚠️ 如果遇到任何问题，欢迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 寻找解决方案或回报新问题。Zeabur 平台相关问题请联系 Zeabur 支持。
 
@@ -1247,6 +1372,17 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 更新日志
+      **2026/2/10**
+      - 修复生图 skill：改用 `/v1/chat/completions` API，默认模型改为 `gemini-2.5-flash-image`
+      - 修复 `gpt-oss-120b`、`llama-3.3-70b`、`qwen-3-32` HTTP 500：加入 `supportsStore: false` 兼容性设置
+      - 修正 `gpt-oss-120b` reasoning 标记（设为 `true`）
+      - 还原脚本支持 `.zip` 格式（Zeabur 备份服务）
+      - 启动时将频道环境变量（`TELEGRAM_BOT_TOKEN`、`DISCORD_BOT_TOKEN`、`SLACK_BOT_TOKEN`、`SLACK_APP_TOKEN`、`LINE_CHANNEL_ACCESS_TOKEN`、`LINE_CHANNEL_SECRET`）同步写入配置文件
+
+      **2026/2/7**
+      - 修复 cron 排程无法主动发送通知：启动时自动检测已配置的频道作为 heartbeat 投递目标
+      - 新部署自动初始化 HEARTBEAT.md 含可执行内容（避免空文件导致 heartbeat 被跳过）
+
       **2026/2/4**
       - 使用 Zeabur configs 管理启动脚本（更易维护）
       - 新增 `backup` 和 `restore` 全局命令
@@ -1276,7 +1412,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞（旧 Clawdbot、Moltbot）は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォームに接続する個人用 AI アシスタントです。
 
-      ⚠️ 本テンプレートは `ghcr.io/openclaw/openclaw:2026.2.2` を使用しています。OpenClaw 🦞 は急速に開発中のため、未発見のバグがある可能性があります。バージョンを変更した場合も安定性を保証できません。
+      ⚠️ 本テンプレートは `ghcr.io/openclaw/openclaw:2026.2.9` を使用しています。OpenClaw 🦞 は急速に開発中のため、未発見のバグがある可能性があります。バージョンを変更した場合も安定性を保証できません。
 
       ⚠️ 問題が発生した場合は、[GitHub issues](https://github.com/openclaw/openclaw/issues) で解決策を探したり、新しい問題を報告したりしてください。Zeabur プラットフォーム関連の問題については、Zeabur サポートにお問い合わせください。
 
@@ -1452,6 +1588,17 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 変更履歴
+      **2026/2/10**
+      - 画像生成 skill を修正：`/v1/chat/completions` API に切替、デフォルトモデルを `gemini-2.5-flash-image` に変更
+      - `gpt-oss-120b`、`llama-3.3-70b`、`qwen-3-32` の HTTP 500 を修正：`supportsStore: false` 互換性設定を追加
+      - `gpt-oss-120b` の reasoning フラグを修正（`true` に設定）
+      - リストアスクリプトが `.zip` 形式に対応（Zeabur バックアップサービス）
+      - 起動時にチャンネル環境変数（`TELEGRAM_BOT_TOKEN`、`DISCORD_BOT_TOKEN`、`SLACK_BOT_TOKEN`、`SLACK_APP_TOKEN`、`LINE_CHANNEL_ACCESS_TOKEN`、`LINE_CHANNEL_SECRET`）を設定ファイルに同期
+
+      **2026/2/7**
+      - cron スケジュールの通知が送信されない問題を修正：起動時に設定済みチャンネルを heartbeat 配信先として自動検出
+      - 新規デプロイで HEARTBEAT.md を実行可能な内容で初期化（空ファイルによる heartbeat スキップを防止）
+
       **2026/2/4**
       - Zeabur configs でスタートアップスクリプトを管理（メンテナンスが容易に）
       - `backup` と `restore` グローバルコマンドを追加
@@ -1481,7 +1628,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞 (anteriormente Clawdbot, Moltbot) es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería a través de una arquitectura Gateway basada en WebSocket.
 
-      ⚠️ Esta plantilla usa `ghcr.io/openclaw/openclaw:2026.2.2`. OpenClaw 🦞 está en desarrollo rápido, por lo que puede haber errores no descubiertos. Cambiar de versión tampoco garantiza estabilidad.
+      ⚠️ Esta plantilla usa `ghcr.io/openclaw/openclaw:2026.2.9`. OpenClaw 🦞 está en desarrollo rápido, por lo que puede haber errores no descubiertos. Cambiar de versión tampoco garantiza estabilidad.
 
       ⚠️ Si encuentra algún problema, no dude en consultar los [GitHub issues](https://github.com/openclaw/openclaw/issues) para buscar soluciones o reportar nuevos problemas. Para problemas relacionados con la plataforma Zeabur, contacte al soporte de Zeabur.
 
@@ -1657,6 +1804,17 @@ localization:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Registro de Cambios
+      **2026/2/10**
+      - Corregir skill de generación de imágenes: cambiar a API `/v1/chat/completions`, modelo predeterminado a `gemini-2.5-flash-image`
+      - Corregir HTTP 500 en `gpt-oss-120b`, `llama-3.3-70b`, `qwen-3-32`: agregar configuración de compatibilidad `supportsStore: false`
+      - Corregir flag de reasoning de `gpt-oss-120b` (establecido en `true`)
+      - Script de restauración ahora soporta formato `.zip` (servicio de backup de Zeabur)
+      - Sincronizar variables de entorno de canales (`TELEGRAM_BOT_TOKEN`, `DISCORD_BOT_TOKEN`, `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`, `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_CHANNEL_SECRET`) al archivo de configuración al iniciar
+
+      **2026/2/7**
+      - Corregir notificaciones proactivas de cron: detectar automáticamente el canal configurado como destino de heartbeat al iniciar
+      - Inicializar HEARTBEAT.md con contenido ejecutable en nuevos despliegues (evita que heartbeat se omita por archivo vacío)
+
       **2026/2/4**
       - Usar Zeabur configs para scripts de inicio (más fácil de mantener)
       - Añadir comandos globales `backup` y `restore`
@@ -1686,7 +1844,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞 (sebelumnya Clawdbot, Moltbot) adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan melalui arsitektur Gateway berbasis WebSocket.
 
-      ⚠️ Template ini menggunakan `ghcr.io/openclaw/openclaw:2026.2.2`. OpenClaw 🦞 sedang dalam pengembangan cepat, jadi mungkin ada bug yang belum ditemukan. Mengubah versi juga tidak menjamin stabilitas.
+      ⚠️ Template ini menggunakan `ghcr.io/openclaw/openclaw:2026.2.9`. OpenClaw 🦞 sedang dalam pengembangan cepat, jadi mungkin ada bug yang belum ditemukan. Mengubah versi juga tidak menjamin stabilitas.
 
       ⚠️ Jika Anda mengalami masalah, silakan kunjungi [GitHub issues](https://github.com/openclaw/openclaw/issues) untuk mencari solusi atau melaporkan masalah baru. Untuk masalah terkait platform Zeabur, silakan hubungi dukungan Zeabur.
 
@@ -1862,6 +2020,17 @@ localization:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Catatan Perubahan
+      **2026/2/10**
+      - Memperbaiki skill pembuatan gambar: beralih ke API `/v1/chat/completions`, model default ke `gemini-2.5-flash-image`
+      - Memperbaiki HTTP 500 pada `gpt-oss-120b`, `llama-3.3-70b`, `qwen-3-32`: menambahkan pengaturan kompatibilitas `supportsStore: false`
+      - Memperbaiki flag reasoning `gpt-oss-120b` (diatur ke `true`)
+      - Script restore mendukung format `.zip` (layanan backup Zeabur)
+      - Sinkronisasi variabel lingkungan saluran (`TELEGRAM_BOT_TOKEN`, `DISCORD_BOT_TOKEN`, `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`, `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_CHANNEL_SECRET`) ke file konfigurasi saat startup
+
+      **2026/2/7**
+      - Memperbaiki notifikasi proaktif cron: mendeteksi otomatis saluran yang dikonfigurasi sebagai target pengiriman heartbeat saat startup
+      - Menginisialisasi HEARTBEAT.md dengan konten yang dapat dieksekusi untuk deployment baru (mencegah heartbeat dilewati karena file kosong)
+
       **2026/2/4**
       - Menggunakan Zeabur configs untuk skrip startup (lebih mudah dipelihara)
       - Menambah perintah global `backup` dan `restore`
