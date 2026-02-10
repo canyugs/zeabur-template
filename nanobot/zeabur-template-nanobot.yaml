@@ -1,0 +1,394 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: Nanobot
+spec:
+    description: |
+      Nanobot is an ultra-lightweight personal AI assistant (~4K lines core code) supporting multiple LLM providers and chat platforms including Telegram, Discord, Slack, DingTalk, Feishu, QQ, and Email.
+    icon: https://raw.githubusercontent.com/HKUDS/nanobot/main/nanobot_logo.png
+    coverImage: https://raw.githubusercontent.com/HKUDS/nanobot/main/nanobot_arch.png
+    tags:
+      - AI
+      - Assistant
+      - Chatbot
+      - Telegram
+      - Discord
+    variables:
+      - key: PUBLIC_DOMAIN
+        type: DOMAIN
+        name: Domain
+        description: What domain do you want to bind Nanobot gateway to?
+      - key: OPENROUTER_API_KEY
+        type: STRING
+        name: OpenRouter API Key
+        description: Your OpenRouter API key for multi-model access (get one at openrouter.ai). Leave empty to configure later.
+    readme: |
+      # Nanobot
+
+      Nanobot is an ultra-lightweight personal AI assistant framework (~4K lines of core agent code) from [HKUDS](https://github.com/HKUDS/nanobot). It supports multiple LLM providers and connects to various messaging platforms via a unified Gateway architecture.
+
+      ## Supported LLM Providers
+
+      OpenRouter (recommended, multi-model gateway), Anthropic, OpenAI, DeepSeek, Groq, Gemini, DashScope, Moonshot, Zhipu, and local models via vLLM.
+
+      ## Supported Chat Platforms
+
+      Telegram, Discord, Slack, DingTalk, Feishu, QQ, and Email.
+
+      > **Note:** WhatsApp requires the Node.js bridge which is only available when building from source. This template installs from PyPI and does not include WhatsApp support.
+
+      ## Usage
+
+      1. After deployment, the Nanobot gateway will start automatically
+      2. **Configure AI model** (choose one):
+         - **OpenRouter** (recommended): If you entered the API Key during deployment, it's already configured with `openrouter/anthropic/claude-sonnet-4-20250514` as default model
+         - **Other providers**: Edit the config file at `/root/.nanobot/config.json` via the **Files** tab to add provider API keys
+      3. **Set up a chat platform** (optional):
+         - Add channel configuration to `/root/.nanobot/config.json`
+         - Example for Telegram: add `TELEGRAM_BOT_TOKEN` environment variable, then add to config:
+           ```json
+           "channels": {
+             "telegram": {
+               "enabled": true,
+               "token": "YOUR_BOT_TOKEN",
+               "allow_from": []
+             }
+           }
+           ```
+         - Restart the service after configuration changes
+
+      ## Configuration
+
+      The main configuration file is at `/root/.nanobot/config.json`. You can edit it via the **Files** tab in Zeabur dashboard.
+
+      **Config structure:**
+      ```json
+      {
+        "providers": {
+          "openrouter": { "api_key": "sk-or-..." },
+          "anthropic": { "api_key": "sk-ant-..." }
+        },
+        "agents": {
+          "defaults": {
+            "model": "openrouter/anthropic/claude-sonnet-4-20250514"
+          }
+        },
+        "channels": {
+          "telegram": { "enabled": true, "token": "...", "allow_from": [] },
+          "discord": { "enabled": true, "token": "...", "allow_from": [] }
+        },
+        "gateway": { "host": "0.0.0.0", "port": 18790 }
+      }
+      ```
+
+      ## CLI Commands
+
+      Access the terminal via **Command** in Zeabur dashboard:
+      - `nanobot agent -m "query"` - Send a single message
+      - `nanobot agent` - Interactive chat
+      - `nanobot status` - View provider configuration
+      - `nanobot cron` - Manage scheduled tasks
+
+      ## Data Persistence
+
+      All data is stored under `/root/.nanobot` (mounted as a persistent volume):
+      - `/root/.nanobot/config.json` - Configuration
+      - `/root/.nanobot/workspace` - Agent workspace and memory
+
+      ## Troubleshooting
+
+      **Service won't start?**
+      1. Check **Logs** for error messages
+      2. Edit config via **Files** tab to fix issues
+      3. Restart the service
+
+      **Update version:** Go to **Settings** and modify the startup script to install a specific version: `pip install nanobot-ai==0.1.3.post6`
+
+    services:
+      - name: nanobot
+        icon: https://raw.githubusercontent.com/HKUDS/nanobot/main/nanobot_logo.png
+        template: PREBUILT_V2
+        domainKey: PUBLIC_DOMAIN
+        spec:
+          source:
+            image: python:3.12-slim-bookworm
+            command:
+              - /bin/sh
+              - -c
+              - /opt/nanobot/startup.sh
+          ports:
+            - id: web
+              port: 18790
+              type: HTTP
+          volumes:
+            - id: data
+              dir: /root/.nanobot
+          configs:
+            - path: /opt/nanobot/startup.sh
+              permission: 493
+              envsubst: false
+              template: |
+                #!/bin/sh
+                set -e
+
+                echo "=== Installing nanobot-ai ==="
+                if ! command -v nanobot >/dev/null 2>&1; then
+                  pip install nanobot-ai
+                else
+                  echo "nanobot-ai already installed"
+                fi
+
+                CONFIG_DIR="/root/.nanobot"
+                CONFIG_FILE="$CONFIG_DIR/config.json"
+                mkdir -p "$CONFIG_DIR"
+
+                if [ ! -f "$CONFIG_FILE" ]; then
+                  echo "=== Creating initial configuration ==="
+                  export NANOBOT_CONFIG_PATH="$CONFIG_FILE"
+                  python3 << 'PYEOF'
+                import json, os
+
+                config_file = os.environ["NANOBOT_CONFIG_PATH"]
+                config = {
+                    "gateway": {"host": "0.0.0.0", "port": 18790},
+                    "agents": {"defaults": {"model": "anthropic/claude-opus-4-5", "max_tokens": 8192, "temperature": 0.7}},
+                    "providers": {},
+                    "channels": {},
+                    "tools": {"restrict_to_workspace": True}
+                }
+
+                openrouter_key = os.environ.get("OPENROUTER_API_KEY", "")
+                if openrouter_key and not openrouter_key.startswith("${"):
+                    config["providers"]["openrouter"] = {"api_key": openrouter_key}
+                    config["agents"]["defaults"]["model"] = "openrouter/anthropic/claude-sonnet-4-20250514"
+
+                telegram_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+                if telegram_token and not telegram_token.startswith("${"):
+                    config["channels"]["telegram"] = {"enabled": True, "token": telegram_token, "allow_from": []}
+
+                discord_token = os.environ.get("DISCORD_BOT_TOKEN", "")
+                if discord_token and not discord_token.startswith("${"):
+                    config["channels"]["discord"] = {"enabled": True, "token": discord_token, "allow_from": []}
+
+                with open(config_file, "w") as f:
+                    json.dump(config, f, indent=2)
+                os.chmod(config_file, 0o600)
+                print(f"Config created at {config_file}")
+                PYEOF
+                else
+                  echo "Config already exists at $CONFIG_FILE"
+                fi
+
+                echo "=== Starting health check server ==="
+                python3 -c "
+                from http.server import HTTPServer, BaseHTTPRequestHandler
+                import json
+
+                class Handler(BaseHTTPRequestHandler):
+                    def do_GET(self):
+                        self.send_response(200)
+                        self.send_header('Content-Type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({'status': 'ok', 'service': 'nanobot'}).encode())
+                    def log_message(self, *args):
+                        pass
+
+                HTTPServer(('0.0.0.0', 18790), Handler).serve_forever()
+                " &
+
+                echo "=== Starting nanobot gateway ==="
+                exec nanobot gateway
+          env:
+            OPENROUTER_API_KEY:
+              default: ${OPENROUTER_API_KEY}
+            TELEGRAM_BOT_TOKEN:
+              default: ""
+            DISCORD_BOT_TOKEN:
+              default: ""
+
+localization:
+  zh-TW:
+    description: |
+      Nanobot 是一個超輕量級個人 AI 助手（約 4K 行核心程式碼），支援多種 LLM 供應商和聊天平台，包括 Telegram、Discord、Slack、釘釘、飛書、QQ 和電子郵件。
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: 網域
+        description: 您想將 Nanobot 閘道綁定到哪個網域？
+      - key: OPENROUTER_API_KEY
+        name: OpenRouter API 金鑰
+        description: 您的 OpenRouter API 金鑰，用於多模型存取（在 openrouter.ai 取得）。留空可稍後設定。
+    readme: |
+      # Nanobot
+
+      Nanobot 是來自 [HKUDS](https://github.com/HKUDS/nanobot) 的超輕量級個人 AI 助手框架（約 4K 行核心代理程式碼）。它支援多種 LLM 供應商，並透過統一的 Gateway 架構連接各種訊息平台。
+
+      ## 支援的 LLM 供應商
+
+      OpenRouter（推薦，多模型閘道）、Anthropic、OpenAI、DeepSeek、Groq、Gemini、DashScope、Moonshot、Zhipu，以及透過 vLLM 的本地模型。
+
+      ## 支援的聊天平台
+
+      Telegram、Discord、Slack、釘釘、飛書、QQ 和電子郵件。
+
+      > **注意：** WhatsApp 需要 Node.js 橋接器，僅在從原始碼建置時可用。此範本從 PyPI 安裝，不包含 WhatsApp 支援。
+
+      ## 使用方式
+
+      1. 部署後，Nanobot 閘道將自動啟動
+      2. **設定 AI 模型**（擇一）：
+         - **OpenRouter**（推薦）：如果您在部署時輸入了 API 金鑰，已使用 `openrouter/anthropic/claude-sonnet-4-20250514` 作為預設模型
+         - **其他供應商**：透過 **Files** 標籤編輯 `/root/.nanobot/config.json` 以新增供應商 API 金鑰
+      3. **設定聊天平台**（可選）：在設定檔中新增頻道設定，然後重新啟動服務
+
+      ## 資料持久化
+
+      所有資料儲存在 `/root/.nanobot`（掛載為持久卷）。
+
+  zh-CN:
+    description: |
+      Nanobot 是一个超轻量级个人 AI 助手（约 4K 行核心代码），支持多种 LLM 供应商和聊天平台，包括 Telegram、Discord、Slack、钉钉、飞书、QQ 和电子邮件。
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: 域名
+        description: 您想将 Nanobot 网关绑定到哪个域名？
+      - key: OPENROUTER_API_KEY
+        name: OpenRouter API 密钥
+        description: 您的 OpenRouter API 密钥，用于多模型访问（在 openrouter.ai 获取）。留空可稍后设置。
+    readme: |
+      # Nanobot
+
+      Nanobot 是来自 [HKUDS](https://github.com/HKUDS/nanobot) 的超轻量级个人 AI 助手框架（约 4K 行核心代理代码）。它支持多种 LLM 供应商，并通过统一的 Gateway 架构连接各种消息平台。
+
+      ## 支持的 LLM 供应商
+
+      OpenRouter（推荐，多模型网关）、Anthropic、OpenAI、DeepSeek、Groq、Gemini、DashScope、Moonshot、Zhipu，以及通过 vLLM 的本地模型。
+
+      ## 支持的聊天平台
+
+      Telegram、Discord、Slack、钉钉、飞书、QQ 和电子邮件。
+
+      > **注意：** WhatsApp 需要 Node.js 桥接器，仅在从源码构建时可用。此模板从 PyPI 安装，不包含 WhatsApp 支持。
+
+      ## 使用方式
+
+      1. 部署后，Nanobot 网关将自动启动
+      2. **配置 AI 模型**（择一）：
+         - **OpenRouter**（推荐）：如果您在部署时输入了 API 密钥，已使用 `openrouter/anthropic/claude-sonnet-4-20250514` 作为默认模型
+         - **其他供应商**：通过 **Files** 标签编辑 `/root/.nanobot/config.json` 以添加供应商 API 密钥
+      3. **设置聊天平台**（可选）：在配置文件中添加频道配置，然后重启服务
+
+      ## 数据持久化
+
+      所有数据存储在 `/root/.nanobot`（挂载为持久卷）。
+
+  ja-JP:
+    description: |
+      Nanobot は超軽量パーソナル AI アシスタント（コアコード約4K行）で、複数の LLM プロバイダーと Telegram、Discord、Slack、DingTalk、Feishu、QQ、メールなどのチャットプラットフォームをサポートしています。
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: ドメイン
+        description: Nanobot ゲートウェイにどのドメインをバインドしますか？
+      - key: OPENROUTER_API_KEY
+        name: OpenRouter API キー
+        description: マルチモデルアクセス用の OpenRouter API キー（openrouter.ai で取得）。後で設定する場合は空欄にしてください。
+    readme: |
+      # Nanobot
+
+      Nanobot は [HKUDS](https://github.com/HKUDS/nanobot) による超軽量パーソナル AI アシスタントフレームワーク（コアエージェントコード約4K行）です。複数の LLM プロバイダーをサポートし、統一された Gateway アーキテクチャを通じて様々なメッセージングプラットフォームに接続します。
+
+      ## サポートされる LLM プロバイダー
+
+      OpenRouter（推奨、マルチモデルゲートウェイ）、Anthropic、OpenAI、DeepSeek、Groq、Gemini、DashScope、Moonshot、Zhipu、および vLLM 経由のローカルモデル。
+
+      ## サポートされるチャットプラットフォーム
+
+      Telegram、Discord、Slack、DingTalk、Feishu、QQ、メール。
+
+      > **注意：** WhatsApp は Node.js ブリッジが必要で、ソースからビルドした場合のみ利用可能です。このテンプレートは PyPI からインストールするため、WhatsApp はサポートされていません。
+
+      ## 使い方
+
+      1. デプロイ後、Nanobot ゲートウェイが自動的に起動します
+      2. **AI モデルの設定**（いずれかを選択）：
+         - **OpenRouter**（推奨）：デプロイ時に API キーを入力した場合、`openrouter/anthropic/claude-sonnet-4-20250514` がデフォルトモデルとして設定済みです
+         - **その他のプロバイダー**：**Files** タブから `/root/.nanobot/config.json` を編集してプロバイダー API キーを追加
+      3. **チャットプラットフォームの設定**（オプション）：設定ファイルにチャネル設定を追加し、サービスを再起動
+
+      ## データの永続化
+
+      すべてのデータは `/root/.nanobot`（永続ボリュームとしてマウント）に保存されます。
+
+  es-ES:
+    description: |
+      Nanobot es un asistente personal de IA ultraligero (~4K lineas de codigo central) que soporta multiples proveedores de LLM y plataformas de chat incluyendo Telegram, Discord, Slack, DingTalk, Feishu, QQ y correo electronico.
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: Dominio
+        description: A que dominio desea vincular la puerta de enlace de Nanobot?
+      - key: OPENROUTER_API_KEY
+        name: Clave API de OpenRouter
+        description: Su clave API de OpenRouter para acceso multimodelo (obtenga una en openrouter.ai). Dejelo vacio para configurar despues.
+    readme: |
+      # Nanobot
+
+      Nanobot es un framework de asistente personal de IA ultraligero (~4K lineas de codigo de agente central) de [HKUDS](https://github.com/HKUDS/nanobot). Soporta multiples proveedores de LLM y se conecta a varias plataformas de mensajeria a traves de una arquitectura Gateway unificada.
+
+      ## Proveedores de LLM Soportados
+
+      OpenRouter (recomendado, puerta de enlace multimodelo), Anthropic, OpenAI, DeepSeek, Groq, Gemini, DashScope, Moonshot, Zhipu y modelos locales via vLLM.
+
+      ## Plataformas de Chat Soportadas
+
+      Telegram, Discord, Slack, DingTalk, Feishu, QQ y correo electronico.
+
+      > **Nota:** WhatsApp requiere el puente Node.js que solo esta disponible al compilar desde el codigo fuente. Esta plantilla se instala desde PyPI y no incluye soporte para WhatsApp.
+
+      ## Uso
+
+      1. Despues del despliegue, la puerta de enlace de Nanobot se iniciara automaticamente
+      2. **Configurar modelo de IA** (elija uno):
+         - **OpenRouter** (recomendado): Si ingreso la clave API durante el despliegue, ya esta configurado con `openrouter/anthropic/claude-sonnet-4-20250514` como modelo predeterminado
+         - **Otros proveedores**: Edite `/root/.nanobot/config.json` a traves de la pestana **Files** para agregar claves API de proveedores
+      3. **Configurar plataforma de chat** (opcional): Agregue la configuracion del canal al archivo de configuracion y reinicie el servicio
+
+      ## Persistencia de Datos
+
+      Todos los datos se almacenan en `/root/.nanobot` (montado como volumen persistente).
+
+  id-ID:
+    description: |
+      Nanobot adalah asisten AI pribadi yang sangat ringan (~4K baris kode inti) yang mendukung berbagai penyedia LLM dan platform chat termasuk Telegram, Discord, Slack, DingTalk, Feishu, QQ, dan Email.
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: Domain
+        description: Domain apa yang ingin Anda ikat ke gateway Nanobot?
+      - key: OPENROUTER_API_KEY
+        name: Kunci API OpenRouter
+        description: Kunci API OpenRouter Anda untuk akses multi-model (dapatkan di openrouter.ai). Kosongkan untuk mengonfigurasi nanti.
+    readme: |
+      # Nanobot
+
+      Nanobot adalah framework asisten AI pribadi yang sangat ringan (~4K baris kode agen inti) dari [HKUDS](https://github.com/HKUDS/nanobot). Mendukung berbagai penyedia LLM dan terhubung ke berbagai platform pesan melalui arsitektur Gateway terpadu.
+
+      ## Penyedia LLM yang Didukung
+
+      OpenRouter (direkomendasikan, gateway multi-model), Anthropic, OpenAI, DeepSeek, Groq, Gemini, DashScope, Moonshot, Zhipu, dan model lokal melalui vLLM.
+
+      ## Platform Chat yang Didukung
+
+      Telegram, Discord, Slack, DingTalk, Feishu, QQ, dan Email.
+
+      > **Catatan:** WhatsApp memerlukan jembatan Node.js yang hanya tersedia saat membangun dari kode sumber. Template ini diinstal dari PyPI dan tidak menyertakan dukungan WhatsApp.
+
+      ## Penggunaan
+
+      1. Setelah deploy, gateway Nanobot akan dimulai secara otomatis
+      2. **Konfigurasi model AI** (pilih salah satu):
+         - **OpenRouter** (direkomendasikan): Jika Anda memasukkan Kunci API saat deploy, sudah dikonfigurasi dengan `openrouter/anthropic/claude-sonnet-4-20250514` sebagai model default
+         - **Penyedia lain**: Edit `/root/.nanobot/config.json` melalui tab **Files** untuk menambahkan kunci API penyedia
+      3. **Siapkan platform chat** (opsional): Tambahkan konfigurasi saluran ke file konfigurasi dan restart layanan
+
+      ## Persistensi Data
+
+      Semua data disimpan di `/root/.nanobot` (dipasang sebagai volume persisten).
