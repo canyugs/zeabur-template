@@ -19,18 +19,22 @@ spec:
         type: DOMAIN
         name: Domain
         description: What domain do you want to bind Nanobot gateway to?
+      - key: ZEABUR_AI_HUB_API_KEY
+        type: STRING
+        name: Zeabur AI Hub API Key
+        description: Zeabur AI Hub API key for multi-model access (get one at zeabur.com). Recommended for Zeabur users. Leave empty to use other providers.
       - key: OPENROUTER_API_KEY
         type: STRING
         name: OpenRouter API Key
         description: Your OpenRouter API key for multi-model access (get one at openrouter.ai). Leave empty to configure later.
+      - key: TELEGRAM_BOT_TOKEN
+        type: STRING
+        name: Telegram Bot Token
+        description: Your Telegram bot token from @BotFather. Leave empty to configure later.
     readme: |
       # Nanobot
 
       Nanobot is an ultra-lightweight personal AI assistant framework (~4K lines of core agent code) from [HKUDS](https://github.com/HKUDS/nanobot). It supports multiple LLM providers and connects to various messaging platforms via a unified Gateway architecture.
-
-      ## Supported LLM Providers
-
-      OpenRouter (recommended, multi-model gateway), Anthropic, OpenAI, DeepSeek, Groq, Gemini, DashScope, Moonshot, Zhipu, and local models via vLLM.
 
       ## Supported Chat Platforms
 
@@ -38,49 +42,54 @@ spec:
 
       > **Note:** WhatsApp requires the Node.js bridge which is only available when building from source. This template installs from PyPI and does not include WhatsApp support.
 
-      ## Usage
+      ## Quick Start
 
-      1. After deployment, the Nanobot gateway will start automatically
-      2. **Configure AI model** (choose one):
-         - **OpenRouter** (recommended): If you entered the API Key during deployment, it's already configured with `openrouter/anthropic/claude-sonnet-4-20250514` as default model
-         - **Other providers**: Edit the config file at `/root/.nanobot/config.json` via the **Files** tab to add provider API keys
-      3. **Set up a chat platform** (optional):
-         - Add channel configuration to `/root/.nanobot/config.json`
-         - Example for Telegram: add `TELEGRAM_BOT_TOKEN` environment variable, then add to config:
-           ```json
-           "channels": {
-             "telegram": {
-               "enabled": true,
-               "token": "YOUR_BOT_TOKEN",
-               "allow_from": []
-             }
-           }
-           ```
-         - Restart the service after configuration changes
+      1. After deployment, the Nanobot gateway starts automatically
+      2. If you entered an API key during deployment (Zeabur AI Hub or OpenRouter), a chat model is already configured
+      3. Connect a chat platform (Telegram / Discord) or use the CLI to start chatting
 
-      ## Configuration
+      ## LLM Providers
 
-      The main configuration file is at `/root/.nanobot/config.json`. You can edit it via the **Files** tab in Zeabur dashboard.
+      Nanobot supports many providers. You can switch at any time by editing `/root/.nanobot/config.json` via the **Files** tab and restarting the service.
 
-      **Config structure:**
+      | Provider | `providers` config | Model ID example |
+      |----------|-------------------|-----------------|
+      | Zeabur AI Hub | `"openai": {"api_key":"...","api_base":"https://hnd1.aihub.zeabur.ai/v1"}` | `openai/claude-sonnet-4-5` |
+      | OpenRouter | `"openrouter": {"api_key":"sk-or-..."}` | `openrouter/anthropic/claude-sonnet-4` |
+      | Anthropic | `"anthropic": {"api_key":"sk-ant-..."}` | `anthropic/claude-sonnet-4-5` |
+      | OpenAI | `"openai": {"api_key":"sk-..."}` | `openai/gpt-4o` |
+      | DeepSeek | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
+
+      **To switch provider:**
+      1. Open `/root/.nanobot/config.json` in the **Files** tab
+      2. Add or update the provider entry under `"providers"`
+      3. Change `"agents" > "defaults" > "model"` to the new model ID
+      4. **Restart the service** for changes to take effect
+
+      **Example** — switch from Zeabur AI Hub to OpenRouter:
       ```json
       {
         "providers": {
-          "openrouter": { "api_key": "sk-or-..." },
-          "anthropic": { "api_key": "sk-ant-..." }
+          "openrouter": { "api_key": "sk-or-your-key" }
         },
         "agents": {
-          "defaults": {
-            "model": "openrouter/anthropic/claude-sonnet-4-20250514"
-          }
-        },
-        "channels": {
-          "telegram": { "enabled": true, "token": "...", "allow_from": [] },
-          "discord": { "enabled": true, "token": "...", "allow_from": [] }
-        },
-        "gateway": { "host": "0.0.0.0", "port": 18790 }
+          "defaults": { "model": "openrouter/anthropic/claude-sonnet-4" }
+        }
       }
       ```
+
+      ## Chat Platforms
+
+      Set up during deployment (Telegram token) or add later in config:
+
+      ```json
+      "channels": {
+        "telegram": { "enabled": true, "token": "BOT_TOKEN", "allow_from": [] },
+        "discord": { "enabled": true, "token": "BOT_TOKEN", "allow_from": [] }
+      }
+      ```
+
+      Restart the service after changes.
 
       ## CLI Commands
 
@@ -88,13 +97,12 @@ spec:
       - `nanobot agent -m "query"` - Send a single message
       - `nanobot agent` - Interactive chat
       - `nanobot status` - View provider configuration
-      - `nanobot cron` - Manage scheduled tasks
 
       ## Data Persistence
 
       All data is stored under `/root/.nanobot` (mounted as a persistent volume):
-      - `/root/.nanobot/config.json` - Configuration
-      - `/root/.nanobot/workspace` - Agent workspace and memory
+      - `config.json` - Configuration
+      - `workspace/` - Agent workspace and memory
 
       ## Troubleshooting
 
@@ -103,7 +111,7 @@ spec:
       2. Edit config via **Files** tab to fix issues
       3. Restart the service
 
-      **Update version:** Go to **Settings** and modify the startup script to install a specific version: `pip install nanobot-ai==0.1.3.post6`
+      **Update version:** Modify the startup script to install a specific version: `pip install nanobot-ai==0.1.3.post6`
 
     services:
       - name: nanobot
@@ -158,10 +166,16 @@ spec:
                     "tools": {"restrict_to_workspace": True}
                 }
 
+                zeabur_key = os.environ.get("ZEABUR_AI_HUB_API_KEY", "")
+                if zeabur_key and not zeabur_key.startswith("${"):
+                    config["providers"]["openai"] = {"api_key": zeabur_key, "api_base": "https://hnd1.aihub.zeabur.ai/v1"}
+                    config["agents"]["defaults"]["model"] = "openai/claude-sonnet-4-5"
+
                 openrouter_key = os.environ.get("OPENROUTER_API_KEY", "")
                 if openrouter_key and not openrouter_key.startswith("${"):
                     config["providers"]["openrouter"] = {"api_key": openrouter_key}
-                    config["agents"]["defaults"]["model"] = "openrouter/anthropic/claude-sonnet-4-20250514"
+                    if not (zeabur_key and not zeabur_key.startswith("${")):
+                        config["agents"]["defaults"]["model"] = "openrouter/anthropic/claude-sonnet-4"
 
                 telegram_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
                 if telegram_token and not telegram_token.startswith("${"):
@@ -178,6 +192,12 @@ spec:
                 PYEOF
                 else
                   echo "Config already exists at $CONFIG_FILE"
+                fi
+
+                # Export Zeabur AI Hub env vars for litellm
+                if [ -n "$ZEABUR_AI_HUB_API_KEY" ] && [ "$ZEABUR_AI_HUB_API_KEY" != '${ZEABUR_AI_HUB_API_KEY}' ]; then
+                  export OPENAI_API_KEY="$ZEABUR_AI_HUB_API_KEY"
+                  export OPENAI_API_BASE="https://hnd1.aihub.zeabur.ai/v1"
                 fi
 
                 echo "=== Starting health check server ==="
@@ -200,12 +220,12 @@ spec:
                 echo "=== Starting nanobot gateway ==="
                 exec nanobot gateway
           env:
+            ZEABUR_AI_HUB_API_KEY:
+              default: ${ZEABUR_AI_HUB_API_KEY}
             OPENROUTER_API_KEY:
               default: ${OPENROUTER_API_KEY}
             TELEGRAM_BOT_TOKEN:
-              default: ""
-            DISCORD_BOT_TOKEN:
-              default: ""
+              default: ${TELEGRAM_BOT_TOKEN}
 
 localization:
   zh-TW:
@@ -215,31 +235,47 @@ localization:
       - key: PUBLIC_DOMAIN
         name: 網域
         description: 您想將 Nanobot 閘道綁定到哪個網域？
+      - key: ZEABUR_AI_HUB_API_KEY
+        name: Zeabur AI Hub API 金鑰
+        description: Zeabur AI Hub API 金鑰，用於多模型存取（在 zeabur.com 取得）。推薦 Zeabur 用戶使用。留空可使用其他供應商。
       - key: OPENROUTER_API_KEY
         name: OpenRouter API 金鑰
         description: 您的 OpenRouter API 金鑰，用於多模型存取（在 openrouter.ai 取得）。留空可稍後設定。
+      - key: TELEGRAM_BOT_TOKEN
+        name: Telegram Bot Token
+        description: 您的 Telegram 機器人 Token（從 @BotFather 取得）。留空可稍後設定。
     readme: |
       # Nanobot
 
-      Nanobot 是來自 [HKUDS](https://github.com/HKUDS/nanobot) 的超輕量級個人 AI 助手框架（約 4K 行核心代理程式碼）。它支援多種 LLM 供應商，並透過統一的 Gateway 架構連接各種訊息平台。
-
-      ## 支援的 LLM 供應商
-
-      OpenRouter（推薦，多模型閘道）、Anthropic、OpenAI、DeepSeek、Groq、Gemini、DashScope、Moonshot、Zhipu，以及透過 vLLM 的本地模型。
+      Nanobot 是來自 [HKUDS](https://github.com/HKUDS/nanobot) 的超輕量級個人 AI 助手框架（約 4K 行核心代理程式碼）。支援多種 LLM 供應商，並透過統一的 Gateway 架構連接各種訊息平台。
 
       ## 支援的聊天平台
 
       Telegram、Discord、Slack、釘釘、飛書、QQ 和電子郵件。
 
-      > **注意：** WhatsApp 需要 Node.js 橋接器，僅在從原始碼建置時可用。此範本從 PyPI 安裝，不包含 WhatsApp 支援。
-
-      ## 使用方式
+      ## 快速開始
 
       1. 部署後，Nanobot 閘道將自動啟動
-      2. **設定 AI 模型**（擇一）：
-         - **OpenRouter**（推薦）：如果您在部署時輸入了 API 金鑰，已使用 `openrouter/anthropic/claude-sonnet-4-20250514` 作為預設模型
-         - **其他供應商**：透過 **Files** 標籤編輯 `/root/.nanobot/config.json` 以新增供應商 API 金鑰
-      3. **設定聊天平台**（可選）：在設定檔中新增頻道設定，然後重新啟動服務
+      2. 如果您在部署時輸入了 API 金鑰（Zeabur AI Hub 或 OpenRouter），聊天模型已自動設定
+      3. 連接聊天平台（Telegram / Discord）或使用 CLI 開始對話
+
+      ## LLM 供應商
+
+      Nanobot 支援多種供應商，您可以隨時透過 **檔案**標籤編輯 `/root/.nanobot/config.json` 並重啟服務來切換。
+
+      | 供應商 | `providers` 設定 | 模型 ID 範例 |
+      |--------|-----------------|-------------|
+      | Zeabur AI Hub | `"openai": {"api_key":"...","api_base":"https://hnd1.aihub.zeabur.ai/v1"}` | `openai/claude-sonnet-4-5` |
+      | OpenRouter | `"openrouter": {"api_key":"sk-or-..."}` | `openrouter/anthropic/claude-sonnet-4` |
+      | Anthropic | `"anthropic": {"api_key":"sk-ant-..."}` | `anthropic/claude-sonnet-4-5` |
+      | OpenAI | `"openai": {"api_key":"sk-..."}` | `openai/gpt-4o` |
+      | DeepSeek | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
+
+      **切換供應商步驟：**
+      1. 在 **檔案**標籤開啟 `/root/.nanobot/config.json`
+      2. 在 `"providers"` 中新增或修改供應商設定
+      3. 將 `"agents" > "defaults" > "model"` 改為新的模型 ID
+      4. **重啟服務**使變更生效
 
       ## 資料持久化
 
@@ -252,31 +288,47 @@ localization:
       - key: PUBLIC_DOMAIN
         name: 域名
         description: 您想将 Nanobot 网关绑定到哪个域名？
+      - key: ZEABUR_AI_HUB_API_KEY
+        name: Zeabur AI Hub API 密钥
+        description: Zeabur AI Hub API 密钥，用于多模型访问（在 zeabur.com 获取）。推荐 Zeabur 用户使用。留空可使用其他供应商。
       - key: OPENROUTER_API_KEY
         name: OpenRouter API 密钥
         description: 您的 OpenRouter API 密钥，用于多模型访问（在 openrouter.ai 获取）。留空可稍后设置。
+      - key: TELEGRAM_BOT_TOKEN
+        name: Telegram Bot Token
+        description: 您的 Telegram 机器人 Token（从 @BotFather 获取）。留空可稍后设置。
     readme: |
       # Nanobot
 
-      Nanobot 是来自 [HKUDS](https://github.com/HKUDS/nanobot) 的超轻量级个人 AI 助手框架（约 4K 行核心代理代码）。它支持多种 LLM 供应商，并通过统一的 Gateway 架构连接各种消息平台。
-
-      ## 支持的 LLM 供应商
-
-      OpenRouter（推荐，多模型网关）、Anthropic、OpenAI、DeepSeek、Groq、Gemini、DashScope、Moonshot、Zhipu，以及通过 vLLM 的本地模型。
+      Nanobot 是来自 [HKUDS](https://github.com/HKUDS/nanobot) 的超轻量级个人 AI 助手框架（约 4K 行核心代理代码）。支持多种 LLM 供应商，并通过统一的 Gateway 架构连接各种消息平台。
 
       ## 支持的聊天平台
 
       Telegram、Discord、Slack、钉钉、飞书、QQ 和电子邮件。
 
-      > **注意：** WhatsApp 需要 Node.js 桥接器，仅在从源码构建时可用。此模板从 PyPI 安装，不包含 WhatsApp 支持。
-
-      ## 使用方式
+      ## 快速开始
 
       1. 部署后，Nanobot 网关将自动启动
-      2. **配置 AI 模型**（择一）：
-         - **OpenRouter**（推荐）：如果您在部署时输入了 API 密钥，已使用 `openrouter/anthropic/claude-sonnet-4-20250514` 作为默认模型
-         - **其他供应商**：通过 **Files** 标签编辑 `/root/.nanobot/config.json` 以添加供应商 API 密钥
-      3. **设置聊天平台**（可选）：在配置文件中添加频道配置，然后重启服务
+      2. 如果您在部署时输入了 API 密钥（Zeabur AI Hub 或 OpenRouter），聊天模型已自动配置
+      3. 连接聊天平台（Telegram / Discord）或使用 CLI 开始对话
+
+      ## LLM 供应商
+
+      Nanobot 支持多种供应商，您可以随时通过 **文件**标签编辑 `/root/.nanobot/config.json` 并重启服务来切换。
+
+      | 供应商 | `providers` 配置 | 模型 ID 示例 |
+      |--------|-----------------|-------------|
+      | Zeabur AI Hub | `"openai": {"api_key":"...","api_base":"https://hnd1.aihub.zeabur.ai/v1"}` | `openai/claude-sonnet-4-5` |
+      | OpenRouter | `"openrouter": {"api_key":"sk-or-..."}` | `openrouter/anthropic/claude-sonnet-4` |
+      | Anthropic | `"anthropic": {"api_key":"sk-ant-..."}` | `anthropic/claude-sonnet-4-5` |
+      | OpenAI | `"openai": {"api_key":"sk-..."}` | `openai/gpt-4o` |
+      | DeepSeek | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
+
+      **切换供应商步骤：**
+      1. 在 **文件**标签打开 `/root/.nanobot/config.json`
+      2. 在 `"providers"` 中添加或修改供应商配置
+      3. 将 `"agents" > "defaults" > "model"` 改为新的模型 ID
+      4. **重启服务**使更改生效
 
       ## 数据持久化
 
@@ -289,31 +341,47 @@ localization:
       - key: PUBLIC_DOMAIN
         name: ドメイン
         description: Nanobot ゲートウェイにどのドメインをバインドしますか？
+      - key: ZEABUR_AI_HUB_API_KEY
+        name: Zeabur AI Hub API キー
+        description: Zeabur AI Hub API キー（zeabur.com で取得）。Zeabur ユーザーにおすすめ。空欄の場合は他のプロバイダーを使用できます。
       - key: OPENROUTER_API_KEY
         name: OpenRouter API キー
         description: マルチモデルアクセス用の OpenRouter API キー（openrouter.ai で取得）。後で設定する場合は空欄にしてください。
+      - key: TELEGRAM_BOT_TOKEN
+        name: Telegram Bot トークン
+        description: BotFather から取得した Telegram ボットトークン。後で設定する場合は空欄にしてください。
     readme: |
       # Nanobot
 
       Nanobot は [HKUDS](https://github.com/HKUDS/nanobot) による超軽量パーソナル AI アシスタントフレームワーク（コアエージェントコード約4K行）です。複数の LLM プロバイダーをサポートし、統一された Gateway アーキテクチャを通じて様々なメッセージングプラットフォームに接続します。
 
-      ## サポートされる LLM プロバイダー
-
-      OpenRouter（推奨、マルチモデルゲートウェイ）、Anthropic、OpenAI、DeepSeek、Groq、Gemini、DashScope、Moonshot、Zhipu、および vLLM 経由のローカルモデル。
-
       ## サポートされるチャットプラットフォーム
 
       Telegram、Discord、Slack、DingTalk、Feishu、QQ、メール。
 
-      > **注意：** WhatsApp は Node.js ブリッジが必要で、ソースからビルドした場合のみ利用可能です。このテンプレートは PyPI からインストールするため、WhatsApp はサポートされていません。
-
-      ## 使い方
+      ## クイックスタート
 
       1. デプロイ後、Nanobot ゲートウェイが自動的に起動します
-      2. **AI モデルの設定**（いずれかを選択）：
-         - **OpenRouter**（推奨）：デプロイ時に API キーを入力した場合、`openrouter/anthropic/claude-sonnet-4-20250514` がデフォルトモデルとして設定済みです
-         - **その他のプロバイダー**：**Files** タブから `/root/.nanobot/config.json` を編集してプロバイダー API キーを追加
-      3. **チャットプラットフォームの設定**（オプション）：設定ファイルにチャネル設定を追加し、サービスを再起動
+      2. デプロイ時に API キー（Zeabur AI Hub または OpenRouter）を入力した場合、チャットモデルは自動設定済みです
+      3. チャットプラットフォーム（Telegram / Discord）を接続するか、CLI で会話を開始
+
+      ## LLM プロバイダー
+
+      Nanobot は複数のプロバイダーをサポートしています。**Files** タブから `/root/.nanobot/config.json` を編集し、サービスを再起動することでいつでも切り替えできます。
+
+      | プロバイダー | `providers` 設定 | モデル ID 例 |
+      |------------|-----------------|-------------|
+      | Zeabur AI Hub | `"openai": {"api_key":"...","api_base":"https://hnd1.aihub.zeabur.ai/v1"}` | `openai/claude-sonnet-4-5` |
+      | OpenRouter | `"openrouter": {"api_key":"sk-or-..."}` | `openrouter/anthropic/claude-sonnet-4` |
+      | Anthropic | `"anthropic": {"api_key":"sk-ant-..."}` | `anthropic/claude-sonnet-4-5` |
+      | OpenAI | `"openai": {"api_key":"sk-..."}` | `openai/gpt-4o` |
+      | DeepSeek | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
+
+      **プロバイダー切り替え手順：**
+      1. **Files** タブで `/root/.nanobot/config.json` を開く
+      2. `"providers"` にプロバイダー設定を追加または変更
+      3. `"agents" > "defaults" > "model"` を新しいモデル ID に変更
+      4. **サービスを再起動**して変更を反映
 
       ## データの永続化
 
@@ -326,31 +394,47 @@ localization:
       - key: PUBLIC_DOMAIN
         name: Dominio
         description: A que dominio desea vincular la puerta de enlace de Nanobot?
+      - key: ZEABUR_AI_HUB_API_KEY
+        name: Clave API de Zeabur AI Hub
+        description: Clave API de Zeabur AI Hub para acceso multimodelo (obtenga una en zeabur.com). Recomendado para usuarios de Zeabur. Dejelo vacio para usar otros proveedores.
       - key: OPENROUTER_API_KEY
         name: Clave API de OpenRouter
         description: Su clave API de OpenRouter para acceso multimodelo (obtenga una en openrouter.ai). Dejelo vacio para configurar despues.
+      - key: TELEGRAM_BOT_TOKEN
+        name: Token de Bot de Telegram
+        description: Su token de bot de Telegram de BotFather. Dejelo vacio para configurar despues.
     readme: |
       # Nanobot
 
       Nanobot es un framework de asistente personal de IA ultraligero (~4K lineas de codigo de agente central) de [HKUDS](https://github.com/HKUDS/nanobot). Soporta multiples proveedores de LLM y se conecta a varias plataformas de mensajeria a traves de una arquitectura Gateway unificada.
 
-      ## Proveedores de LLM Soportados
-
-      OpenRouter (recomendado, puerta de enlace multimodelo), Anthropic, OpenAI, DeepSeek, Groq, Gemini, DashScope, Moonshot, Zhipu y modelos locales via vLLM.
-
       ## Plataformas de Chat Soportadas
 
       Telegram, Discord, Slack, DingTalk, Feishu, QQ y correo electronico.
 
-      > **Nota:** WhatsApp requiere el puente Node.js que solo esta disponible al compilar desde el codigo fuente. Esta plantilla se instala desde PyPI y no incluye soporte para WhatsApp.
+      ## Inicio Rapido
 
-      ## Uso
+      1. Despues del despliegue, la puerta de enlace de Nanobot se inicia automaticamente
+      2. Si ingreso una clave API durante el despliegue (Zeabur AI Hub u OpenRouter), el modelo de chat ya esta configurado
+      3. Conecte una plataforma de chat (Telegram / Discord) o use el CLI para comenzar
 
-      1. Despues del despliegue, la puerta de enlace de Nanobot se iniciara automaticamente
-      2. **Configurar modelo de IA** (elija uno):
-         - **OpenRouter** (recomendado): Si ingreso la clave API durante el despliegue, ya esta configurado con `openrouter/anthropic/claude-sonnet-4-20250514` como modelo predeterminado
-         - **Otros proveedores**: Edite `/root/.nanobot/config.json` a traves de la pestana **Files** para agregar claves API de proveedores
-      3. **Configurar plataforma de chat** (opcional): Agregue la configuracion del canal al archivo de configuracion y reinicie el servicio
+      ## Proveedores de LLM
+
+      Nanobot soporta multiples proveedores. Puede cambiar en cualquier momento editando `/root/.nanobot/config.json` en la pestana **Files** y reiniciando el servicio.
+
+      | Proveedor | Configuracion `providers` | Ejemplo de Model ID |
+      |-----------|--------------------------|-------------------|
+      | Zeabur AI Hub | `"openai": {"api_key":"...","api_base":"https://hnd1.aihub.zeabur.ai/v1"}` | `openai/claude-sonnet-4-5` |
+      | OpenRouter | `"openrouter": {"api_key":"sk-or-..."}` | `openrouter/anthropic/claude-sonnet-4` |
+      | Anthropic | `"anthropic": {"api_key":"sk-ant-..."}` | `anthropic/claude-sonnet-4-5` |
+      | OpenAI | `"openai": {"api_key":"sk-..."}` | `openai/gpt-4o` |
+      | DeepSeek | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
+
+      **Para cambiar de proveedor:**
+      1. Abra `/root/.nanobot/config.json` en la pestana **Files**
+      2. Agregue o modifique la configuracion del proveedor en `"providers"`
+      3. Cambie `"agents" > "defaults" > "model"` al nuevo Model ID
+      4. **Reinicie el servicio** para aplicar los cambios
 
       ## Persistencia de Datos
 
@@ -363,31 +447,47 @@ localization:
       - key: PUBLIC_DOMAIN
         name: Domain
         description: Domain apa yang ingin Anda ikat ke gateway Nanobot?
+      - key: ZEABUR_AI_HUB_API_KEY
+        name: Kunci API Zeabur AI Hub
+        description: Kunci API Zeabur AI Hub untuk akses multi-model (dapatkan di zeabur.com). Direkomendasikan untuk pengguna Zeabur. Kosongkan untuk menggunakan penyedia lain.
       - key: OPENROUTER_API_KEY
         name: Kunci API OpenRouter
         description: Kunci API OpenRouter Anda untuk akses multi-model (dapatkan di openrouter.ai). Kosongkan untuk mengonfigurasi nanti.
+      - key: TELEGRAM_BOT_TOKEN
+        name: Token Bot Telegram
+        description: Token bot Telegram Anda dari BotFather. Kosongkan untuk mengonfigurasi nanti.
     readme: |
       # Nanobot
 
       Nanobot adalah framework asisten AI pribadi yang sangat ringan (~4K baris kode agen inti) dari [HKUDS](https://github.com/HKUDS/nanobot). Mendukung berbagai penyedia LLM dan terhubung ke berbagai platform pesan melalui arsitektur Gateway terpadu.
 
-      ## Penyedia LLM yang Didukung
-
-      OpenRouter (direkomendasikan, gateway multi-model), Anthropic, OpenAI, DeepSeek, Groq, Gemini, DashScope, Moonshot, Zhipu, dan model lokal melalui vLLM.
-
       ## Platform Chat yang Didukung
 
       Telegram, Discord, Slack, DingTalk, Feishu, QQ, dan Email.
 
-      > **Catatan:** WhatsApp memerlukan jembatan Node.js yang hanya tersedia saat membangun dari kode sumber. Template ini diinstal dari PyPI dan tidak menyertakan dukungan WhatsApp.
-
-      ## Penggunaan
+      ## Mulai Cepat
 
       1. Setelah deploy, gateway Nanobot akan dimulai secara otomatis
-      2. **Konfigurasi model AI** (pilih salah satu):
-         - **OpenRouter** (direkomendasikan): Jika Anda memasukkan Kunci API saat deploy, sudah dikonfigurasi dengan `openrouter/anthropic/claude-sonnet-4-20250514` sebagai model default
-         - **Penyedia lain**: Edit `/root/.nanobot/config.json` melalui tab **Files** untuk menambahkan kunci API penyedia
-      3. **Siapkan platform chat** (opsional): Tambahkan konfigurasi saluran ke file konfigurasi dan restart layanan
+      2. Jika Anda memasukkan kunci API saat deploy (Zeabur AI Hub atau OpenRouter), model chat sudah dikonfigurasi
+      3. Hubungkan platform chat (Telegram / Discord) atau gunakan CLI untuk mulai
+
+      ## Penyedia LLM
+
+      Nanobot mendukung berbagai penyedia. Anda dapat beralih kapan saja dengan mengedit `/root/.nanobot/config.json` di tab **Files** dan me-restart layanan.
+
+      | Penyedia | Konfigurasi `providers` | Contoh Model ID |
+      |----------|------------------------|----------------|
+      | Zeabur AI Hub | `"openai": {"api_key":"...","api_base":"https://hnd1.aihub.zeabur.ai/v1"}` | `openai/claude-sonnet-4-5` |
+      | OpenRouter | `"openrouter": {"api_key":"sk-or-..."}` | `openrouter/anthropic/claude-sonnet-4` |
+      | Anthropic | `"anthropic": {"api_key":"sk-ant-..."}` | `anthropic/claude-sonnet-4-5` |
+      | OpenAI | `"openai": {"api_key":"sk-..."}` | `openai/gpt-4o` |
+      | DeepSeek | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
+
+      **Cara beralih penyedia:**
+      1. Buka `/root/.nanobot/config.json` di tab **Files**
+      2. Tambahkan atau ubah konfigurasi penyedia di `"providers"`
+      3. Ubah `"agents" > "defaults" > "model"` ke Model ID baru
+      4. **Restart layanan** agar perubahan diterapkan
 
       ## Persistensi Data
 
