@@ -71,6 +71,7 @@ spec:
       1. Go to your service's **Environment Variables** tab in Zeabur dashboard
       2. Add `TELEGRAM_BOT_TOKEN` with your bot token
       3. Restart the service
+      4. The Telegram plugin will be auto-enabled on restart. If the bot does not start, go to **Settings → Config** and verify the plugin is enabled: `"plugins": { "entries": { "telegram": { "enabled": true } } }`. To disable, set `enabled` to `false`.
 
       **Pairing your Telegram account:**
       1. Send `/start` to your bot in Telegram
@@ -1037,6 +1038,7 @@ localization:
       1. 前往 Zeabur 控制台的服務**環境變數**頁籤
       2. 新增 `TELEGRAM_BOT_TOKEN` 並填入您的 Token
       3. 重新啟動服務
+      4. 重啟後 Telegram 外掛會自動啟用。若機器人未啟動，請前往 **Settings → Config** 確認外掛已啟用：`"plugins": { "entries": { "telegram": { "enabled": true } } }`。如需停用，將 `enabled` 設為 `false`。
 
       **配對您的 Telegram 帳號：**
       1. 在 Telegram 向您的機器人發送 `/start`
@@ -1253,6 +1255,7 @@ localization:
       1. 前往 Zeabur 控制台的服务**环境变量**页签
       2. 添加 `TELEGRAM_BOT_TOKEN` 并填入您的 Token
       3. 重新启动服务
+      4. 重启后 Telegram 插件会自动启用。若机器人未启动，请前往 **Settings → Config** 确认插件已启用：`"plugins": { "entries": { "telegram": { "enabled": true } } }`。如需停用，将 `enabled` 设为 `false`。
 
       **配对您的 Telegram 账号：**
       1. 在 Telegram 向您的机器人发送 `/start`
@@ -1469,6 +1472,7 @@ localization:
       1. Zeabur ダッシュボードのサービス**変数**タブに移動
       2. `TELEGRAM_BOT_TOKEN` を追加してトークンを入力
       3. サービスを再起動
+      4. 再起動後、Telegram プラグインが自動的に有効化されます。ボットが起動しない場合は、**Settings → Config** でプラグインが有効になっているか確認してください：`"plugins": { "entries": { "telegram": { "enabled": true } } }`。無効にするには `enabled` を `false` に設定します。
 
       **Telegram アカウントのペアリング：**
       1. Telegram でボットに `/start` を送信
@@ -1685,6 +1689,7 @@ localization:
       1. Vaya a la pestaña **Variable** de su servicio en el panel de Zeabur
       2. Agregue `TELEGRAM_BOT_TOKEN` con su token de bot
       3. Reinicie el servicio
+      4. El plugin de Telegram se habilitará automáticamente al reiniciar. Si el bot no se inicia, vaya a **Settings → Config** y verifique que el plugin esté habilitado: `"plugins": { "entries": { "telegram": { "enabled": true } } }`. Para deshabilitar, establezca `enabled` en `false`.
 
       **Vincular su cuenta de Telegram:**
       1. Envíe `/start` a su bot en Telegram
@@ -1901,6 +1906,7 @@ localization:
       1. Buka tab **Variabel** layanan Anda di dashboard Zeabur
       2. Tambahkan `TELEGRAM_BOT_TOKEN` dengan token bot Anda
       3. Restart layanan
+      4. Plugin Telegram akan diaktifkan secara otomatis saat restart. Jika bot tidak berjalan, buka **Settings → Config** dan pastikan plugin sudah diaktifkan: `"plugins": { "entries": { "telegram": { "enabled": true } } }`. Untuk menonaktifkan, atur `enabled` ke `false`.
 
       **Menghubungkan akun Telegram Anda:**
       1. Kirim `/start` ke bot Anda di Telegram
