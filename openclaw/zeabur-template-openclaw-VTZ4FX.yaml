@@ -396,6 +396,7 @@ spec:
                     try {
                       const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
                       let changed = false;
+                      const enabledPlugins = new Set();
                       for (const { env, channel, key } of envMap) {
                         const val = process.env[env];
                         if (!val) continue;
@@ -403,11 +404,29 @@ spec:
                         if (!config.channels[channel]) config.channels[channel] = {};
                         if (config.channels[channel][key]) {
                           console.log(env + ': already set in config, skipping');
+                        } else {
+                          config.channels[channel][key] = val;
+                          changed = true;
+                          console.log(env + ' -> channels.' + channel + '.' + key);
+                        }
+                        enabledPlugins.add(channel);
+                      }
+                      // Auto-enable bundled channel plugins (they are disabled by default)
+                      // Respect explicit enabled:false (user intentionally disabled the plugin)
+                      for (const pluginId of enabledPlugins) {
+                        if (!config.plugins) config.plugins = {};
+                        if (!config.plugins.entries) config.plugins.entries = {};
+                        const entry = config.plugins.entries[pluginId];
+                        if (entry && entry.enabled === false) {
+                          console.log('Plugin ' + pluginId + ': explicitly disabled, skipping');
                           continue;
                         }
-                        config.channels[channel][key] = val;
-                        changed = true;
-                        console.log(env + ' -> channels.' + channel + '.' + key);
+                        if (!entry) config.plugins.entries[pluginId] = {};
+                        if (config.plugins.entries[pluginId].enabled !== true) {
+                          config.plugins.entries[pluginId].enabled = true;
+                          changed = true;
+                          console.log('Auto-enabled plugin: ' + pluginId);
+                        }
                       }
                       if (changed) {
                         fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
