@@ -102,6 +102,38 @@ spec:
       3. A QR code will appear - scan it with WhatsApp on your phone
       4. Connection complete! You can now message yourself on WhatsApp to chat with OpenClaw
 
+      ## LINE Bot Setup
+      **Creating a LINE Messaging API channel:**
+      1. Create a [LINE Official Account](https://entry.line.biz/) if you don't have one
+      2. Go to [LINE Developers Console](https://developers.line.biz/console/)
+      3. Create or select a **Provider**
+      4. Create a new **Messaging API** channel and link it to your LINE Official Account
+      4. In the **Messaging API** tab, issue a **Channel access token** (long-lived)
+      5. In the **Basic settings** tab, copy the **Channel secret**
+
+      **Adding credentials to Zeabur:**
+      1. Go to your service's **Environment Variables** tab in Zeabur dashboard
+      2. Add `LINE_CHANNEL_ACCESS_TOKEN` with your channel access token
+      3. Add `LINE_CHANNEL_SECRET` with your channel secret
+      4. Restart the service
+      5. The LINE plugin will be auto-enabled on restart. If the bot does not start, go to **Settings → Config** and verify the plugin is enabled: `"plugins": { "entries": { "line": { "enabled": true } } }`
+
+      **Setting up the webhook:**
+      1. After restarting, your webhook URL is: `https://<your-domain>/line/webhook`
+      2. In [LINE Developers Console](https://developers.line.biz/console/), go to your channel's **Messaging API** tab
+      3. Set **Webhook URL** to `https://<your-domain>/line/webhook`
+      4. Enable **Use webhook**
+      5. (Recommended) Disable **Auto-reply messages** and **Greeting messages** in the LINE Official Account Manager
+
+      **Pairing your LINE account:**
+      1. Add your bot as a friend on LINE and send any message
+      2. The bot will reply with a pairing code (e.g., `JN4MSY23`)
+      3. Approve the pairing using one of these methods:
+         - **Web Chat**: In the OpenClaw web interface chat box, type `openclaw pairing approve line <code>`
+         - **Terminal**: Open **Command** in Zeabur dashboard, run `openclaw pairing approve line <code>`
+      4. You'll see: `Approved line sender <user-id>.`
+      5. Now you can chat with the bot on LINE!
+
       For other messaging platforms (Discord, Slack, etc.), see the [Channels documentation](https://docs.openclaw.ai/channels).
 
       ## AI Model Configuration
@@ -1069,6 +1101,38 @@ localization:
       3. 會出現 QR Code - 使用您手機上的 WhatsApp 掃描
       4. 連結完成！現在您可以在 WhatsApp 中傳訊息給自己來與 OpenClaw 對話
 
+      ## LINE 機器人設定
+      **建立 LINE Messaging API 頻道：**
+      1. 若尚未建立 [LINE 官方帳號](https://entry.line.biz/)，請先建立一個
+      2. 前往 [LINE Developers Console](https://developers.line.biz/console/)
+      3. 建立或選擇一個 **Provider**
+      4. 建立新的 **Messaging API** 頻道，並連結您的 LINE 官方帳號
+      4. 在 **Messaging API** 頁籤中，發行 **Channel access token**（長期有效）
+      5. 在 **Basic settings** 頁籤中，複製 **Channel secret**
+
+      **將憑證加入 Zeabur：**
+      1. 前往 Zeabur 控制台的服務**環境變數**頁籤
+      2. 新增 `LINE_CHANNEL_ACCESS_TOKEN` 並填入您的 Channel access token
+      3. 新增 `LINE_CHANNEL_SECRET` 並填入您的 Channel secret
+      4. 重新啟動服務
+      5. 重啟後 LINE 外掛會自動啟用。若機器人未啟動，請前往 **Settings → Config** 確認外掛已啟用：`"plugins": { "entries": { "line": { "enabled": true } } }`
+
+      **設定 Webhook：**
+      1. 重啟後，您的 Webhook URL 為：`https://<your-domain>/line/webhook`
+      2. 在 [LINE Developers Console](https://developers.line.biz/console/) 中，前往頻道的 **Messaging API** 頁籤
+      3. 將 **Webhook URL** 設為 `https://<your-domain>/line/webhook`
+      4. 啟用 **Use webhook**
+      5. （建議）在 LINE 官方帳號管理後台關閉**自動回應訊息**和**加入好友的歡迎訊息**
+
+      **配對您的 LINE 帳號：**
+      1. 在 LINE 上加機器人為好友並傳送任意訊息
+      2. 機器人會回覆配對碼（例如 `JN4MSY23`）
+      3. 使用以下任一方式核准配對：
+         - **網頁 Chat**：在 OpenClaw 網頁介面的對話框輸入 `openclaw pairing approve line <配對碼>`
+         - **終端機**：在 Zeabur 控制台開啟 **指令** 進入容器終端，執行 `openclaw pairing approve line <配對碼>`
+      4. 看到 `Approved line sender <user-id>.` 表示配對成功
+      5. 現在可以在 LINE 上與機器人對話了！
+
       如需設定其他通訊平台（Discord、Slack 等），請參閱 [Channels 文件](https://docs.openclaw.ai/channels)。
 
       ## AI 模型設定
@@ -1285,6 +1349,38 @@ localization:
       2. 执行：`openclaw channels login`
       3. 会出现 QR Code - 使用您手机上的 WhatsApp 扫描
       4. 连接完成！现在您可以在 WhatsApp 中给自己发消息来与 OpenClaw 对话
+
+      ## LINE 机器人设置
+      **创建 LINE Messaging API 频道：**
+      1. 若尚未创建 [LINE 官方账号](https://entry.line.biz/)，请先创建一个
+      2. 前往 [LINE Developers Console](https://developers.line.biz/console/)
+      3. 创建或选择一个 **Provider**
+      4. 创建新的 **Messaging API** 频道，并关联您的 LINE 官方账号
+      4. 在 **Messaging API** 页签中，签发 **Channel access token**（长期有效）
+      5. 在 **Basic settings** 页签中，复制 **Channel secret**
+
+      **将凭证添加到 Zeabur：**
+      1. 前往 Zeabur 控制台的服务**环境变量**页签
+      2. 添加 `LINE_CHANNEL_ACCESS_TOKEN` 并填入您的 Channel access token
+      3. 添加 `LINE_CHANNEL_SECRET` 并填入您的 Channel secret
+      4. 重新启动服务
+      5. 重启后 LINE 插件会自动启用。若机器人未启动，请前往 **Settings → Config** 确认插件已启用：`"plugins": { "entries": { "line": { "enabled": true } } }`
+
+      **设置 Webhook：**
+      1. 重启后，您的 Webhook URL 为：`https://<your-domain>/line/webhook`
+      2. 在 [LINE Developers Console](https://developers.line.biz/console/) 中，前往频道的 **Messaging API** 页签
+      3. 将 **Webhook URL** 设为 `https://<your-domain>/line/webhook`
+      4. 启用 **Use webhook**
+      5. （建议）在 LINE 官方账号管理后台关闭**自动回复消息**和**加入好友的欢迎消息**
+
+      **配对您的 LINE 账号：**
+      1. 在 LINE 上加机器人为好友并发送任意消息
+      2. 机器人会回复配对码（例如 `JN4MSY23`）
+      3. 使用以下任一方式核准配对：
+         - **网页 Chat**：在 OpenClaw 网页界面的对话框输入 `openclaw pairing approve line <配对码>`
+         - **终端**：在 Zeabur 控制台打开**命令**进入容器终端，执行 `openclaw pairing approve line <配对码>`
+      4. 看到 `Approved line sender <user-id>.` 表示配对成功
+      5. 现在可以在 LINE 上与机器人对话了！
 
       如需设置其他通讯平台（Discord、Slack 等），请参阅 [Channels 文档](https://docs.openclaw.ai/channels)。
 
@@ -1503,6 +1599,38 @@ localization:
       3. QR コードが表示されます - スマートフォンの WhatsApp でスキャンしてください
       4. 接続完了！WhatsApp で自分自身にメッセージを送ると OpenClaw と会話できます
 
+      ## LINE ボット設定
+      **LINE Messaging API チャンネルの作成：**
+      1. [LINE 公式アカウント](https://entry.line.biz/)をまだ作成していない場合は、先に作成してください
+      2. [LINE Developers Console](https://developers.line.biz/console/) にアクセス
+      3. **Provider** を作成または選択
+      4. 新しい **Messaging API** チャンネルを作成し、LINE 公式アカウントにリンク
+      4. **Messaging API** タブで **Channel access token**（長期有効）を発行
+      5. **Basic settings** タブで **Channel secret** をコピー
+
+      **Zeabur に認証情報を追加：**
+      1. Zeabur ダッシュボードのサービス**変数**タブに移動
+      2. `LINE_CHANNEL_ACCESS_TOKEN` を追加して Channel access token を入力
+      3. `LINE_CHANNEL_SECRET` を追加して Channel secret を入力
+      4. サービスを再起動
+      5. 再起動後、LINE プラグインが自動的に有効化されます。ボットが起動しない場合は、**Settings → Config** でプラグインが有効になっているか確認してください：`"plugins": { "entries": { "line": { "enabled": true } } }`
+
+      **Webhook の設定：**
+      1. 再起動後、Webhook URL は `https://<your-domain>/line/webhook` です
+      2. [LINE Developers Console](https://developers.line.biz/console/) でチャンネルの **Messaging API** タブに移動
+      3. **Webhook URL** を `https://<your-domain>/line/webhook` に設定
+      4. **Use webhook** を有効化
+      5. （推奨）LINE 公式アカウントマネージャーで**自動応答メッセージ**と**あいさつメッセージ**を無効化
+
+      **LINE アカウントのペアリング：**
+      1. LINE でボットを友だち追加し、任意のメッセージを送信
+      2. ボットがペアリングコードを返信（例：`JN4MSY23`）
+      3. 以下のいずれかの方法でペアリングを承認：
+         - **Web Chat**：OpenClaw のウェブインターフェースのチャットボックスに `openclaw pairing approve line <コード>` を入力
+         - **ターミナル**：Zeabur ダッシュボードの**コマンド**を開き、`openclaw pairing approve line <コード>` を実行
+      4. `Approved line sender <user-id>.` と表示されればペアリング完了
+      5. LINE でボットとの会話を開始できます！
+
       その他のメッセージングプラットフォーム（Discord、Slack など）については、[Channels ドキュメント](https://docs.openclaw.ai/channels)をご覧ください。
 
       ## AI モデル設定
@@ -1720,6 +1848,38 @@ localization:
       3. Aparecerá un código QR - escanéelo con WhatsApp en su teléfono
       4. ¡Conexión completa! Ahora puede enviarse mensajes a sí mismo en WhatsApp para chatear con OpenClaw
 
+      ## Configuración de Bot de LINE
+      **Crear un canal de LINE Messaging API:**
+      1. Si aún no tiene una [Cuenta Oficial de LINE](https://entry.line.biz/), créela primero
+      2. Vaya a [LINE Developers Console](https://developers.line.biz/console/)
+      3. Cree o seleccione un **Provider**
+      4. Cree un nuevo canal de **Messaging API** y vincúlelo a su Cuenta Oficial de LINE
+      4. En la pestaña **Messaging API**, emita un **Channel access token** (de larga duración)
+      5. En la pestaña **Basic settings**, copie el **Channel secret**
+
+      **Agregar credenciales a Zeabur:**
+      1. Vaya a la pestaña **Variable** de su servicio en el panel de Zeabur
+      2. Agregue `LINE_CHANNEL_ACCESS_TOKEN` con su Channel access token
+      3. Agregue `LINE_CHANNEL_SECRET` con su Channel secret
+      4. Reinicie el servicio
+      5. El plugin de LINE se habilitará automáticamente al reiniciar. Si el bot no se inicia, vaya a **Settings → Config** y verifique que el plugin esté habilitado: `"plugins": { "entries": { "line": { "enabled": true } } }`
+
+      **Configurar el Webhook:**
+      1. Después de reiniciar, su URL de webhook es: `https://<your-domain>/line/webhook`
+      2. En [LINE Developers Console](https://developers.line.biz/console/), vaya a la pestaña **Messaging API** de su canal
+      3. Establezca **Webhook URL** como `https://<your-domain>/line/webhook`
+      4. Habilite **Use webhook**
+      5. (Recomendado) Desactive **Mensajes de respuesta automática** y **Mensajes de bienvenida** en el Administrador de cuenta oficial de LINE
+
+      **Vincular su cuenta de LINE:**
+      1. Agregue el bot como amigo en LINE y envíe cualquier mensaje
+      2. El bot responderá con un código de emparejamiento (ej. `JN4MSY23`)
+      3. Apruebe el emparejamiento usando uno de estos métodos:
+         - **Chat Web**: En la interfaz web de OpenClaw, escriba `openclaw pairing approve line <código>`
+         - **Terminal**: Abra **Comando** en el panel de Zeabur, ejecute `openclaw pairing approve line <código>`
+      4. Verá: `Approved line sender <user-id>.`
+      5. ¡Ahora puede chatear con el bot en LINE!
+
       Para otras plataformas de mensajería (Discord, Slack, etc.), consulte la [documentación de Canales](https://docs.openclaw.ai/channels).
 
       ## Configuración del Modelo de AI
@@ -1936,6 +2096,38 @@ localization:
       2. Jalankan: `openclaw channels login`
       3. QR Code akan muncul - pindai dengan WhatsApp di ponsel Anda
       4. Koneksi selesai! Sekarang Anda dapat mengirim pesan ke diri sendiri di WhatsApp untuk mengobrol dengan OpenClaw
+
+      ## Pengaturan Bot LINE
+      **Membuat channel LINE Messaging API:**
+      1. Jika belum memiliki [Akun Resmi LINE](https://entry.line.biz/), buat terlebih dahulu
+      2. Buka [LINE Developers Console](https://developers.line.biz/console/)
+      3. Buat atau pilih **Provider**
+      4. Buat channel **Messaging API** baru dan hubungkan ke Akun Resmi LINE Anda
+      4. Di tab **Messaging API**, terbitkan **Channel access token** (berlaku lama)
+      5. Di tab **Basic settings**, salin **Channel secret**
+
+      **Menambahkan kredensial ke Zeabur:**
+      1. Buka tab **Variabel** layanan Anda di dashboard Zeabur
+      2. Tambahkan `LINE_CHANNEL_ACCESS_TOKEN` dengan Channel access token Anda
+      3. Tambahkan `LINE_CHANNEL_SECRET` dengan Channel secret Anda
+      4. Restart layanan
+      5. Plugin LINE akan diaktifkan secara otomatis saat restart. Jika bot tidak berjalan, buka **Settings → Config** dan pastikan plugin sudah diaktifkan: `"plugins": { "entries": { "line": { "enabled": true } } }`
+
+      **Mengatur Webhook:**
+      1. Setelah restart, URL webhook Anda adalah: `https://<your-domain>/line/webhook`
+      2. Di [LINE Developers Console](https://developers.line.biz/console/), buka tab **Messaging API** channel Anda
+      3. Atur **Webhook URL** ke `https://<your-domain>/line/webhook`
+      4. Aktifkan **Use webhook**
+      5. (Disarankan) Nonaktifkan **Pesan balasan otomatis** dan **Pesan sambutan** di LINE Official Account Manager
+
+      **Menghubungkan akun LINE Anda:**
+      1. Tambahkan bot sebagai teman di LINE dan kirim pesan apa saja
+      2. Bot akan membalas dengan kode pairing (mis. `JN4MSY23`)
+      3. Setujui pairing menggunakan salah satu metode berikut:
+         - **Web Chat**: Di antarmuka web OpenClaw, ketik `openclaw pairing approve line <kode>`
+         - **Terminal**: Buka **Command** di dashboard Zeabur, jalankan `openclaw pairing approve line <kode>`
+      4. Anda akan melihat: `Approved line sender <user-id>.`
+      5. Sekarang Anda dapat mengobrol dengan bot di LINE!
 
       Untuk platform perpesanan lainnya (Discord, Slack, dll.), lihat [dokumentasi Channels](https://docs.openclaw.ai/channels).
 
