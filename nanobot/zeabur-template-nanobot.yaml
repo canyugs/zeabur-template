@@ -15,10 +15,6 @@ spec:
       - Telegram
       - Discord
     variables:
-      - key: PUBLIC_DOMAIN
-        type: DOMAIN
-        name: Domain
-        description: What domain do you want to bind Nanobot gateway to?
       - key: ZEABUR_AI_HUB_API_KEY
         type: STRING
         name: Zeabur AI Hub API Key
@@ -46,7 +42,8 @@ spec:
 
       1. After deployment, the Nanobot gateway starts automatically
       2. If you entered an API key during deployment (Zeabur AI Hub or OpenRouter), a chat model is already configured
-      3. Connect a chat platform (Telegram / Discord) or use the CLI to start chatting
+      3. If you entered a Telegram bot token, the bot is ready — send it a message to start chatting
+      4. To add more platforms or change settings, edit `/root/.nanobot/config.json` via the **Files** tab
 
       ## LLM Providers
 
@@ -80,16 +77,38 @@ spec:
 
       ## Chat Platforms
 
-      Set up during deployment (Telegram token) or add later in config:
+      Supported: Telegram, Discord, Slack, DingTalk, Feishu, QQ, and Email.
+
+      **Telegram setup:**
+      1. Search for `@BotFather` on Telegram and send `/newbot`
+      2. Follow the prompts to set the bot name and username
+      3. Copy the bot token you receive
+      4. Enter it during deployment, or add it to config later
+
+      If you entered the bot token during deployment, it's already active. Otherwise, add it to config:
 
       ```json
       "channels": {
-        "telegram": { "enabled": true, "token": "BOT_TOKEN", "allow_from": [] },
-        "discord": { "enabled": true, "token": "BOT_TOKEN", "allow_from": [] }
+        "telegram": { "enabled": true, "token": "BOT_TOKEN", "allow_from": [] }
       }
       ```
 
-      Restart the service after changes.
+      **Other platforms** — add the corresponding channel in config and restart:
+
+      ```json
+      "channels": {
+        "discord": { "enabled": true, "token": "BOT_TOKEN", "allow_from": [] },
+        "slack": { "enabled": true, "bot_token": "xoxb-...", "app_token": "xapp-...", "allow_from": [] }
+      }
+      ```
+
+      **`allow_from`** — controls who can talk to the bot. Empty list `[]` = anyone can use it. To restrict access, add user IDs:
+
+      ```json
+      "allow_from": ["123456789", "987654321"]
+      ```
+
+      Restart the service after any config changes.
 
       ## CLI Commands
 
@@ -111,16 +130,15 @@ spec:
       2. Edit config via **Files** tab to fix issues
       3. Restart the service
 
-      **Update version:** Modify the startup script to install a specific version: `pip install nanobot-ai==0.1.3.post6`
+      **Update version:** Modify the startup script to install a specific version: `uv pip install --system nanobot-ai==0.1.3.post6`
 
     services:
       - name: nanobot
         icon: https://raw.githubusercontent.com/HKUDS/nanobot/main/nanobot_logo.png
         template: PREBUILT_V2
-        domainKey: PUBLIC_DOMAIN
         spec:
           source:
-            image: python:3.12-slim-bookworm
+            image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
             command:
               - /bin/sh
               - -c
@@ -142,7 +160,7 @@ spec:
 
                 echo "=== Installing nanobot-ai ==="
                 if ! command -v nanobot >/dev/null 2>&1; then
-                  pip install nanobot-ai
+                  uv pip install --system nanobot-ai
                 else
                   echo "nanobot-ai already installed"
                 fi
@@ -232,9 +250,6 @@ localization:
     description: |
       Nanobot 是一個超輕量級個人 AI 助手（約 4K 行核心程式碼），支援多種 LLM 供應商和聊天平台，包括 Telegram、Discord、Slack、釘釘、飛書、QQ 和電子郵件。
     variables:
-      - key: PUBLIC_DOMAIN
-        name: 網域
-        description: 您想將 Nanobot 閘道綁定到哪個網域？
       - key: ZEABUR_AI_HUB_API_KEY
         name: Zeabur AI Hub API 金鑰
         description: Zeabur AI Hub API 金鑰，用於多模型存取（在 zeabur.com 取得）。推薦 Zeabur 用戶使用。留空可使用其他供應商。
@@ -257,11 +272,12 @@ localization:
 
       1. 部署後，Nanobot 閘道將自動啟動
       2. 如果您在部署時輸入了 API 金鑰（Zeabur AI Hub 或 OpenRouter），聊天模型已自動設定
-      3. 連接聊天平台（Telegram / Discord）或使用 CLI 開始對話
+      3. 如果您輸入了 Telegram bot token，機器人已就緒 — 直接發訊息即可開始對話
+      4. 如需新增更多平台或修改設定，透過**檔案**標籤編輯 `/root/.nanobot/config.json`
 
       ## LLM 供應商
 
-      Nanobot 支援多種供應商，您可以隨時透過 **檔案**標籤編輯 `/root/.nanobot/config.json` 並重啟服務來切換。
+      Nanobot 支援多種供應商，您可以隨時透過**檔案**標籤編輯 `/root/.nanobot/config.json` 並重啟服務來切換。
 
       | 供應商 | `providers` 設定 | 模型 ID 範例 |
       |--------|-----------------|-------------|
@@ -272,10 +288,44 @@ localization:
       | DeepSeek | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
 
       **切換供應商步驟：**
-      1. 在 **檔案**標籤開啟 `/root/.nanobot/config.json`
+      1. 在**檔案**標籤開啟 `/root/.nanobot/config.json`
       2. 在 `"providers"` 中新增或修改供應商設定
       3. 將 `"agents" > "defaults" > "model"` 改為新的模型 ID
       4. **重啟服務**使變更生效
+
+      ## 聊天平台
+
+      支援：Telegram、Discord、Slack、釘釘、飛書、QQ 和電子郵件。
+
+      **Telegram 設定步驟：**
+      1. 在 Telegram 搜尋 `@BotFather` 並發送 `/newbot`
+      2. 依照提示設定 bot 名稱和 username
+      3. 複製取得的 bot token
+      4. 在部署時填入，或事後加到設定檔
+
+      如果您在部署時輸入了 bot token，已自動啟用。否則在設定檔中新增：
+
+      ```json
+      "channels": {
+        "telegram": { "enabled": true, "token": "BOT_TOKEN", "allow_from": [] }
+      }
+      ```
+
+      **其他平台** — 在設定檔中新增對應的頻道並重啟：
+
+      ```json
+      "channels": {
+        "discord": { "enabled": true, "token": "BOT_TOKEN", "allow_from": [] }
+      }
+      ```
+
+      **`allow_from`** — 控制誰可以與機器人對話。空清單 `[]` = 任何人都可使用。如需限制存取，加入使用者 ID：
+
+      ```json
+      "allow_from": ["123456789", "987654321"]
+      ```
+
+      修改設定後需重啟服務。
 
       ## 資料持久化
 
@@ -285,9 +335,6 @@ localization:
     description: |
       Nanobot 是一个超轻量级个人 AI 助手（约 4K 行核心代码），支持多种 LLM 供应商和聊天平台，包括 Telegram、Discord、Slack、钉钉、飞书、QQ 和电子邮件。
     variables:
-      - key: PUBLIC_DOMAIN
-        name: 域名
-        description: 您想将 Nanobot 网关绑定到哪个域名？
       - key: ZEABUR_AI_HUB_API_KEY
         name: Zeabur AI Hub API 密钥
         description: Zeabur AI Hub API 密钥，用于多模型访问（在 zeabur.com 获取）。推荐 Zeabur 用户使用。留空可使用其他供应商。
@@ -310,11 +357,12 @@ localization:
 
       1. 部署后，Nanobot 网关将自动启动
       2. 如果您在部署时输入了 API 密钥（Zeabur AI Hub 或 OpenRouter），聊天模型已自动配置
-      3. 连接聊天平台（Telegram / Discord）或使用 CLI 开始对话
+      3. 如果您输入了 Telegram bot token，机器人已就绪 — 直接发消息即可开始对话
+      4. 如需添加更多平台或修改设置，通过**文件**标签编辑 `/root/.nanobot/config.json`
 
       ## LLM 供应商
 
-      Nanobot 支持多种供应商，您可以随时通过 **文件**标签编辑 `/root/.nanobot/config.json` 并重启服务来切换。
+      Nanobot 支持多种供应商，您可以随时通过**文件**标签编辑 `/root/.nanobot/config.json` 并重启服务来切换。
 
       | 供应商 | `providers` 配置 | 模型 ID 示例 |
       |--------|-----------------|-------------|
@@ -325,10 +373,44 @@ localization:
       | DeepSeek | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
 
       **切换供应商步骤：**
-      1. 在 **文件**标签打开 `/root/.nanobot/config.json`
+      1. 在**文件**标签打开 `/root/.nanobot/config.json`
       2. 在 `"providers"` 中添加或修改供应商配置
       3. 将 `"agents" > "defaults" > "model"` 改为新的模型 ID
       4. **重启服务**使更改生效
+
+      ## 聊天平台
+
+      支持：Telegram、Discord、Slack、钉钉、飞书、QQ 和电子邮件。
+
+      **Telegram 设置步骤：**
+      1. 在 Telegram 搜索 `@BotFather` 并发送 `/newbot`
+      2. 按照提示设置 bot 名称和 username
+      3. 复制获得的 bot token
+      4. 在部署时填入，或之后添加到配置文件
+
+      如果您在部署时输入了 bot token，已自动启用。否则在配置文件中添加：
+
+      ```json
+      "channels": {
+        "telegram": { "enabled": true, "token": "BOT_TOKEN", "allow_from": [] }
+      }
+      ```
+
+      **其他平台** — 在配置文件中添加对应的频道并重启：
+
+      ```json
+      "channels": {
+        "discord": { "enabled": true, "token": "BOT_TOKEN", "allow_from": [] }
+      }
+      ```
+
+      **`allow_from`** — 控制谁可以与机器人对话。空列表 `[]` = 任何人都可使用。如需限制访问，添加用户 ID：
+
+      ```json
+      "allow_from": ["123456789", "987654321"]
+      ```
+
+      修改配置后需重启服务。
 
       ## 数据持久化
 
@@ -338,9 +420,6 @@ localization:
     description: |
       Nanobot は超軽量パーソナル AI アシスタント（コアコード約4K行）で、複数の LLM プロバイダーと Telegram、Discord、Slack、DingTalk、Feishu、QQ、メールなどのチャットプラットフォームをサポートしています。
     variables:
-      - key: PUBLIC_DOMAIN
-        name: ドメイン
-        description: Nanobot ゲートウェイにどのドメインをバインドしますか？
       - key: ZEABUR_AI_HUB_API_KEY
         name: Zeabur AI Hub API キー
         description: Zeabur AI Hub API キー（zeabur.com で取得）。Zeabur ユーザーにおすすめ。空欄の場合は他のプロバイダーを使用できます。
@@ -363,7 +442,8 @@ localization:
 
       1. デプロイ後、Nanobot ゲートウェイが自動的に起動します
       2. デプロイ時に API キー（Zeabur AI Hub または OpenRouter）を入力した場合、チャットモデルは自動設定済みです
-      3. チャットプラットフォーム（Telegram / Discord）を接続するか、CLI で会話を開始
+      3. Telegram ボットトークンを入力した場合、ボットは準備完了 — メッセージを送信して会話を開始
+      4. プラットフォームの追加や設定変更は **Files** タブから `/root/.nanobot/config.json` を編集
 
       ## LLM プロバイダー
 
@@ -383,6 +463,40 @@ localization:
       3. `"agents" > "defaults" > "model"` を新しいモデル ID に変更
       4. **サービスを再起動**して変更を反映
 
+      ## チャットプラットフォーム
+
+      対応：Telegram、Discord、Slack、DingTalk、Feishu、QQ、メール。
+
+      **Telegram セットアップ手順：**
+      1. Telegram で `@BotFather` を検索し `/newbot` を送信
+      2. プロンプトに従ってボット名とユーザー名を設定
+      3. 取得したボットトークンをコピー
+      4. デプロイ時に入力するか、後で設定ファイルに追加
+
+      デプロイ時にボットトークンを入力した場合、自動的に有効化済みです。そうでない場合は設定ファイルに追加：
+
+      ```json
+      "channels": {
+        "telegram": { "enabled": true, "token": "BOT_TOKEN", "allow_from": [] }
+      }
+      ```
+
+      **その他のプラットフォーム** — 設定ファイルにチャネルを追加して再起動：
+
+      ```json
+      "channels": {
+        "discord": { "enabled": true, "token": "BOT_TOKEN", "allow_from": [] }
+      }
+      ```
+
+      **`allow_from`** — ボットと会話できるユーザーを制御。空リスト `[]` = 誰でも利用可能。アクセスを制限するにはユーザー ID を追加：
+
+      ```json
+      "allow_from": ["123456789", "987654321"]
+      ```
+
+      設定変更後はサービスの再起動が必要です。
+
       ## データの永続化
 
       すべてのデータは `/root/.nanobot`（永続ボリュームとしてマウント）に保存されます。
@@ -391,9 +505,6 @@ localization:
     description: |
       Nanobot es un asistente personal de IA ultraligero (~4K lineas de codigo central) que soporta multiples proveedores de LLM y plataformas de chat incluyendo Telegram, Discord, Slack, DingTalk, Feishu, QQ y correo electronico.
     variables:
-      - key: PUBLIC_DOMAIN
-        name: Dominio
-        description: A que dominio desea vincular la puerta de enlace de Nanobot?
       - key: ZEABUR_AI_HUB_API_KEY
         name: Clave API de Zeabur AI Hub
         description: Clave API de Zeabur AI Hub para acceso multimodelo (obtenga una en zeabur.com). Recomendado para usuarios de Zeabur. Dejelo vacio para usar otros proveedores.
@@ -416,7 +527,8 @@ localization:
 
       1. Despues del despliegue, la puerta de enlace de Nanobot se inicia automaticamente
       2. Si ingreso una clave API durante el despliegue (Zeabur AI Hub u OpenRouter), el modelo de chat ya esta configurado
-      3. Conecte una plataforma de chat (Telegram / Discord) o use el CLI para comenzar
+      3. Si ingreso un token de bot de Telegram, el bot esta listo — envie un mensaje para comenzar
+      4. Para agregar mas plataformas o cambiar configuracion, edite `/root/.nanobot/config.json` en la pestana **Files**
 
       ## Proveedores de LLM
 
@@ -436,6 +548,40 @@ localization:
       3. Cambie `"agents" > "defaults" > "model"` al nuevo Model ID
       4. **Reinicie el servicio** para aplicar los cambios
 
+      ## Plataformas de Chat
+
+      Soportadas: Telegram, Discord, Slack, DingTalk, Feishu, QQ y correo electronico.
+
+      **Configuracion de Telegram:**
+      1. Busque `@BotFather` en Telegram y envie `/newbot`
+      2. Siga las instrucciones para configurar el nombre y username del bot
+      3. Copie el token del bot que reciba
+      4. Ingreselo durante el despliegue o agreguelo al config despues
+
+      Si ingreso el token del bot durante el despliegue, ya esta activo. De lo contrario, agregue en config:
+
+      ```json
+      "channels": {
+        "telegram": { "enabled": true, "token": "BOT_TOKEN", "allow_from": [] }
+      }
+      ```
+
+      **Otras plataformas** — agregue el canal correspondiente en config y reinicie:
+
+      ```json
+      "channels": {
+        "discord": { "enabled": true, "token": "BOT_TOKEN", "allow_from": [] }
+      }
+      ```
+
+      **`allow_from`** — controla quien puede hablar con el bot. Lista vacia `[]` = cualquiera puede usarlo. Para restringir acceso, agregue IDs de usuario:
+
+      ```json
+      "allow_from": ["123456789", "987654321"]
+      ```
+
+      Reinicie el servicio despues de cambios en la configuracion.
+
       ## Persistencia de Datos
 
       Todos los datos se almacenan en `/root/.nanobot` (montado como volumen persistente).
@@ -444,9 +590,6 @@ localization:
     description: |
       Nanobot adalah asisten AI pribadi yang sangat ringan (~4K baris kode inti) yang mendukung berbagai penyedia LLM dan platform chat termasuk Telegram, Discord, Slack, DingTalk, Feishu, QQ, dan Email.
     variables:
-      - key: PUBLIC_DOMAIN
-        name: Domain
-        description: Domain apa yang ingin Anda ikat ke gateway Nanobot?
       - key: ZEABUR_AI_HUB_API_KEY
         name: Kunci API Zeabur AI Hub
         description: Kunci API Zeabur AI Hub untuk akses multi-model (dapatkan di zeabur.com). Direkomendasikan untuk pengguna Zeabur. Kosongkan untuk menggunakan penyedia lain.
@@ -469,7 +612,8 @@ localization:
 
       1. Setelah deploy, gateway Nanobot akan dimulai secara otomatis
       2. Jika Anda memasukkan kunci API saat deploy (Zeabur AI Hub atau OpenRouter), model chat sudah dikonfigurasi
-      3. Hubungkan platform chat (Telegram / Discord) atau gunakan CLI untuk mulai
+      3. Jika Anda memasukkan token bot Telegram, bot sudah siap — kirim pesan untuk mulai
+      4. Untuk menambah platform atau mengubah pengaturan, edit `/root/.nanobot/config.json` di tab **Files**
 
       ## Penyedia LLM
 
@@ -488,6 +632,40 @@ localization:
       2. Tambahkan atau ubah konfigurasi penyedia di `"providers"`
       3. Ubah `"agents" > "defaults" > "model"` ke Model ID baru
       4. **Restart layanan** agar perubahan diterapkan
+
+      ## Platform Chat
+
+      Didukung: Telegram, Discord, Slack, DingTalk, Feishu, QQ, dan Email.
+
+      **Pengaturan Telegram:**
+      1. Cari `@BotFather` di Telegram dan kirim `/newbot`
+      2. Ikuti petunjuk untuk mengatur nama dan username bot
+      3. Salin token bot yang Anda terima
+      4. Masukkan saat deploy atau tambahkan ke config nanti
+
+      Jika Anda memasukkan token bot saat deploy, sudah aktif otomatis. Jika tidak, tambahkan di config:
+
+      ```json
+      "channels": {
+        "telegram": { "enabled": true, "token": "BOT_TOKEN", "allow_from": [] }
+      }
+      ```
+
+      **Platform lain** — tambahkan channel yang sesuai di config dan restart:
+
+      ```json
+      "channels": {
+        "discord": { "enabled": true, "token": "BOT_TOKEN", "allow_from": [] }
+      }
+      ```
+
+      **`allow_from`** — mengontrol siapa yang dapat berbicara dengan bot. Daftar kosong `[]` = siapa saja bisa menggunakan. Untuk membatasi akses, tambahkan ID pengguna:
+
+      ```json
+      "allow_from": ["123456789", "987654321"]
+      ```
+
+      Restart layanan setelah perubahan konfigurasi.
 
       ## Persistensi Data
 
