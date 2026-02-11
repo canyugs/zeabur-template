@@ -1,0 +1,1245 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: Talk to the City
+spec:
+  description: |
+    Talk to the City (T3C) is an open-source LLM-powered tool for collective deliberation and decision-making. It processes qualitative data and organizes similar claims into structured topic trees.
+  icon: https://avatars.githubusercontent.com/u/130554778
+  tags:
+    - AI
+    - Analytics
+    - Tool
+  variables:
+    - key: PUBLIC_DOMAIN
+      type: DOMAIN
+      name: Client Domain
+      description: Domain for the Talk to the City frontend
+    - key: OPENAI_API_KEY
+      type: STRING
+      name: OpenAI API Key
+      description: Your OpenAI API key for LLM processing
+    - key: FIREBASE_CREDENTIALS_ENCODED
+      type: STRING
+      name: Firebase Service Account (Base64)
+      description: Base64-encoded Firebase service account JSON credentials
+    - key: NEXT_PUBLIC_FIREBASE_API_KEY
+      type: STRING
+      name: Firebase API Key
+      description: Firebase API key from Firebase console
+    - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+      type: STRING
+      name: Firebase Auth Domain
+      description: "Firebase authentication domain (e.g., project-id.firebaseapp.com)"
+    - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+      type: STRING
+      name: Firebase Project ID
+      description: Firebase project identifier
+    - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+      type: STRING
+      name: Firebase Storage Bucket
+      description: "Firebase storage bucket (e.g., project-id.appspot.com)"
+    - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+      type: STRING
+      name: Firebase Messaging Sender ID
+      description: Firebase Cloud Messaging sender ID
+    - key: NEXT_PUBLIC_FIREBASE_APP_ID
+      type: STRING
+      name: Firebase App ID
+      description: Firebase application ID
+    - key: GOOGLE_CREDENTIALS_ENCODED
+      type: STRING
+      name: Google Cloud Credentials (Base64)
+      description: Base64-encoded Google Cloud service account JSON for Cloud Storage
+    - key: GCLOUD_STORAGE_BUCKET
+      type: STRING
+      name: GCS Bucket Name
+      description: Google Cloud Storage bucket name for report storage
+  readme: |
+    # Talk to the City (T3C)
+
+    [Talk to the City](https://github.com/aIObjectives/tttc-light-js) is an open-source, LLM-powered tool for improving collective deliberation and decision-making. It processes qualitative data and organizes similar claims into structured topic trees.
+
+    ## Architecture
+
+    This template deploys 4 services:
+
+    | Service | Port | Role |
+    |---------|------|------|
+    | **next-client** | 3000 | Next.js frontend |
+    | **express-server** | 8080 | Node.js backend API |
+    | **pyserver** | 8000 | Python LLM processing |
+    | **redis** | 6379 | Job queue management |
+
+    ## External Services Setup
+
+    This template requires 3 external services. **Set them up before deploying.**
+
+    ### 1. OpenAI API (LLM Processing)
+
+    T3C uses OpenAI to extract claims, generate topic trees, deduplicate, and create summaries. Default model: `gpt-4o-mini`.
+
+    1. Go to [OpenAI Platform](https://platform.openai.com/api-keys)
+    2. Click **Create new secret key**, copy the key (starts with `sk-`)
+    3. Enter as `OPENAI_API_KEY` during deployment
+
+    ### 2. Firebase (User Authentication + Database)
+
+    T3C uses Firebase Authentication (Email/Password + Google sign-in) and Cloud Firestore (user profiles, report metadata).
+
+    #### 2.1 Create Project
+
+    1. Go to [Firebase Console](https://console.firebase.google.com/) → **Add project**
+    2. Enter a project name (e.g., `tttc-prod`) → **Create project**
+
+    #### 2.2 Enable Authentication
+
+    1. Go to **Authentication** → **Get started**
+    2. **Sign-in method** tab → Enable **Email/Password** and **Google**
+    3. For Google: set a support email → **Save**
+
+    #### 2.3 Add Authorized Domain
+
+    After deployment, add your Zeabur domain:
+
+    1. **Authentication** → **Settings** → **Authorized domains**
+    2. Click **Add domain** → enter your domain (e.g., `tttc.zeabur.app`)
+
+    > Required for email verification links and Google sign-in popup to work.
+
+    #### 2.4 Register Web App & Get Config
+
+    1. **Project Settings** (gear icon) → **Your apps** → click Web icon (`</>`)
+    2. Enter nickname (e.g., `tttc-web`) → **Register app**
+    3. Copy the `firebaseConfig` values:
+
+    ```javascript
+    // Maps to template variables:
+    apiKey: "..."            → NEXT_PUBLIC_FIREBASE_API_KEY
+    authDomain: "..."        → NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    projectId: "..."         → NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    storageBucket: "..."     → NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    messagingSenderId: "..." → NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    appId: "..."             → NEXT_PUBLIC_FIREBASE_APP_ID
+    ```
+
+    #### 2.5 Generate Service Account Key
+
+    1. **Project Settings** → **Service accounts** tab
+    2. Click **Generate new private key** → download the JSON file
+    3. Base64-encode it:
+
+    ```bash
+    # macOS
+    base64 -i firebase-service-account.json | tr -d '\n'
+    # Linux
+    base64 -w 0 firebase-service-account.json
+    ```
+
+    4. Enter the result as `FIREBASE_CREDENTIALS_ENCODED`
+
+    > **No rebuild needed!** The Docker image includes an entrypoint script that automatically injects Firebase config from environment variables at startup. Just set the `NEXT_PUBLIC_FIREBASE_*` variables and restart the service.
+
+    ### 3. Google Cloud Storage (Report Storage)
+
+    T3C stores generated reports (JSON topic trees) in a GCS bucket.
+
+    #### 3.1 Create Bucket
+
+    1. Go to [Google Cloud Console — Storage](https://console.cloud.google.com/storage)
+    2. **Create bucket** → enter a unique name (e.g., `tttc-reports-prod`)
+    3. Choose a region, Standard storage class → **Create**
+    4. Enter the bucket name as `GCLOUD_STORAGE_BUCKET`
+
+    #### 3.2 Create Service Account & Key
+
+    1. Go to [IAM & Admin → Service Accounts](https://console.cloud.google.com/iam-admin/service-accounts)
+    2. **Create Service Account** → name: `tttc-storage`
+    3. Grant role: **Storage Object Admin** → **Done**
+    4. Click the service account → **Keys** tab → **Add Key** → **Create new key** → **JSON**
+    5. Base64-encode the downloaded key:
+
+    ```bash
+    # macOS
+    base64 -i gcs-service-account.json | tr -d '\n'
+    # Linux
+    base64 -w 0 gcs-service-account.json
+    ```
+
+    6. Enter the result as `GOOGLE_CREDENTIALS_ENCODED`
+
+    ## Variables Reference
+
+    | Variable | Required | Description |
+    |----------|----------|-------------|
+    | `OPENAI_API_KEY` | Yes | OpenAI API key for LLM processing |
+    | `FIREBASE_CREDENTIALS_ENCODED` | Yes | Base64-encoded Firebase service account JSON |
+    | `NEXT_PUBLIC_FIREBASE_API_KEY` | Yes* | Firebase web app API key |
+    | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Yes* | e.g., `project.firebaseapp.com` |
+    | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Yes* | Firebase project ID |
+    | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Yes* | e.g., `project.appspot.com` |
+    | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Yes* | Firebase messaging sender ID |
+    | `NEXT_PUBLIC_FIREBASE_APP_ID` | Yes* | Firebase app ID |
+    | `GOOGLE_CREDENTIALS_ENCODED` | Yes | Base64-encoded GCS service account JSON |
+    | `GCLOUD_STORAGE_BUCKET` | Yes | GCS bucket name for report storage |
+
+    \* Injected at runtime via entrypoint script. Set the variables and restart `next-client`.
+
+    ## Post-Deployment Checklist
+
+    1. Add your Zeabur domain to Firebase Authorized Domains
+    2. Verify all 4 services show **Running** in the Dashboard
+    3. Check `express-server` logs for: `Firebase admin app initialized successfully`
+    4. Visit your domain and test sign-in
+
+    ## Links
+
+    - [GitHub Repository](https://github.com/aIObjectives/tttc-light-js)
+    - [Development Guide](https://github.com/aIObjectives/tttc-light-js/blob/main/DEVELOPMENT.md)
+  services:
+    # Redis - Job Queue
+    - name: redis
+      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/redis.svg
+      template: PREBUILT_V2
+      spec:
+        source:
+          image: redis:7-alpine
+          command:
+            - redis-server
+            - --save
+            - "60"
+            - "1"
+            - --loglevel
+            - warning
+        ports:
+          - id: database
+            port: 6379
+            type: TCP
+        volumes:
+          - id: data
+            dir: /data
+        env:
+          REDIS_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+            readonly: true
+          REDIS_PORT:
+            default: ${DATABASE_PORT}
+            expose: true
+            readonly: true
+          REDIS_CONNECTION_STRING:
+            default: redis://${REDIS_HOST}:${REDIS_PORT}
+            expose: true
+            readonly: true
+
+    # Python LLM Processing Service
+    - name: pyserver
+      icon: https://avatars.githubusercontent.com/u/130554778
+      template: PREBUILT_V2
+      dependencies:
+        - redis
+      spec:
+        source:
+          image: ghcr.io/canyugs/tttc-pyserver:latest
+        ports:
+          - id: web
+            port: 8000
+            type: HTTP
+        env:
+          PORT:
+            default: "8000"
+          ALLOWED_ORIGINS:
+            default: "*"
+          REDIS_URL:
+            default: ${REDIS_CONNECTION_STRING}
+          PYSERVER_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+            readonly: true
+
+    # Express Backend API
+    - name: express-server
+      icon: https://avatars.githubusercontent.com/u/130554778
+      template: PREBUILT_V2
+      dependencies:
+        - redis
+        - pyserver
+      spec:
+        source:
+          image: ghcr.io/canyugs/tttc-express-server:latest
+        ports:
+          - id: web
+            port: 8080
+            type: HTTP
+        env:
+          NODE_ENV:
+            default: production
+          PORT:
+            default: "8080"
+          CLIENT_BASE_URL:
+            default: https://${NEXT_CLIENT_DOMAIN}
+          ALLOWED_ORIGINS:
+            default: https://${NEXT_CLIENT_DOMAIN}
+          PYSERVER_URL:
+            default: http://${PYSERVER_HOST}:8000
+          REDIS_HOST:
+            default: ${REDIS_HOST}
+          REDIS_PORT:
+            default: ${REDIS_PORT}
+          REDIS_URL:
+            default: ${REDIS_CONNECTION_STRING}
+          REDIS_QUEUE_NAME:
+            default: prod-queue
+          OPENAI_API_KEY:
+            default: ${OPENAI_API_KEY}
+          FIREBASE_CREDENTIALS_ENCODED:
+            default: ${FIREBASE_CREDENTIALS_ENCODED}
+          GOOGLE_CREDENTIALS_ENCODED:
+            default: ${GOOGLE_CREDENTIALS_ENCODED}
+          GCLOUD_STORAGE_BUCKET:
+            default: ${GCLOUD_STORAGE_BUCKET}
+          ALLOWED_GCS_BUCKETS:
+            default: ${GCLOUD_STORAGE_BUCKET}
+          FEATURE_FLAG_PROVIDER:
+            default: local
+          LOCAL_FLAGS:
+            default: '{"exampleBool": true}'
+          ANALYTICS_PROVIDER:
+            default: local
+          ANALYTICS_ENABLED:
+            default: "false"
+          EXPRESS_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+            readonly: true
+
+    # Next.js Frontend
+    - name: next-client
+      icon: https://avatars.githubusercontent.com/u/130554778
+      template: PREBUILT_V2
+      domainKey: PUBLIC_DOMAIN
+      dependencies:
+        - express-server
+      spec:
+        source:
+          image: ghcr.io/canyugs/tttc-next-client:latest
+        ports:
+          - id: web
+            port: 3000
+            type: HTTP
+        env:
+          PORT:
+            default: "3000"
+          HOSTNAME:
+            default: "0.0.0.0"
+          PIPELINE_EXPRESS_URL:
+            default: http://${EXPRESS_HOST}:8080
+          NEXT_PUBLIC_FIREBASE_API_KEY:
+            default: ${NEXT_PUBLIC_FIREBASE_API_KEY}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:
+            default: ${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID:
+            default: ${NEXT_PUBLIC_FIREBASE_PROJECT_ID}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET:
+            default: ${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID:
+            default: ${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}
+          NEXT_PUBLIC_FIREBASE_APP_ID:
+            default: ${NEXT_PUBLIC_FIREBASE_APP_ID}
+          NEXT_CLIENT_DOMAIN:
+            default: ${ZEABUR_WEB_DOMAIN}
+            expose: true
+            readonly: true
+
+localization:
+  zh-TW:
+    description: |
+      Talk to the City (T3C) 是一個開源的 LLM 驅動工具，用於集體審議和決策。它處理定性資料並將相似的觀點組織成結構化的主題樹。
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: 客戶端網域
+        description: Talk to the City 前端的網域
+      - key: OPENAI_API_KEY
+        name: OpenAI API 金鑰
+        description: 用於 LLM 處理的 OpenAI API 金鑰
+      - key: FIREBASE_CREDENTIALS_ENCODED
+        name: Firebase 服務帳號（Base64）
+        description: Base64 編碼的 Firebase 服務帳號 JSON 憑證
+      - key: NEXT_PUBLIC_FIREBASE_API_KEY
+        name: Firebase API 金鑰
+        description: Firebase 控制台中的 API 金鑰
+      - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+        name: Firebase 驗證網域
+        description: "Firebase 驗證網域（例如 project-id.firebaseapp.com）"
+      - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        name: Firebase 專案 ID
+        description: Firebase 專案識別碼
+      - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+        name: Firebase 儲存桶
+        description: "Firebase 儲存桶（例如 project-id.appspot.com）"
+      - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+        name: Firebase 訊息傳送者 ID
+        description: Firebase Cloud Messaging 傳送者 ID
+      - key: NEXT_PUBLIC_FIREBASE_APP_ID
+        name: Firebase 應用程式 ID
+        description: Firebase 應用程式識別碼
+      - key: GOOGLE_CREDENTIALS_ENCODED
+        name: Google Cloud 憑證（Base64）
+        description: Base64 編碼的 Google Cloud 服務帳號 JSON（用於 Cloud Storage）
+      - key: GCLOUD_STORAGE_BUCKET
+        name: GCS 儲存桶名稱
+        description: 用於報告儲存的 Google Cloud Storage 儲存桶名稱
+    readme: |
+      # Talk to the City (T3C)
+
+      [Talk to the City](https://github.com/aIObjectives/tttc-light-js) 是一個開源的 LLM 驅動工具，用於改善集體審議和決策。它處理定性資料並將相似的觀點組織成結構化的主題樹。
+
+      ## 架構
+
+      此範本部署 4 個服務：
+
+      | 服務 | 連接埠 | 角色 |
+      |------|--------|------|
+      | **next-client** | 3000 | Next.js 前端 |
+      | **express-server** | 8080 | Node.js 後端 API |
+      | **pyserver** | 8000 | Python LLM 處理 |
+      | **redis** | 6379 | 工作佇列管理 |
+
+      ## 外部服務設定
+
+      此範本需要 3 個外部服務。**請在部署前完成設定。**
+
+      ### 1. OpenAI API（LLM 處理）
+
+      T3C 使用 OpenAI 來提取觀點、產生主題樹、去重和產生摘要。預設模型：`gpt-4o-mini`。
+
+      1. 前往 [OpenAI Platform](https://platform.openai.com/api-keys)
+      2. 點擊 **Create new secret key**，複製金鑰（以 `sk-` 開頭）
+      3. 部署時輸入為 `OPENAI_API_KEY`
+
+      ### 2. Firebase（使用者驗證 + 資料庫）
+
+      T3C 使用 Firebase Authentication（電子郵件/密碼 + Google 登入）和 Cloud Firestore（使用者資料、報告元資料）。
+
+      #### 2.1 建立專案
+
+      1. 前往 [Firebase 控制台](https://console.firebase.google.com/) → **新增專案**
+      2. 輸入專案名稱（例如 `tttc-prod`）→ **建立專案**
+
+      #### 2.2 啟用身份驗證
+
+      1. 前往 **Authentication** → **開始使用**
+      2. **登入方式**分頁 → 啟用**電子郵件/密碼**和 **Google**
+      3. Google 登入：設定支援電子郵件 → **儲存**
+
+      #### 2.3 新增授權網域
+
+      部署後，將您的 Zeabur 網域加入授權清單：
+
+      1. **Authentication** → **設定** → **授權網域**
+      2. 點擊**新增網域** → 輸入您的網域（例如 `tttc.zeabur.app`）
+
+      > 電子郵件驗證連結和 Google 登入彈窗需要此設定才能正常運作。
+
+      #### 2.4 註冊 Web 應用程式並取得設定
+
+      1. **專案設定**（齒輪圖示）→ **您的應用程式** → 點擊 Web 圖示（`</>`）
+      2. 輸入暱稱（例如 `tttc-web`）→ **註冊應用程式**
+      3. 複製 `firebaseConfig` 的值：
+
+      ```javascript
+      // 對應到範本變數：
+      apiKey: "..."            → NEXT_PUBLIC_FIREBASE_API_KEY
+      authDomain: "..."        → NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+      projectId: "..."         → NEXT_PUBLIC_FIREBASE_PROJECT_ID
+      storageBucket: "..."     → NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+      messagingSenderId: "..." → NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+      appId: "..."             → NEXT_PUBLIC_FIREBASE_APP_ID
+      ```
+
+      #### 2.5 產生服務帳號金鑰
+
+      1. **專案設定** → **服務帳號**分頁
+      2. 點擊**產生新的私密金鑰** → 下載 JSON 檔案
+      3. 進行 Base64 編碼：
+
+      ```bash
+      # macOS
+      base64 -i firebase-service-account.json | tr -d '\n'
+      # Linux
+      base64 -w 0 firebase-service-account.json
+      ```
+
+      4. 將結果輸入為 `FIREBASE_CREDENTIALS_ENCODED`
+
+      > **不需要重新建置映像檔！** Docker 映像檔內建 entrypoint 腳本，會在啟動時自動將環境變數注入 Firebase 設定。只需設定 `NEXT_PUBLIC_FIREBASE_*` 變數並重啟服務即可。
+
+      ### 3. Google Cloud Storage（報告儲存）
+
+      T3C 將產生的報告（JSON 主題樹）儲存在 GCS 儲存桶中。
+
+      #### 3.1 建立儲存桶
+
+      1. 前往 [Google Cloud 控制台 — Storage](https://console.cloud.google.com/storage)
+      2. **建立儲存桶** → 輸入唯一名稱（例如 `tttc-reports-prod`）
+      3. 選擇區域、Standard 儲存類別 → **建立**
+      4. 將儲存桶名稱輸入為 `GCLOUD_STORAGE_BUCKET`
+
+      #### 3.2 建立服務帳號與金鑰
+
+      1. 前往 [IAM 與管理 → 服務帳號](https://console.cloud.google.com/iam-admin/service-accounts)
+      2. **建立服務帳號** → 名稱：`tttc-storage`
+      3. 授予角色：**Storage Object Admin** → **完成**
+      4. 點擊該服務帳號 → **金鑰**分頁 → **新增金鑰** → **建立新金鑰** → **JSON**
+      5. 將下載的金鑰進行 Base64 編碼：
+
+      ```bash
+      # macOS
+      base64 -i gcs-service-account.json | tr -d '\n'
+      # Linux
+      base64 -w 0 gcs-service-account.json
+      ```
+
+      6. 將結果輸入為 `GOOGLE_CREDENTIALS_ENCODED`
+
+      ## 變數對照表
+
+      | 變數 | 必填 | 說明 |
+      |------|------|------|
+      | `OPENAI_API_KEY` | 是 | OpenAI API 金鑰，用於 LLM 處理 |
+      | `FIREBASE_CREDENTIALS_ENCODED` | 是 | Base64 編碼的 Firebase 服務帳號 JSON |
+      | `NEXT_PUBLIC_FIREBASE_API_KEY` | 是* | Firebase Web 應用程式 API 金鑰 |
+      | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | 是* | 例如 `project.firebaseapp.com` |
+      | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | 是* | Firebase 專案 ID |
+      | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | 是* | 例如 `project.appspot.com` |
+      | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | 是* | Firebase 訊息傳送者 ID |
+      | `NEXT_PUBLIC_FIREBASE_APP_ID` | 是* | Firebase 應用程式 ID |
+      | `GOOGLE_CREDENTIALS_ENCODED` | 是 | Base64 編碼的 GCS 服務帳號 JSON |
+      | `GCLOUD_STORAGE_BUCKET` | 是 | 用於報告儲存的 GCS 儲存桶名稱 |
+
+      \* 透過 entrypoint 腳本在執行時注入。設定變數後重啟 `next-client` 即可。
+
+      ## 部署後檢查清單
+
+      1. 將您的 Zeabur 網域加入 Firebase 授權網域
+      2. 確認所有 4 個服務在 Dashboard 中顯示**執行中**
+      3. 檢查 `express-server` 日誌是否出現：`Firebase admin app initialized successfully`
+      4. 造訪您的網域並測試登入
+
+      ## 連結
+
+      - [GitHub 倉庫](https://github.com/aIObjectives/tttc-light-js)
+      - [開發指南](https://github.com/aIObjectives/tttc-light-js/blob/main/DEVELOPMENT.md)
+  zh-CN:
+    description: |
+      Talk to the City (T3C) 是一个开源的 LLM 驱动工具，用于集体审议和决策。它处理定性数据并将相似的观点组织成结构化的主题树。
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: 客户端域名
+        description: Talk to the City 前端的域名
+      - key: OPENAI_API_KEY
+        name: OpenAI API 密钥
+        description: 用于 LLM 处理的 OpenAI API 密钥
+      - key: FIREBASE_CREDENTIALS_ENCODED
+        name: Firebase 服务账号（Base64）
+        description: Base64 编码的 Firebase 服务账号 JSON 凭证
+      - key: NEXT_PUBLIC_FIREBASE_API_KEY
+        name: Firebase API 密钥
+        description: Firebase 控制台中的 API 密钥
+      - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+        name: Firebase 认证域名
+        description: "Firebase 认证域名（例如 project-id.firebaseapp.com）"
+      - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        name: Firebase 项目 ID
+        description: Firebase 项目标识符
+      - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+        name: Firebase 存储桶
+        description: "Firebase 存储桶（例如 project-id.appspot.com）"
+      - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+        name: Firebase 消息发送者 ID
+        description: Firebase Cloud Messaging 发送者 ID
+      - key: NEXT_PUBLIC_FIREBASE_APP_ID
+        name: Firebase 应用 ID
+        description: Firebase 应用标识符
+      - key: GOOGLE_CREDENTIALS_ENCODED
+        name: Google Cloud 凭证（Base64）
+        description: Base64 编码的 Google Cloud 服务账号 JSON（用于 Cloud Storage）
+      - key: GCLOUD_STORAGE_BUCKET
+        name: GCS 存储桶名称
+        description: 用于报告存储的 Google Cloud Storage 存储桶名称
+    readme: |
+      # Talk to the City (T3C)
+
+      [Talk to the City](https://github.com/aIObjectives/tttc-light-js) 是一个开源的 LLM 驱动工具，用于改善集体审议和决策。它处理定性数据并将相似的观点组织成结构化的主题树。
+
+      ## 架构
+
+      此模板部署 4 个服务：
+
+      | 服务 | 端口 | 角色 |
+      |------|------|------|
+      | **next-client** | 3000 | Next.js 前端 |
+      | **express-server** | 8080 | Node.js 后端 API |
+      | **pyserver** | 8000 | Python LLM 处理 |
+      | **redis** | 6379 | 作业队列管理 |
+
+      ## 外部服务设置
+
+      此模板需要 3 个外部服务。**请在部署前完成设置。**
+
+      ### 1. OpenAI API（LLM 处理）
+
+      T3C 使用 OpenAI 来提取观点、生成主题树、去重和生成摘要。默认模型：`gpt-4o-mini`。
+
+      1. 前往 [OpenAI Platform](https://platform.openai.com/api-keys)
+      2. 点击 **Create new secret key**，复制密钥（以 `sk-` 开头）
+      3. 部署时输入为 `OPENAI_API_KEY`
+
+      ### 2. Firebase（用户认证 + 数据库）
+
+      T3C 使用 Firebase Authentication（邮箱/密码 + Google 登录）和 Cloud Firestore（用户资料、报告元数据）。
+
+      #### 2.1 创建项目
+
+      1. 前往 [Firebase 控制台](https://console.firebase.google.com/) → **添加项目**
+      2. 输入项目名称（例如 `tttc-prod`）→ **创建项目**
+
+      #### 2.2 启用身份验证
+
+      1. 前往 **Authentication** → **开始使用**
+      2. **登录方式**选项卡 → 启用**邮箱/密码**和 **Google**
+      3. Google 登录：设置支持邮箱 → **保存**
+
+      #### 2.3 添加授权域名
+
+      部署后，将您的 Zeabur 域名添加到授权列表：
+
+      1. **Authentication** → **设置** → **授权域名**
+      2. 点击**添加域名** → 输入您的域名（例如 `tttc.zeabur.app`）
+
+      > 邮箱验证链接和 Google 登录弹窗需要此设置才能正常工作。
+
+      #### 2.4 注册 Web 应用并获取配置
+
+      1. **项目设置**（齿轮图标）→ **您的应用** → 点击 Web 图标（`</>`）
+      2. 输入昵称（例如 `tttc-web`）→ **注册应用**
+      3. 复制 `firebaseConfig` 的值：
+
+      ```javascript
+      // Maps to template variables:
+      apiKey: "..."            → NEXT_PUBLIC_FIREBASE_API_KEY
+      authDomain: "..."        → NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+      projectId: "..."         → NEXT_PUBLIC_FIREBASE_PROJECT_ID
+      storageBucket: "..."     → NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+      messagingSenderId: "..." → NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+      appId: "..."             → NEXT_PUBLIC_FIREBASE_APP_ID
+      ```
+
+      #### 2.5 生成服务账号密钥
+
+      1. **项目设置** → **服务账号**选项卡
+      2. 点击**生成新的私钥** → 下载 JSON 文件
+      3. 进行 Base64 编码：
+
+      ```bash
+      # macOS
+      base64 -i firebase-service-account.json | tr -d '\n'
+      # Linux
+      base64 -w 0 firebase-service-account.json
+      ```
+
+      4. 将结果输入为 `FIREBASE_CREDENTIALS_ENCODED`
+
+      > **无需重新构建镜像！** Docker 镜像内置 entrypoint 脚本，会在启动时自动将环境变量注入 Firebase 配置。只需设置 `NEXT_PUBLIC_FIREBASE_*` 变量并重启服务即可。
+
+      ### 3. Google Cloud Storage（报告存储）
+
+      T3C 将生成的报告（JSON 主题树）存储在 GCS 存储桶中。
+
+      #### 3.1 创建存储桶
+
+      1. 前往 [Google Cloud 控制台 — Storage](https://console.cloud.google.com/storage)
+      2. **创建存储桶** → 输入唯一名称（例如 `tttc-reports-prod`）
+      3. 选择区域、Standard 存储类别 → **创建**
+      4. 将存储桶名称输入为 `GCLOUD_STORAGE_BUCKET`
+
+      #### 3.2 创建服务账号与密钥
+
+      1. 前往 [IAM 与管理 → 服务账号](https://console.cloud.google.com/iam-admin/service-accounts)
+      2. **创建服务账号** → 名称：`tttc-storage`
+      3. 授予角色：**Storage Object Admin** → **完成**
+      4. 点击该服务账号 → **密钥**选项卡 → **添加密钥** → **创建新密钥** → **JSON**
+      5. 将下载的密钥进行 Base64 编码：
+
+      ```bash
+      # macOS
+      base64 -i gcs-service-account.json | tr -d '\n'
+      # Linux
+      base64 -w 0 gcs-service-account.json
+      ```
+
+      6. 将结果输入为 `GOOGLE_CREDENTIALS_ENCODED`
+
+      ## 变量参考表
+
+      | 变量 | 必填 | 说明 |
+      |------|------|------|
+      | `OPENAI_API_KEY` | 是 | OpenAI API 密钥，用于 LLM 处理 |
+      | `FIREBASE_CREDENTIALS_ENCODED` | 是 | Base64 编码的 Firebase 服务账号 JSON |
+      | `NEXT_PUBLIC_FIREBASE_API_KEY` | 是* | Firebase Web 应用 API 密钥 |
+      | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | 是* | 例如 `project.firebaseapp.com` |
+      | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | 是* | Firebase 项目 ID |
+      | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | 是* | 例如 `project.appspot.com` |
+      | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | 是* | Firebase 消息发送者 ID |
+      | `NEXT_PUBLIC_FIREBASE_APP_ID` | 是* | Firebase 应用 ID |
+      | `GOOGLE_CREDENTIALS_ENCODED` | 是 | Base64 编码的 GCS 服务账号 JSON |
+      | `GCLOUD_STORAGE_BUCKET` | 是 | 用于报告存储的 GCS 存储桶名称 |
+
+      \* 通过 entrypoint 脚本在运行时注入。设置变量后重启 `next-client` 即可。
+
+      ## 部署后检查清单
+
+      1. 将您的 Zeabur 域名添加到 Firebase 授权域名
+      2. 确认所有 4 个服务在 Dashboard 中显示**运行中**
+      3. 检查 `express-server` 日志是否出现：`Firebase admin app initialized successfully`
+      4. 访问您的域名并测试登录
+
+      ## 链接
+
+      - [GitHub 仓库](https://github.com/aIObjectives/tttc-light-js)
+      - [开发指南](https://github.com/aIObjectives/tttc-light-js/blob/main/DEVELOPMENT.md)
+  ja-JP:
+    description: |
+      Talk to the City (T3C) は、集団的な審議と意思決定のためのオープンソース LLM 搭載ツールです。定性データを処理し、類似の意見を構造化されたトピックツリーに整理します。
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: クライアントドメイン
+        description: Talk to the City フロントエンドのドメイン
+      - key: OPENAI_API_KEY
+        name: OpenAI API キー
+        description: LLM 処理用の OpenAI API キー
+      - key: FIREBASE_CREDENTIALS_ENCODED
+        name: Firebase サービスアカウント（Base64）
+        description: Base64 エンコードされた Firebase サービスアカウント JSON 認証情報
+      - key: NEXT_PUBLIC_FIREBASE_API_KEY
+        name: Firebase API キー
+        description: Firebase コンソールの API キー
+      - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+        name: Firebase 認証ドメイン
+        description: "Firebase 認証ドメイン（例：project-id.firebaseapp.com）"
+      - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        name: Firebase プロジェクト ID
+        description: Firebase プロジェクト識別子
+      - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+        name: Firebase ストレージバケット
+        description: "Firebase ストレージバケット（例：project-id.appspot.com）"
+      - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+        name: Firebase メッセージング送信者 ID
+        description: Firebase Cloud Messaging 送信者 ID
+      - key: NEXT_PUBLIC_FIREBASE_APP_ID
+        name: Firebase アプリ ID
+        description: Firebase アプリケーション識別子
+      - key: GOOGLE_CREDENTIALS_ENCODED
+        name: Google Cloud 認証情報（Base64）
+        description: Base64 エンコードされた Google Cloud サービスアカウント JSON（Cloud Storage 用）
+      - key: GCLOUD_STORAGE_BUCKET
+        name: GCS バケット名
+        description: レポート保存用の Google Cloud Storage バケット名
+    readme: |
+      # Talk to the City (T3C)
+
+      [Talk to the City](https://github.com/aIObjectives/tttc-light-js) は、集団的な審議と意思決定を改善するためのオープンソース LLM 搭載ツールです。定性データを処理し、類似の意見を構造化されたトピックツリーに整理します。
+
+      ## アーキテクチャ
+
+      このテンプレートは 4 つのサービスをデプロイします：
+
+      | サービス | ポート | 役割 |
+      |----------|--------|------|
+      | **next-client** | 3000 | Next.js フロントエンド |
+      | **express-server** | 8080 | Node.js バックエンド API |
+      | **pyserver** | 8000 | Python LLM 処理 |
+      | **redis** | 6379 | ジョブキュー管理 |
+
+      ## 外部サービスの設定
+
+      このテンプレートには 3 つの外部サービスが必要です。**デプロイ前に設定を完了してください。**
+
+      ### 1. OpenAI API（LLM 処理）
+
+      T3C は OpenAI を使用して意見の抽出、トピックツリーの生成、重複排除、要約の作成を行います。デフォルトモデル：`gpt-4o-mini`。
+
+      1. [OpenAI Platform](https://platform.openai.com/api-keys) にアクセス
+      2. **Create new secret key** をクリックし、キーをコピー（`sk-` で始まります）
+      3. デプロイ時に `OPENAI_API_KEY` として入力
+
+      ### 2. Firebase（ユーザー認証 + データベース）
+
+      T3C は Firebase Authentication（メール/パスワード + Google サインイン）と Cloud Firestore（ユーザープロファイル、レポートメタデータ）を使用します。
+
+      #### 2.1 プロジェクトの作成
+
+      1. [Firebase コンソール](https://console.firebase.google.com/) → **プロジェクトを追加**
+      2. プロジェクト名を入力（例：`tttc-prod`）→ **プロジェクトを作成**
+
+      #### 2.2 認証の有効化
+
+      1. **Authentication** → **始める**
+      2. **ログイン方法**タブ → **メール/パスワード**と **Google** を有効化
+      3. Google の場合：サポートメールを設定 → **保存**
+
+      #### 2.3 承認済みドメインの追加
+
+      デプロイ後、Zeabur ドメインを承認リストに追加します：
+
+      1. **Authentication** → **設定** → **承認済みドメイン**
+      2. **ドメインを追加** をクリック → ドメインを入力（例：`tttc.zeabur.app`）
+
+      > メール確認リンクと Google サインインポップアップが正常に動作するために必要です。
+
+      #### 2.4 Web アプリの登録と設定の取得
+
+      1. **プロジェクトの設定**（歯車アイコン）→ **マイアプリ** → Web アイコン（`</>`）をクリック
+      2. ニックネームを入力（例：`tttc-web`）→ **アプリを登録**
+      3. `firebaseConfig` の値をコピー：
+
+      ```javascript
+      // Maps to template variables:
+      apiKey: "..."            → NEXT_PUBLIC_FIREBASE_API_KEY
+      authDomain: "..."        → NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+      projectId: "..."         → NEXT_PUBLIC_FIREBASE_PROJECT_ID
+      storageBucket: "..."     → NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+      messagingSenderId: "..." → NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+      appId: "..."             → NEXT_PUBLIC_FIREBASE_APP_ID
+      ```
+
+      #### 2.5 サービスアカウントキーの生成
+
+      1. **プロジェクトの設定** → **サービスアカウント**タブ
+      2. **新しい秘密鍵の生成** をクリック → JSON ファイルをダウンロード
+      3. Base64 エンコードを実行：
+
+      ```bash
+      # macOS
+      base64 -i firebase-service-account.json | tr -d '\n'
+      # Linux
+      base64 -w 0 firebase-service-account.json
+      ```
+
+      4. 結果を `FIREBASE_CREDENTIALS_ENCODED` として入力
+
+      > **再ビルド不要！** Docker イメージには entrypoint スクリプトが含まれており、起動時に環境変数から Firebase 設定を自動的に注入します。`NEXT_PUBLIC_FIREBASE_*` 変数を設定してサービスを再起動するだけで反映されます。
+
+      ### 3. Google Cloud Storage（レポート保存）
+
+      T3C は生成されたレポート（JSON トピックツリー）を GCS バケットに保存します。
+
+      #### 3.1 バケットの作成
+
+      1. [Google Cloud コンソール — Storage](https://console.cloud.google.com/storage) にアクセス
+      2. **バケットを作成** → 一意の名前を入力（例：`tttc-reports-prod`）
+      3. リージョンを選択、Standard ストレージクラス → **作成**
+      4. バケット名を `GCLOUD_STORAGE_BUCKET` として入力
+
+      #### 3.2 サービスアカウントとキーの作成
+
+      1. [IAM と管理 → サービスアカウント](https://console.cloud.google.com/iam-admin/service-accounts) にアクセス
+      2. **サービスアカウントを作成** → 名前：`tttc-storage`
+      3. ロールを付与：**Storage Object Admin** → **完了**
+      4. サービスアカウントをクリック → **鍵**タブ → **鍵を追加** → **新しい鍵を作成** → **JSON**
+      5. ダウンロードした鍵を Base64 エンコード：
+
+      ```bash
+      # macOS
+      base64 -i gcs-service-account.json | tr -d '\n'
+      # Linux
+      base64 -w 0 gcs-service-account.json
+      ```
+
+      6. 結果を `GOOGLE_CREDENTIALS_ENCODED` として入力
+
+      ## 変数リファレンス
+
+      | 変数 | 必須 | 説明 |
+      |------|------|------|
+      | `OPENAI_API_KEY` | はい | LLM 処理用の OpenAI API キー |
+      | `FIREBASE_CREDENTIALS_ENCODED` | はい | Base64 エンコードされた Firebase サービスアカウント JSON |
+      | `NEXT_PUBLIC_FIREBASE_API_KEY` | はい* | Firebase Web アプリの API キー |
+      | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | はい* | 例：`project.firebaseapp.com` |
+      | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | はい* | Firebase プロジェクト ID |
+      | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | はい* | 例：`project.appspot.com` |
+      | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | はい* | Firebase メッセージング送信者 ID |
+      | `NEXT_PUBLIC_FIREBASE_APP_ID` | はい* | Firebase アプリ ID |
+      | `GOOGLE_CREDENTIALS_ENCODED` | はい | Base64 エンコードされた GCS サービスアカウント JSON |
+      | `GCLOUD_STORAGE_BUCKET` | はい | レポート保存用の GCS バケット名 |
+
+      \* entrypoint スクリプトにより実行時に注入されます。変数を設定して `next-client` を再起動してください。
+
+      ## デプロイ後チェックリスト
+
+      1. Zeabur ドメインを Firebase の承認済みドメインに追加
+      2. 4 つのサービスすべてがダッシュボードで**実行中**と表示されていることを確認
+      3. `express-server` のログに `Firebase admin app initialized successfully` と表示されていることを確認
+      4. ドメインにアクセスしてサインインをテスト
+
+      ## リンク
+
+      - [GitHub リポジトリ](https://github.com/aIObjectives/tttc-light-js)
+      - [開発ガイド](https://github.com/aIObjectives/tttc-light-js/blob/main/DEVELOPMENT.md)
+  es-ES:
+    description: |
+      Talk to the City (T3C) es una herramienta de código abierto impulsada por LLM para la deliberación colectiva y la toma de decisiones. Procesa datos cualitativos y organiza opiniones similares en árboles temáticos estructurados.
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: Dominio del cliente
+        description: Dominio para el frontend de Talk to the City
+      - key: OPENAI_API_KEY
+        name: Clave API de OpenAI
+        description: Tu clave API de OpenAI para procesamiento LLM
+      - key: FIREBASE_CREDENTIALS_ENCODED
+        name: Cuenta de servicio Firebase (Base64)
+        description: Credenciales JSON de cuenta de servicio Firebase codificadas en Base64
+      - key: NEXT_PUBLIC_FIREBASE_API_KEY
+        name: Clave API de Firebase
+        description: Clave API de la consola de Firebase
+      - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+        name: Dominio de autenticación Firebase
+        description: "Dominio de autenticación Firebase (ej., project-id.firebaseapp.com)"
+      - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        name: ID de proyecto Firebase
+        description: Identificador del proyecto Firebase
+      - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+        name: Bucket de almacenamiento Firebase
+        description: "Bucket de almacenamiento Firebase (ej., project-id.appspot.com)"
+      - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+        name: ID de remitente Firebase Messaging
+        description: ID de remitente de Firebase Cloud Messaging
+      - key: NEXT_PUBLIC_FIREBASE_APP_ID
+        name: ID de aplicación Firebase
+        description: Identificador de aplicación Firebase
+      - key: GOOGLE_CREDENTIALS_ENCODED
+        name: Credenciales Google Cloud (Base64)
+        description: JSON de cuenta de servicio Google Cloud codificado en Base64 para Cloud Storage
+      - key: GCLOUD_STORAGE_BUCKET
+        name: Nombre del bucket GCS
+        description: Nombre del bucket de Google Cloud Storage para almacenamiento de informes
+    readme: |
+      # Talk to the City (T3C)
+
+      [Talk to the City](https://github.com/aIObjectives/tttc-light-js) es una herramienta de código abierto impulsada por LLM para mejorar la deliberación colectiva y la toma de decisiones. Procesa datos cualitativos y organiza opiniones similares en árboles temáticos estructurados.
+
+      ## Arquitectura
+
+      Esta plantilla despliega 4 servicios:
+
+      | Servicio | Puerto | Rol |
+      |----------|--------|-----|
+      | **next-client** | 3000 | Frontend Next.js |
+      | **express-server** | 8080 | API backend Node.js |
+      | **pyserver** | 8000 | Procesamiento LLM Python |
+      | **redis** | 6379 | Gestión de cola de trabajos |
+
+      ## Configuración de servicios externos
+
+      Esta plantilla requiere 3 servicios externos. **Configúralos antes de desplegar.**
+
+      ### 1. OpenAI API (Procesamiento LLM)
+
+      T3C usa OpenAI para extraer opiniones, generar árboles temáticos, deduplicar y crear resúmenes. Modelo predeterminado: `gpt-4o-mini`.
+
+      1. Ve a [OpenAI Platform](https://platform.openai.com/api-keys)
+      2. Haz clic en **Create new secret key**, copia la clave (empieza con `sk-`)
+      3. Ingrésala como `OPENAI_API_KEY` durante el despliegue
+
+      ### 2. Firebase (Autenticación de usuarios + Base de datos)
+
+      T3C usa Firebase Authentication (correo/contraseña + inicio de sesión con Google) y Cloud Firestore (perfiles de usuario, metadatos de informes).
+
+      #### 2.1 Crear proyecto
+
+      1. Ve a [Firebase Console](https://console.firebase.google.com/) → **Agregar proyecto**
+      2. Ingresa un nombre de proyecto (ej., `tttc-prod`) → **Crear proyecto**
+
+      #### 2.2 Habilitar autenticación
+
+      1. Ve a **Authentication** → **Comenzar**
+      2. Pestaña **Método de inicio de sesión** → Habilita **Correo electrónico/Contraseña** y **Google**
+      3. Para Google: establece un correo de soporte → **Guardar**
+
+      #### 2.3 Agregar dominio autorizado
+
+      Después del despliegue, agrega tu dominio de Zeabur:
+
+      1. **Authentication** → **Configuración** → **Dominios autorizados**
+      2. Haz clic en **Agregar dominio** → ingresa tu dominio (ej., `tttc.zeabur.app`)
+
+      > Necesario para que los enlaces de verificación por correo y la ventana emergente de inicio de sesión con Google funcionen correctamente.
+
+      #### 2.4 Registrar app web y obtener configuración
+
+      1. **Configuración del proyecto** (icono de engranaje) → **Tus apps** → haz clic en el icono Web (`</>`)
+      2. Ingresa un apodo (ej., `tttc-web`) → **Registrar app**
+      3. Copia los valores de `firebaseConfig`:
+
+      ```javascript
+      // Maps to template variables:
+      apiKey: "..."            → NEXT_PUBLIC_FIREBASE_API_KEY
+      authDomain: "..."        → NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+      projectId: "..."         → NEXT_PUBLIC_FIREBASE_PROJECT_ID
+      storageBucket: "..."     → NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+      messagingSenderId: "..." → NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+      appId: "..."             → NEXT_PUBLIC_FIREBASE_APP_ID
+      ```
+
+      #### 2.5 Generar clave de cuenta de servicio
+
+      1. **Configuración del proyecto** → pestaña **Cuentas de servicio**
+      2. Haz clic en **Generar nueva clave privada** → descarga el archivo JSON
+      3. Codifícalo en Base64:
+
+      ```bash
+      # macOS
+      base64 -i firebase-service-account.json | tr -d '\n'
+      # Linux
+      base64 -w 0 firebase-service-account.json
+      ```
+
+      4. Ingresa el resultado como `FIREBASE_CREDENTIALS_ENCODED`
+
+      > **¡No es necesario reconstruir!** La imagen Docker incluye un script de entrypoint que inyecta automáticamente la configuración de Firebase desde las variables de entorno al iniciar. Solo establece las variables `NEXT_PUBLIC_FIREBASE_*` y reinicia el servicio.
+
+      ### 3. Google Cloud Storage (Almacenamiento de informes)
+
+      T3C almacena los informes generados (árboles temáticos JSON) en un bucket de GCS.
+
+      #### 3.1 Crear bucket
+
+      1. Ve a [Google Cloud Console — Storage](https://console.cloud.google.com/storage)
+      2. **Crear bucket** → ingresa un nombre único (ej., `tttc-reports-prod`)
+      3. Elige una región, clase de almacenamiento Standard → **Crear**
+      4. Ingresa el nombre del bucket como `GCLOUD_STORAGE_BUCKET`
+
+      #### 3.2 Crear cuenta de servicio y clave
+
+      1. Ve a [IAM y administración → Cuentas de servicio](https://console.cloud.google.com/iam-admin/service-accounts)
+      2. **Crear cuenta de servicio** → nombre: `tttc-storage`
+      3. Otorga el rol: **Storage Object Admin** → **Listo**
+      4. Haz clic en la cuenta de servicio → pestaña **Claves** → **Agregar clave** → **Crear nueva clave** → **JSON**
+      5. Codifica en Base64 la clave descargada:
+
+      ```bash
+      # macOS
+      base64 -i gcs-service-account.json | tr -d '\n'
+      # Linux
+      base64 -w 0 gcs-service-account.json
+      ```
+
+      6. Ingresa el resultado como `GOOGLE_CREDENTIALS_ENCODED`
+
+      ## Referencia de variables
+
+      | Variable | Requerida | Descripción |
+      |----------|-----------|-------------|
+      | `OPENAI_API_KEY` | Sí | Clave API de OpenAI para procesamiento LLM |
+      | `FIREBASE_CREDENTIALS_ENCODED` | Sí | JSON de cuenta de servicio Firebase codificado en Base64 |
+      | `NEXT_PUBLIC_FIREBASE_API_KEY` | Sí* | Clave API de la app web Firebase |
+      | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Sí* | Ej., `project.firebaseapp.com` |
+      | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Sí* | ID del proyecto Firebase |
+      | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Sí* | Ej., `project.appspot.com` |
+      | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Sí* | ID de remitente de Firebase Messaging |
+      | `NEXT_PUBLIC_FIREBASE_APP_ID` | Sí* | ID de la aplicación Firebase |
+      | `GOOGLE_CREDENTIALS_ENCODED` | Sí | JSON de cuenta de servicio GCS codificado en Base64 |
+      | `GCLOUD_STORAGE_BUCKET` | Sí | Nombre del bucket GCS para almacenamiento de informes |
+
+      \* Inyectadas en tiempo de ejecución mediante el script de entrypoint. Establece las variables y reinicia `next-client`.
+
+      ## Lista de verificación post-despliegue
+
+      1. Agrega tu dominio de Zeabur a los dominios autorizados de Firebase
+      2. Verifica que los 4 servicios muestren **Ejecutándose** en el Dashboard
+      3. Revisa los logs de `express-server` buscando: `Firebase admin app initialized successfully`
+      4. Visita tu dominio y prueba el inicio de sesión
+
+      ## Enlaces
+
+      - [Repositorio en GitHub](https://github.com/aIObjectives/tttc-light-js)
+      - [Guía de desarrollo](https://github.com/aIObjectives/tttc-light-js/blob/main/DEVELOPMENT.md)
+  id-ID:
+    description: |
+      Talk to the City (T3C) adalah alat open-source berbasis LLM untuk deliberasi kolektif dan pengambilan keputusan. Alat ini memproses data kualitatif dan mengorganisir klaim serupa ke dalam pohon topik terstruktur.
+    variables:
+      - key: PUBLIC_DOMAIN
+        name: Domain Klien
+        description: Domain untuk frontend Talk to the City
+      - key: OPENAI_API_KEY
+        name: Kunci API OpenAI
+        description: Kunci API OpenAI Anda untuk pemrosesan LLM
+      - key: FIREBASE_CREDENTIALS_ENCODED
+        name: Akun Layanan Firebase (Base64)
+        description: Kredensial JSON akun layanan Firebase yang dikodekan Base64
+      - key: NEXT_PUBLIC_FIREBASE_API_KEY
+        name: Kunci API Firebase
+        description: Kunci API dari konsol Firebase
+      - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+        name: Domain Autentikasi Firebase
+        description: "Domain autentikasi Firebase (misal, project-id.firebaseapp.com)"
+      - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        name: ID Proyek Firebase
+        description: Pengidentifikasi proyek Firebase
+      - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+        name: Bucket Penyimpanan Firebase
+        description: "Bucket penyimpanan Firebase (misal, project-id.appspot.com)"
+      - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+        name: ID Pengirim Firebase Messaging
+        description: ID pengirim Firebase Cloud Messaging
+      - key: NEXT_PUBLIC_FIREBASE_APP_ID
+        name: ID Aplikasi Firebase
+        description: Pengidentifikasi aplikasi Firebase
+      - key: GOOGLE_CREDENTIALS_ENCODED
+        name: Kredensial Google Cloud (Base64)
+        description: JSON akun layanan Google Cloud yang dikodekan Base64 untuk Cloud Storage
+      - key: GCLOUD_STORAGE_BUCKET
+        name: Nama Bucket GCS
+        description: Nama bucket Google Cloud Storage untuk penyimpanan laporan
+    readme: |
+      # Talk to the City (T3C)
+
+      [Talk to the City](https://github.com/aIObjectives/tttc-light-js) adalah alat open-source berbasis LLM untuk meningkatkan deliberasi kolektif dan pengambilan keputusan. Alat ini memproses data kualitatif dan mengorganisir klaim serupa ke dalam pohon topik terstruktur.
+
+      ## Arsitektur
+
+      Template ini mendeploy 4 layanan:
+
+      | Layanan | Port | Peran |
+      |---------|------|-------|
+      | **next-client** | 3000 | Frontend Next.js |
+      | **express-server** | 8080 | API backend Node.js |
+      | **pyserver** | 8000 | Pemrosesan LLM Python |
+      | **redis** | 6379 | Manajemen antrean tugas |
+
+      ## Pengaturan Layanan Eksternal
+
+      Template ini memerlukan 3 layanan eksternal. **Siapkan sebelum melakukan deployment.**
+
+      ### 1. OpenAI API (Pemrosesan LLM)
+
+      T3C menggunakan OpenAI untuk mengekstrak opini, menghasilkan pohon topik, deduplikasi, dan membuat ringkasan. Model default: `gpt-4o-mini`.
+
+      1. Buka [OpenAI Platform](https://platform.openai.com/api-keys)
+      2. Klik **Create new secret key**, salin kunci tersebut (diawali dengan `sk-`)
+      3. Masukkan sebagai `OPENAI_API_KEY` saat deployment
+
+      ### 2. Firebase (Autentikasi Pengguna + Database)
+
+      T3C menggunakan Firebase Authentication (Email/Kata Sandi + login Google) dan Cloud Firestore (profil pengguna, metadata laporan).
+
+      #### 2.1 Buat Proyek
+
+      1. Buka [Firebase Console](https://console.firebase.google.com/) → **Tambahkan proyek**
+      2. Masukkan nama proyek (misal, `tttc-prod`) → **Buat proyek**
+
+      #### 2.2 Aktifkan Autentikasi
+
+      1. Buka **Authentication** → **Mulai**
+      2. Tab **Metode login** → Aktifkan **Email/Kata Sandi** dan **Google**
+      3. Untuk Google: atur email dukungan → **Simpan**
+
+      #### 2.3 Tambahkan Domain yang Diotorisasi
+
+      Setelah deployment, tambahkan domain Zeabur Anda:
+
+      1. **Authentication** → **Pengaturan** → **Domain yang diotorisasi**
+      2. Klik **Tambahkan domain** → masukkan domain Anda (misal, `tttc.zeabur.app`)
+
+      > Diperlukan agar tautan verifikasi email dan popup login Google dapat berfungsi dengan baik.
+
+      #### 2.4 Daftarkan Aplikasi Web & Dapatkan Konfigurasi
+
+      1. **Pengaturan Proyek** (ikon roda gigi) → **Aplikasi Anda** → klik ikon Web (`</>`)
+      2. Masukkan nama panggilan (misal, `tttc-web`) → **Daftarkan aplikasi**
+      3. Salin nilai `firebaseConfig`:
+
+      ```javascript
+      // Maps to template variables:
+      apiKey: "..."            → NEXT_PUBLIC_FIREBASE_API_KEY
+      authDomain: "..."        → NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+      projectId: "..."         → NEXT_PUBLIC_FIREBASE_PROJECT_ID
+      storageBucket: "..."     → NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+      messagingSenderId: "..." → NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+      appId: "..."             → NEXT_PUBLIC_FIREBASE_APP_ID
+      ```
+
+      #### 2.5 Buat Kunci Akun Layanan
+
+      1. **Pengaturan Proyek** → tab **Akun Layanan**
+      2. Klik **Buat kunci pribadi baru** → unduh file JSON
+      3. Encode Base64:
+
+      ```bash
+      # macOS
+      base64 -i firebase-service-account.json | tr -d '\n'
+      # Linux
+      base64 -w 0 firebase-service-account.json
+      ```
+
+      4. Masukkan hasilnya sebagai `FIREBASE_CREDENTIALS_ENCODED`
+
+      > **Tidak perlu build ulang!** Image Docker sudah menyertakan script entrypoint yang secara otomatis menyuntikkan konfigurasi Firebase dari variabel lingkungan saat startup. Cukup atur variabel `NEXT_PUBLIC_FIREBASE_*` dan restart layanan.
+
+      ### 3. Google Cloud Storage (Penyimpanan Laporan)
+
+      T3C menyimpan laporan yang dihasilkan (pohon topik JSON) di bucket GCS.
+
+      #### 3.1 Buat Bucket
+
+      1. Buka [Google Cloud Console — Storage](https://console.cloud.google.com/storage)
+      2. **Buat bucket** → masukkan nama unik (misal, `tttc-reports-prod`)
+      3. Pilih region, kelas penyimpanan Standard → **Buat**
+      4. Masukkan nama bucket sebagai `GCLOUD_STORAGE_BUCKET`
+
+      #### 3.2 Buat Akun Layanan & Kunci
+
+      1. Buka [IAM & Admin → Akun Layanan](https://console.cloud.google.com/iam-admin/service-accounts)
+      2. **Buat Akun Layanan** → nama: `tttc-storage`
+      3. Berikan peran: **Storage Object Admin** → **Selesai**
+      4. Klik akun layanan tersebut → tab **Kunci** → **Tambahkan Kunci** → **Buat kunci baru** → **JSON**
+      5. Encode Base64 kunci yang diunduh:
+
+      ```bash
+      # macOS
+      base64 -i gcs-service-account.json | tr -d '\n'
+      # Linux
+      base64 -w 0 gcs-service-account.json
+      ```
+
+      6. Masukkan hasilnya sebagai `GOOGLE_CREDENTIALS_ENCODED`
+
+      ## Referensi Variabel
+
+      | Variabel | Wajib | Deskripsi |
+      |----------|-------|-----------|
+      | `OPENAI_API_KEY` | Ya | Kunci API OpenAI untuk pemrosesan LLM |
+      | `FIREBASE_CREDENTIALS_ENCODED` | Ya | JSON akun layanan Firebase yang dikodekan Base64 |
+      | `NEXT_PUBLIC_FIREBASE_API_KEY` | Ya* | Kunci API aplikasi web Firebase |
+      | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Ya* | Misal, `project.firebaseapp.com` |
+      | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Ya* | ID proyek Firebase |
+      | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Ya* | Misal, `project.appspot.com` |
+      | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Ya* | ID pengirim Firebase Messaging |
+      | `NEXT_PUBLIC_FIREBASE_APP_ID` | Ya* | ID aplikasi Firebase |
+      | `GOOGLE_CREDENTIALS_ENCODED` | Ya | JSON akun layanan GCS yang dikodekan Base64 |
+      | `GCLOUD_STORAGE_BUCKET` | Ya | Nama bucket GCS untuk penyimpanan laporan |
+
+      \* Disuntikkan saat runtime melalui script entrypoint. Atur variabel dan restart `next-client`.
+
+      ## Checklist Pasca-Deployment
+
+      1. Tambahkan domain Zeabur Anda ke Domain yang Diotorisasi di Firebase
+      2. Pastikan semua 4 layanan menampilkan **Berjalan** di Dashboard
+      3. Periksa log `express-server` untuk: `Firebase admin app initialized successfully`
+      4. Kunjungi domain Anda dan uji login
+
+      ## Tautan
+
+      - [Repositori GitHub](https://github.com/aIObjectives/tttc-light-js)
+      - [Panduan Pengembangan](https://github.com/aIObjectives/tttc-light-js/blob/main/DEVELOPMENT.md)

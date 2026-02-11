@@ -1,0 +1,84 @@
+name: Build T3C Docker Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Upstream git ref to build from (branch, tag, or commit)"
+        default: "main"
+        required: false
+  schedule:
+    # Check weekly for upstream updates (Monday 00:00 UTC)
+    - cron: "0 0 * * 1"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/tttc
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - service: pyserver
+            dockerfile: pyserver/Dockerfile
+            image: pyserver
+          - service: express-server
+            dockerfile: express-server/Dockerfile
+            image: express-server
+          - service: next-client
+            dockerfile: next-client/Dockerfile
+            image: next-client
+    steps:
+      # 1. Checkout this repo (for custom files in tttc/docker/)
+      - name: Checkout template repo
+        uses: actions/checkout@v4
+        with:
+          path: template
+
+      # 2. Checkout upstream source code
+      - name: Checkout upstream repo
+        uses: actions/checkout@v4
+        with:
+          repository: aIObjectives/tttc-light-js
+          ref: ${{ github.event.inputs.ref || 'main' }}
+          path: upstream
+
+      # 3. Prepare next-client custom files
+      - name: Prepare next-client for runtime env injection
+        if: matrix.service == 'next-client'
+        run: |
+          cp template/tttc/docker/next-client.env.local upstream/next-client/.env.local
+          cp template/tttc/docker/entrypoint.sh upstream/next-client/entrypoint.sh
+          chmod +x upstream/next-client/entrypoint.sh
+
+          # Patch Dockerfile: replace CMD with entrypoint
+          sed -i 's|CMD \["node", "server.js"\]|COPY --chown=nextjs:nodejs next-client/entrypoint.sh ./next-client/entrypoint.sh\nRUN chmod +x ./next-client/entrypoint.sh\nCMD ["./entrypoint.sh"]|' upstream/next-client/Dockerfile
+
+      # 4. Build and push
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./upstream
+          file: ./upstream/${{ matrix.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-${{ matrix.image }}:latest
+            ${{ env.IMAGE_PREFIX }}-${{ matrix.image }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
