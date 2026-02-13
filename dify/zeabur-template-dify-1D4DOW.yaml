@@ -36,7 +36,8 @@ spec:
     ## App structure
 
     - Redis, PostgreSQL, MINIO, and Weaviate for data storage and caching.
-    - `api`, `worker`, `web`, and `sandbox` are the microservices of Dify.
+    - `api`, `worker`, `worker-beat`, `web`, and `sandbox` are the microservices of Dify.
+    - `plugin-daemon` manages third-party plugin execution and lifecycle.
     - `nginx` is the gateway of Dify. It integrates the microservices to a single host. In another words, **it is the entry point of your Dify app.**
 
     ## Configuration
@@ -45,9 +46,25 @@ spec:
 
     ### Upload File Size Limit
 
-    The default upload file size limit is 15 MB. You can change this limit by modifying the `client_max_body_size` directive in the configuration file located at `/etc/nginx/nginx.conf` for the `nginx` service. The value should be a string with a unit (e.g., `15M` for 15 MB).
+    The default upload file size limit is 100 MB. You can change this limit by modifying the `client_max_body_size` directive in the configuration file located at `/etc/nginx/nginx.conf` for the `nginx` service. The value should be a string with a unit (e.g., `100M` for 100 MB).
 
-    Additionally, you may need to set the `UPLOAD_FILE_SIZE_LIMIT` variable in the environment of the `api` service to match this value. Ensure that this value is the same as the `client_max_body_size` directive in the `/etc/nginx/nginx.conf` configuration (e.g., `15M` for 15 MB).
+    Additionally, you may need to set the `UPLOAD_FILE_SIZE_LIMIT` variable in the environment of the `api` service to match this value. Ensure that this value is the same as the `client_max_body_size` directive in the `/etc/nginx/nginx.conf` configuration (e.g., `100M` for 100 MB).
+
+    ## Changelog
+
+    ### v1.12.1-2
+
+    #### New
+    - Added worker-beat scheduler service
+
+    #### Fixes
+    - Increased file upload size limit from 15MB to 100MB
+    - Fixed plugin endpoint page asset loading 404
+    - Fixed plugin endpoint URL showing localhost
+    - Fixed app creation from templates failing
+
+    #### Improvements
+    - Environment variables are now managed by their respective services, reducing duplication
   services:
     - name: nginx
       icon: https://www.svgrepo.com/show/373924/nginx.svg
@@ -72,6 +89,7 @@ spec:
               proxy_set_header Host $host;
               proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
               proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_set_header X-Forwarded-Port $server_port;
               proxy_http_version 1.1;
               proxy_set_header Connection "";
               proxy_buffering off;
@@ -101,7 +119,7 @@ spec:
 
                 sendfile        on;
                 keepalive_timeout  65;
-                client_max_body_size 15M;
+                client_max_body_size 100M;
                 include /etc/nginx/conf.d/*.conf;
               }
           - path: /etc/nginx/conf.d/default.conf
@@ -135,9 +153,11 @@ spec:
                   include proxy.conf;
                 }
 
-                location /e/ {
+                location ~ ^/e/([^/]+)(/.*)?$ {
+                  set $hook_id $1;
                   proxy_pass http://plugin-daemon:5002;
                   proxy_set_header Dify-Hook-Url $scheme://$host$request_uri;
+                  proxy_redirect ~^/(?!e/)(.+)$ /e/$hook_id/$1;
                   include proxy.conf;
                 }
 
@@ -257,6 +277,21 @@ spec:
           POSTGRES_USERNAME:
             default: ${POSTGRES_USER}
             expose: true
+          DB_DATABASE:
+            default: ${POSTGRES_DATABASE}
+            expose: true
+          DB_HOST:
+            default: ${POSTGRES_HOST}
+            expose: true
+          DB_PASSWORD:
+            default: ${POSTGRES_PASSWORD}
+            expose: true
+          DB_PORT:
+            default: ${POSTGRES_PORT}
+            expose: true
+          DB_USERNAME:
+            default: ${POSTGRES_USERNAME}
+            expose: true
 
     - name: minio
       icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/minio.svg
@@ -315,6 +350,24 @@ spec:
           MINIO_USERNAME:
             default: ${MINIO_ROOT_USER}
             expose: true
+          STORAGE_TYPE:
+            default: s3
+            expose: true
+          S3_ACCESS_KEY:
+            default: ${MINIO_USERNAME}
+            expose: true
+          S3_SECRET_KEY:
+            default: ${MINIO_PASSWORD}
+            expose: true
+          S3_BUCKET_NAME:
+            default: dify
+            expose: true
+          S3_ENDPOINT:
+            default: http://minio:9000
+            expose: true
+          S3_REGION:
+            default: us-east-1
+            expose: true
 
     - name: api
       icon: https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/dark/dify-color.png
@@ -338,100 +391,61 @@ spec:
             expose: true
           APP_WEB_URL:
             default: ${DIFY_GATEWAY_URL}
+            expose: true
           CELERY_BROKER_URL:
             default: redis://:${REDIS_PASSWORD}@redis:6379/1
-          CODE_EXECUTION_API_KEY:
-            default: dify-sandbox
-          CODE_EXECUTION_ENDPOINT:
-            default: http://sandbox:8194
-          CODE_MAX_NUMBER:
-            default: "9223372036854775807"
-          CODE_MAX_NUMBER_ARRAY_LENGTH:
-            default: "1000"
-          CODE_MAX_OBJECT_ARRAY_LENGTH:
-            default: "30"
-          CODE_MAX_STRING_ARRAY_LENGTH:
-            default: "30"
-          CODE_MAX_STRING_LENGTH:
-            default: "80000"
-          CODE_MIN_NUMBER:
-            default: "-9223372036854775808"
+            expose: true
           CONSOLE_API_URL:
             default: ${DIFY_GATEWAY_URL}
+            expose: true
           CONSOLE_WEB_URL:
             default: ${DIFY_GATEWAY_URL}
-          DB_DATABASE:
-            default: ${POSTGRES_DATABASE}
-          DB_HOST:
-            default: ${POSTGRES_HOST}
-          DB_PASSWORD:
-            default: ${POSTGRES_PASSWORD}
-          DB_PORT:
-            default: ${POSTGRES_PORT}
-          DB_USERNAME:
-            default: ${POSTGRES_USERNAME}
+            expose: true
+          ENDPOINT_URL_TEMPLATE:
+            default: ${DIFY_GATEWAY_URL}/e/{hook_id}
+          FILES_URL:
+            default: ${DIFY_GATEWAY_URL}
+            expose: true
+          HOSTED_FETCH_APP_TEMPLATES_MODE:
+            default: builtin
+          INNER_API:
+            default: "true"
+          INNER_API_KEY:
+            default: ${API_SECRET_KEY}
+          INNER_API_KEY_FOR_PLUGIN:
+            default: ${API_SECRET_KEY}
+          MARKETPLACE_API_URL:
+            default: https://marketplace.dify.ai
+          MARKETPLACE_ENABLED:
+            default: "true"
           MIGRATION_ENABLED:
             default: "true"
           MODE:
             default: api
-          REDIS_DB:
-            default: "0"
-          REDIS_USE_SSL:
-            default: "false"
-          REDIS_USERNAME:
-            default: ""
-          S3_ACCESS_KEY:
-            default: ${MINIO_USERNAME}
-          S3_BUCKET_NAME:
-            default: dify
-          S3_ENDPOINT:
-            default: http://minio:9000
-          S3_REGION:
-            default: us-east-1
-          S3_SECRET_KEY:
-            default: ${MINIO_PASSWORD}
-          SECRET_KEY:
-            default: ${API_SECRET_KEY}
-          SERVICE_API_URL:
-            default: ${DIFY_GATEWAY_URL}
-          STORAGE_TYPE:
-            default: s3
-          TEMPLATE_TRANSFORM_MAX_LENGTH:
-            default: "80000"
-          VECTOR_STORE:
-            default: weaviate
-          WEAVIATE_API_KEY:
-            default: WVF5YThaHlkYwhGUSmCRgsX3tD5ngdN8pkih
-          WEAVIATE_ENDPOINT:
-            default: http://weaviate:8080
-          TRIGGER_URL:
-            default: ${DIFY_GATEWAY_URL}
-          SSRF_PROXY_HTTP_URL:
-            default: http://ssrf-proxy:3128
-          SSRF_PROXY_HTTPS_URL:
-            default: http://ssrf-proxy:3128
-          PLUGIN_DAEMON_URL:
-            default: http://plugin-daemon:5002
           PLUGIN_DAEMON_KEY:
             default: ${API_SECRET_KEY}
-          INNER_API_KEY:
-            default: ${API_SECRET_KEY}
-          INNER_API:
-            default: "true"
-          MARKETPLACE_ENABLED:
-            default: "true"
-          MARKETPLACE_API_URL:
-            default: https://marketplace.dify.ai
+            expose: true
+          PLUGIN_DAEMON_TIMEOUT:
+            default: "600.0"
+            expose: true
+          PLUGIN_DAEMON_URL:
+            default: http://plugin-daemon:5002
+            expose: true
+          PLUGIN_MAX_PACKAGE_SIZE:
+            default: "52428800"
           PLUGIN_REMOTE_INSTALL_HOST:
             default: plugin-daemon
           PLUGIN_REMOTE_INSTALL_PORT:
             default: "5003"
-          INNER_API_KEY_FOR_PLUGIN:
+          SECRET_KEY:
             default: ${API_SECRET_KEY}
-          PLUGIN_MAX_PACKAGE_SIZE:
-            default: "52428800"
-          PLUGIN_DAEMON_TIMEOUT:
-            default: "600.0"
+            expose: true
+          SERVICE_API_URL:
+            default: ${DIFY_GATEWAY_URL}
+            expose: true
+          TRIGGER_URL:
+            default: ${DIFY_GATEWAY_URL}
+            expose: true
 
     - name: worker
       icon: https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/dark/dify-color.png
@@ -444,84 +458,26 @@ spec:
         source:
           image: langgenius/dify-api:1.12.1
         env:
-          APP_WEB_URL:
-            default: ${DIFY_GATEWAY_URL}
-          CELERY_BROKER_URL:
-            default: redis://:${REDIS_PASSWORD}@redis:6379/1
-          CODE_EXECUTION_API_KEY:
-            default: dify-sandbox
-          CODE_EXECUTION_ENDPOINT:
-            default: http://sandbox:8194
-          CODE_MAX_NUMBER:
-            default: "9223372036854775807"
-          CODE_MAX_NUMBER_ARRAY_LENGTH:
-            default: "1000"
-          CODE_MAX_OBJECT_ARRAY_LENGTH:
-            default: "30"
-          CODE_MAX_STRING_ARRAY_LENGTH:
-            default: "30"
-          CODE_MAX_STRING_LENGTH:
-            default: "80000"
-          CODE_MIN_NUMBER:
-            default: "-9223372036854775808"
-          CONSOLE_API_URL:
-            default: ${DIFY_GATEWAY_URL}
-          CONSOLE_WEB_URL:
-            default: ${DIFY_GATEWAY_URL}
-          DB_DATABASE:
-            default: ${POSTGRES_DATABASE}
-          DB_HOST:
-            default: ${POSTGRES_HOST}
-          DB_PASSWORD:
-            default: ${POSTGRES_PASSWORD}
-          DB_PORT:
-            default: ${POSTGRES_PORT}
-          DB_USERNAME:
-            default: ${POSTGRES_USERNAME}
           LOG_LEVEL:
             default: INFO
-          MIGRATION_ENABLED:
-            default: "true"
           MODE:
             default: worker
-          REDIS_DB:
-            default: "0"
-          REDIS_USE_SSL:
-            default: "false"
-          REDIS_USERNAME:
-            default: ""
-          S3_ACCESS_KEY:
-            default: ${MINIO_USERNAME}
-          S3_BUCKET_NAME:
-            default: dify
-          S3_ENDPOINT:
-            default: http://minio:9000
-          S3_REGION:
-            default: us-east-1
-          S3_SECRET_KEY:
-            default: ${MINIO_PASSWORD}
-          SECRET_KEY:
-            default: ${API_SECRET_KEY}
-          STORAGE_TYPE:
-            default: s3
-          TEMPLATE_TRANSFORM_MAX_LENGTH:
-            default: "80000"
-          VECTOR_STORE:
-            default: weaviate
-          WEAVIATE_API_KEY:
-            default: WVF5YThaHlkYwhGUSmCRgsX3tD5ngdN8pkih
-          WEAVIATE_ENDPOINT:
-            default: http://weaviate:8080
-          SSRF_PROXY_HTTP_URL:
-            default: http://ssrf-proxy:3128
-          SSRF_PROXY_HTTPS_URL:
-            default: http://ssrf-proxy:3128
-          PLUGIN_DAEMON_URL:
-            default: http://plugin-daemon:5002
-          PLUGIN_DAEMON_KEY:
-            default: ${API_SECRET_KEY}
-          INNER_API_KEY:
-            default: ${API_SECRET_KEY}
+
+    - name: worker-beat
+      icon: https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/dark/dify-color.png
+      template: PREBUILT_V2
+      dependencies:
+        - db
+        - redis
+        - api
+      spec:
+        source:
+          image: langgenius/dify-api:1.12.1
+        env:
+          LOG_LEVEL:
+            default: INFO
+          MODE:
+            default: beat
 
     - name: web
       icon: https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/dark/dify-color.png
@@ -575,6 +531,15 @@ spec:
             default: /var/lib/weaviate
           QUERY_DEFAULTS_LIMIT:
             default: "25"
+          VECTOR_STORE:
+            default: weaviate
+            expose: true
+          WEAVIATE_API_KEY:
+            default: ${AUTHENTICATION_APIKEY_ALLOWED_KEYS}
+            expose: true
+          WEAVIATE_ENDPOINT:
+            default: http://weaviate:8080
+            expose: true
 
     - name: sandbox
       icon: https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/dark/dify-color.png
@@ -597,6 +562,12 @@ spec:
             default: "8194"
           WORKER_TIMEOUT:
             default: "15"
+          CODE_EXECUTION_API_KEY:
+            default: ${API_KEY}
+            expose: true
+          CODE_EXECUTION_ENDPOINT:
+            default: http://sandbox:8194
+            expose: true
 
     - name: ssrf-proxy
       icon: https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/dark/dify-color.png
@@ -613,6 +584,12 @@ spec:
             default: "3128"
           COREDUMP_DIR:
             default: /var/spool/squid
+          SSRF_PROXY_HTTP_URL:
+            default: http://ssrf-proxy:3128
+            expose: true
+          SSRF_PROXY_HTTPS_URL:
+            default: http://ssrf-proxy:3128
+            expose: true
         configs:
           - path: /etc/squid/squid.conf
             template: |
@@ -670,22 +647,10 @@ spec:
           - id: data
             dir: /app/storage
         env:
-          DB_DATABASE:
-            default: ${POSTGRES_DATABASE}
-          DB_HOST:
-            default: ${POSTGRES_HOST}
-          DB_PASSWORD:
-            default: ${POSTGRES_PASSWORD}
-          DB_PORT:
-            default: ${POSTGRES_PORT}
-          DB_USERNAME:
-            default: ${POSTGRES_USERNAME}
           DIFY_INNER_API_KEY:
             default: ${API_SECRET_KEY}
           DIFY_INNER_API_URL:
             default: http://api:5001
-          ENDPOINT_URL_TEMPLATE:
-            default: ${DIFY_GATEWAY_URL}/e/{hook_id}
           MAX_PLUGIN_PACKAGE_SIZE:
             default: "52428800"
           PLATFORM:
@@ -745,7 +710,8 @@ localization:
       ## アプリの構造
 
       - Redis、PostgreSQL、MINIO、Weaviateがデータストレージとキャッシングに使用されます。
-      - `api`、`worker`、`web`、`sandbox`はDifyのマイクロサービスです。
+      - `api`、`worker`、`worker-beat`、`web`、`sandbox`はDifyのマイクロサービスです。
+      - `plugin-daemon`はサードパーティプラグインの実行とライフサイクルを管理します。
       - `nginx`はDifyのゲートウェイです。マイクロサービスを単一のホストに統合します。言い換えれば、**それがDifyアプリのエントリーポイントです。**
 
       ## 設定
@@ -754,9 +720,25 @@ localization:
 
       ### アップロードファイルサイズの制限
 
-      デフォルトのアップロードファイルサイズ制限は15 MBです。この制限は、`nginx` サービスの `/etc/nginx/nginx.conf` 設定ファイル内の `client_max_body_size` ディレクティブを変更することで調整できます。値は単位付きの文字列で指定する必要があります（例：`15M` は15 MBを表します）。
+      デフォルトのアップロードファイルサイズ制限は100 MBです。この制限は、`nginx` サービスの `/etc/nginx/nginx.conf` 設定ファイル内の `client_max_body_size` ディレクティブを変更することで調整できます。値は単位付きの文字列で指定する必要があります（例：`100M` は100 MBを表します）。
 
-      また、`api` サービスの環境で `UPLOAD_FILE_SIZE_LIMIT` 変数を設定し、上記の設定と一致させる必要があるかもしれません。この値が `/etc/nginx/nginx.conf` の設定にある `client_max_body_size` ディレクティブと同じであることを確認してください（例：`15M` は15 MBを表します）。
+      また、`api` サービスの環境で `UPLOAD_FILE_SIZE_LIMIT` 変数を設定し、上記の設定と一致させる必要があるかもしれません。この値が `/etc/nginx/nginx.conf` の設定にある `client_max_body_size` ディレクティブと同じであることを確認してください（例：`100M` は100 MBを表します）。
+
+      ## 変更履歴
+
+      ### v1.12.1-2
+
+      #### 追加
+      - worker-beat スケジューラサービスを追加
+
+      #### 修正
+      - ファイルアップロードサイズ制限を 15MB から 100MB に引き上げ
+      - プラグインエンドポイントページのアセット読み込み 404 を修正
+      - プラグインエンドポイント URL が localhost と表示される問題を修正
+      - テンプレートからのアプリ作成が失敗する問題を修正
+
+      #### 改善
+      - 環境変数を各サービスで管理するように変更し、重複を削減
 
   zh-CN:
     description: Dify 是一个开源的大型语言模型(LLM)应用开发平台。
@@ -780,7 +762,8 @@ localization:
       ## 应用结构
 
       - Redis、PostgreSQL、MINIO 和 Weaviate 用于数据存储和缓存。
-      - `api`、`worker`、`web` 和 `sandbox` 是 Dify 的微服务。
+      - `api`、`worker`、`worker-beat`、`web` 和 `sandbox` 是 Dify 的微服务。
+      - `plugin-daemon` 管理第三方插件的执行和生命周期。
       - `nginx` 是 Dify 的网关。它将微服务集成到一个主机上。换句话说，**它是您的 Dify 应用的入口点。**
 
       ## 配置
@@ -789,9 +772,25 @@ localization:
 
       ### 上传文件大小限制
 
-      默认的上传文件大小限制为 15 MB。你可以通过修改 `nginx` 服务中的 `/etc/nginx/nginx.conf` 配置文件里的 `client_max_body_size` 指令来调整这个限制。数值应为带有单位的字符串（例如：`15M` 表示 15 MB）。
+      默认的上传文件大小限制为 100 MB。你可以通过修改 `nginx` 服务中的 `/etc/nginx/nginx.conf` 配置文件里的 `client_max_body_size` 指令来调整这个限制。数值应为带有单位的字符串（例如：`100M` 表示 100 MB）。
 
-      另外，你可能需要在 `api` 服务的环境中设置 `UPLOAD_FILE_SIZE_LIMIT` 变量，使其与上述配置保持一致。请确保这个数值与 `/etc/nginx/nginx.conf` 配置中的 `client_max_body_size` 指令相同（例如：`15M` 表示 15 MB）。
+      另外，你可能需要在 `api` 服务的环境中设置 `UPLOAD_FILE_SIZE_LIMIT` 变量，使其与上述配置保持一致。请确保这个数值与 `/etc/nginx/nginx.conf` 配置中的 `client_max_body_size` 指令相同（例如：`100M` 表示 100 MB）。
+
+      ## 更新日志
+
+      ### v1.12.1-2
+
+      #### 新增
+      - 新增 worker-beat 排程服务
+
+      #### 修正
+      - 文件上传大小从 15MB 提高到 100MB
+      - 修正 plugin endpoint 页面 asset 加载 404
+      - 修正 plugin endpoint URL 显示为 localhost
+      - 修正从模板创建应用时会失败的问题
+
+      #### 优化
+      - 环境变量改由对应服务各自管理，减少重复设定
 
   zh-TW:
     description: Dify 是一個開源的大型語言模型(LLM)應用開發平台。
@@ -815,7 +814,8 @@ localization:
       ## 應用程式結構
 
       - Redis、PostgreSQL、MINIO 和 Weaviate 用於資料儲存和快取。
-      - `api`、`worker`、`web` 和 `sandbox` 是 Dify 的微服務。
+      - `api`、`worker`、`worker-beat`、`web` 和 `sandbox` 是 Dify 的微服務。
+      - `plugin-daemon` 管理第三方插件的執行和生命週期。
       - `nginx` 是 Dify 的閘道。它將微服務整合到一個主機上。換句話說，**它是您的 Dify 應用程式的入口點。**
 
       ## 設定
@@ -824,6 +824,126 @@ localization:
 
       ### 上傳檔案大小限制
 
-      預設的上傳檔案大小限制為 15 MB。你可以透過修改 `nginx` 服務中的 `/etc/nginx/nginx.conf` 設定檔裡的 `client_max_body_size` 指令來調整這個限制。數值應為帶有單位的字串（例如：`15M` 代表 15 MB）。
+      預設的上傳檔案大小限制為 100 MB。你可以透過修改 `nginx` 服務中的 `/etc/nginx/nginx.conf` 設定檔裡的 `client_max_body_size` 指令來調整這個限制。數值應為帶有單位的字串（例如：`100M` 代表 100 MB）。
 
-      此外，你可能需要在 `api` 服務的環境中設定 `UPLOAD_FILE_SIZE_LIMIT` 變數，使其與上述設定相符。請確保這個數值與 `/etc/nginx/nginx.conf` 設定中的 `client_max_body_size` 指令相同（例如：`15M` 代表 15 MB）。
+      此外，你可能需要在 `api` 服務的環境中設定 `UPLOAD_FILE_SIZE_LIMIT` 變數，使其與上述設定相符。請確保這個數值與 `/etc/nginx/nginx.conf` 設定中的 `client_max_body_size` 指令相同（例如：`100M` 代表 100 MB）。
+
+      ## 更新日誌
+
+      ### v1.12.1-2
+
+      #### 新增
+      - 新增 worker-beat 排程服務
+
+      #### 修正
+      - 檔案上傳大小從 15MB 提高到 100MB
+      - 修正 plugin endpoint 頁面 asset 載入 404
+      - 修正 plugin endpoint URL 顯示為 localhost
+      - 修正從模板建立應用時會失敗的問題
+
+      #### 優化
+      - 環境變數改由對應服務各自管理，減少重複設定
+
+  es:
+    description: Dify es una plataforma de desarrollo de aplicaciones LLM de código abierto.
+    readme: |-
+      Dify es una plataforma de desarrollo de aplicaciones LLM de código abierto. Su interfaz intuitiva combina flujos de trabajo de IA, pipelines RAG, capacidades de agentes, gestión de modelos, funciones de observabilidad y más, permitiéndote pasar rápidamente del prototipo a producción.
+
+      ## Características
+
+      1. **Flujos de trabajo**: Construye y prueba potentes flujos de trabajo de IA en un lienzo visual, aprovechando todas las siguientes características y más.
+      2. **Soporte integral de modelos**: Integración fluida con cientos de LLMs propietarios/de código abierto de docenas de proveedores de inferencia y soluciones autoalojadas, cubriendo GPT, Mistral, Llama3 y cualquier modelo compatible con la API de OpenAI. La lista completa de proveedores de modelos compatibles se puede encontrar en [la sección de Proveedores de Modelos](https://docs.dify.ai/getting-started/readme/model-providers).
+      3. **IDE de prompts**: Interfaz intuitiva para crear prompts, comparar el rendimiento de los modelos y agregar funciones adicionales como texto a voz en una aplicación basada en chat.
+      4. **Pipeline RAG**: Amplias capacidades RAG que cubren desde la ingesta de documentos hasta la recuperación, con soporte listo para usar para la extracción de texto de PDFs, PPTs y otros formatos de documentos comunes.
+      5. **Capacidades de agentes**: Puedes definir agentes basados en llamadas a funciones LLM o ReAct, y agregar herramientas preconstruidas o personalizadas para el agente. Dify proporciona más de 50 herramientas integradas para agentes de IA, como Google Search, DELL·E, Stable Diffusion y WolframAlpha.
+      6. **LLMOps**: Monitorea y analiza los registros y el rendimiento de la aplicación a lo largo del tiempo. Puedes mejorar continuamente los prompts, conjuntos de datos y modelos basándote en datos de producción y anotaciones.
+      7. **Backend como servicio**: Todas las ofertas de Dify vienen con APIs correspondientes, por lo que puedes integrar Dify fácilmente en tu propia lógica de negocio.
+
+      ## Despliegue
+
+      Para desplegar Dify, haz clic en el botón "Deploy" en la esquina superior derecha e ingresa el nombre de dominio requerido. Una vez desplegado, puedes acceder a tu aplicación Dify en `https://<your-domain>.zeabur.app`.
+
+      ## Estructura de la aplicación
+
+      - Redis, PostgreSQL, MINIO y Weaviate para almacenamiento de datos y caché.
+      - `api`, `worker`, `worker-beat`, `web` y `sandbox` son los microservicios de Dify.
+      - `plugin-daemon` gestiona la ejecución y el ciclo de vida de los plugins de terceros.
+      - `nginx` es el gateway de Dify. Integra los microservicios en un solo host. En otras palabras, **es el punto de entrada de tu aplicación Dify.**
+
+      ## Configuración
+
+      Consulta <https://docs.dify.ai/getting-started/install-self-hosted/environments> para las variables configurables, que se establecen principalmente en el servicio `api`.
+
+      ### Límite de tamaño de archivo de carga
+
+      El límite de tamaño de archivo de carga predeterminado es 100 MB. Puedes cambiar este límite modificando la directiva `client_max_body_size` en el archivo de configuración ubicado en `/etc/nginx/nginx.conf` para el servicio `nginx`. El valor debe ser una cadena con una unidad (por ejemplo, `100M` para 100 MB).
+
+      Además, es posible que necesites establecer la variable `UPLOAD_FILE_SIZE_LIMIT` en el entorno del servicio `api` para que coincida con este valor. Asegúrate de que este valor sea el mismo que la directiva `client_max_body_size` en la configuración `/etc/nginx/nginx.conf` (por ejemplo, `100M` para 100 MB).
+
+      ## Registro de cambios
+
+      ### v1.12.1-2
+
+      #### Nuevo
+      - Añadido servicio de programador worker-beat
+
+      #### Correcciones
+      - Aumento del límite de tamaño de carga de archivos de 15MB a 100MB
+      - Corregido error 404 al cargar assets de la página de plugin endpoint
+      - Corregido URL de plugin endpoint que mostraba localhost
+      - Corregido fallo al crear aplicaciones desde plantillas
+
+      #### Mejoras
+      - Las variables de entorno ahora son gestionadas por sus respectivos servicios, reduciendo duplicación
+
+  id:
+    description: Dify adalah platform pengembangan aplikasi LLM sumber terbuka.
+    readme: |-
+      Dify adalah platform pengembangan aplikasi LLM sumber terbuka. Antarmukanya yang intuitif menggabungkan alur kerja AI, pipeline RAG, kemampuan agen, manajemen model, fitur observabilitas, dan lainnya, memungkinkan Anda beralih dengan cepat dari prototipe ke produksi.
+
+      ## Fitur
+
+      1. **Alur Kerja**: Bangun dan uji alur kerja AI yang kuat di kanvas visual, memanfaatkan semua fitur berikut dan lebih banyak lagi.
+      2. **Dukungan model yang komprehensif**: Integrasi mulus dengan ratusan LLM proprietary/sumber terbuka dari puluhan penyedia inferensi dan solusi self-hosted, mencakup GPT, Mistral, Llama3, dan model apa pun yang kompatibel dengan API OpenAI. Daftar lengkap penyedia model yang didukung dapat ditemukan di [bagian Penyedia Model](https://docs.dify.ai/getting-started/readme/model-providers).
+      3. **IDE Prompt**: Antarmuka intuitif untuk membuat prompt, membandingkan performa model, dan menambahkan fitur tambahan seperti text-to-speech ke aplikasi berbasis chat.
+      4. **Pipeline RAG**: Kemampuan RAG yang luas mencakup segala hal mulai dari penyerapan dokumen hingga pengambilan, dengan dukungan siap pakai untuk ekstraksi teks dari PDF, PPT, dan format dokumen umum lainnya.
+      5. **Kemampuan Agen**: Anda dapat mendefinisikan agen berdasarkan LLM Function Calling atau ReAct, dan menambahkan alat bawaan atau kustom untuk agen. Dify menyediakan 50+ alat bawaan untuk agen AI, seperti Google Search, DELL·E, Stable Diffusion, dan WolframAlpha.
+      6. **LLMOps**: Pantau dan analisis log dan performa aplikasi dari waktu ke waktu. Anda dapat terus meningkatkan prompt, dataset, dan model berdasarkan data produksi dan anotasi.
+      7. **Backend-as-a-Service**: Semua penawaran Dify dilengkapi dengan API yang sesuai, sehingga Anda dapat dengan mudah mengintegrasikan Dify ke dalam logika bisnis Anda sendiri.
+
+      ## Deployment
+
+      Untuk men-deploy Dify, klik tombol "Deploy" di sudut kanan atas, dan isi nama domain yang diperlukan. Setelah di-deploy, Anda dapat mengakses aplikasi Dify Anda di `https://<your-domain>.zeabur.app`.
+
+      ## Struktur Aplikasi
+
+      - Redis, PostgreSQL, MINIO, dan Weaviate untuk penyimpanan data dan caching.
+      - `api`, `worker`, `worker-beat`, `web`, dan `sandbox` adalah microservice Dify.
+      - `plugin-daemon` mengelola eksekusi dan siklus hidup plugin pihak ketiga.
+      - `nginx` adalah gateway Dify. Mengintegrasikan microservice ke satu host. Dengan kata lain, **ini adalah titik masuk aplikasi Dify Anda.**
+
+      ## Konfigurasi
+
+      Lihat <https://docs.dify.ai/getting-started/install-self-hosted/environments> untuk variabel yang dapat dikonfigurasi, yang terutama diatur di layanan `api`.
+
+      ### Batas Ukuran File Upload
+
+      Batas ukuran file upload default adalah 100 MB. Anda dapat mengubah batas ini dengan memodifikasi direktif `client_max_body_size` di file konfigurasi yang terletak di `/etc/nginx/nginx.conf` untuk layanan `nginx`. Nilainya harus berupa string dengan satuan (misalnya, `100M` untuk 100 MB).
+
+      Selain itu, Anda mungkin perlu mengatur variabel `UPLOAD_FILE_SIZE_LIMIT` di lingkungan layanan `api` agar sesuai dengan nilai ini. Pastikan nilai ini sama dengan direktif `client_max_body_size` dalam konfigurasi `/etc/nginx/nginx.conf` (misalnya, `100M` untuk 100 MB).
+
+      ## Catatan Perubahan
+
+      ### v1.12.1-2
+
+      #### Baru
+      - Menambahkan layanan penjadwal worker-beat
+
+      #### Perbaikan
+      - Meningkatkan batas ukuran upload file dari 15MB ke 100MB
+      - Memperbaiki error 404 saat memuat asset halaman plugin endpoint
+      - Memperbaiki URL plugin endpoint yang menampilkan localhost
+      - Memperbaiki kegagalan pembuatan aplikasi dari template
+
+      #### Peningkatan
+      - Variabel lingkungan sekarang dikelola oleh layanan masing-masing, mengurangi duplikasi
