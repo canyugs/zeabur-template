@@ -25,9 +25,13 @@ spec:
       - Telegram
       - Slack
       - Discord
-    resourceUsage:
-      cpu: 2
-      memory: 4096
+    resourceRequirement:
+      minConfig:
+        cpu: 2
+        ram: 2
+      recommendedConfig:
+        cpu: 4
+        ram: 8
 
     readme: |
       # OpenClaw 🦞
@@ -39,6 +43,8 @@ spec:
 
       ⚠️ macOS-specific software and packages (e.g. Homebrew) are not supported in this container environment. Please look for alternative solutions.
 
+      ⚠️ This template requires a [Dedicated Server](https://zeabur.com/docs/dedicated-server) on Zeabur. It cannot run on shared clusters.
+
       ⚠️ This template is pre-configured and ready to use - no need to run the setup wizard. If you do want to run the wizard, remember to set bind to `lan` mode. Refer to the [official documentation](https://docs.openclaw.ai) for more advanced configuration.
 
       ---
@@ -49,6 +55,7 @@ spec:
 
       ## Feature Extensions
       - **Browser**: If you need browser features (web browsing, screenshots, etc.), deploy the [Browser Template](https://zeabur.com/templates/H8L4G1)
+      - **Devbox**: If you need multi-language code execution (Python, Go, Rust, C/C++), deploy the [Devbox Template](https://zeabur.com/templates/ZBVZNH) to the same project
 
       ## Usage
       1. After deployment, copy "Web UI (with token)" URL from the **Instructions** tab and paste it into your browser (first login requires token, after that you can access directly)
@@ -1038,6 +1045,8 @@ localization:
 
       ⚠️ macOS 特有的軟體與套件（如 Homebrew）無法在此容器環境中使用，請尋找其他替代方案。
 
+      ⚠️ 此模板需要在 Zeabur 上使用[專用伺服器](https://zeabur.com/docs/dedicated-server)，無法在共享叢集上運行。
+
       ⚠️ 本模板已預先設定好可直接使用，不需要執行設定精靈。如果要執行精靈，請記得將 bind 設定為 `lan` 模式，或參考[官方文件](https://docs.openclaw.ai)進行更進階的設定。
 
       ---
@@ -1048,6 +1057,7 @@ localization:
 
       ## 功能擴充
       - **瀏覽器**：如需瀏覽器功能（網頁瀏覽、截圖等），請部署 [Browser 模板](https://zeabur.com/templates/H8L4G1)
+      - **Devbox**：如需多語言程式執行（Python、Go、Rust、C/C++），請將 [Devbox 模板](https://zeabur.com/templates/ZBVZNH) 部署到同一個專案
 
       ## 使用方式
       1. 部署完成後，在**使用說明**頁籤複製「Web UI (with token)」網址，貼到瀏覽器開啟（首次登入需要 token，之後可直接開啟網址）
@@ -1287,6 +1297,8 @@ localization:
 
       ⚠️ macOS 特有的软件与套件（如 Homebrew）无法在此容器环境中使用，请寻找其他替代方案。
 
+      ⚠️ 此模板需要在 Zeabur 上使用[专用服务器](https://zeabur.com/docs/dedicated-server)，无法在共享集群上运行。
+
       ⚠️ 本模板已预先配置好可直接使用，不需要运行设置向导。如果要运行向导，请记得将 bind 设置为 `lan` 模式，或参考[官方文档](https://docs.openclaw.ai)进行更高级的配置。
 
       ---
@@ -1297,6 +1309,7 @@ localization:
 
       ## 功能扩充
       - **浏览器**：如需浏览器功能（网页浏览、截图等），请部署 [Browser 模板](https://zeabur.com/templates/H8L4G1)
+      - **Devbox**：如需多语言程序执行（Python、Go、Rust、C/C++），请将 [Devbox 模板](https://zeabur.com/templates/ZBVZNH) 部署到同一个项目
 
       ## 使用方式
       1. 部署完成后，在**使用说明**页签复制「Web UI (with token)」网址，贴到浏览器打开（首次登录需要 token，之后可直接打开网址）
@@ -1536,6 +1549,8 @@ localization:
 
       ⚠️ macOS 固有のソフトウェアやパッケージ（Homebrew など）はこのコンテナ環境ではサポートされていません。代替ソリューションをお探しください。
 
+      ⚠️ このテンプレートは Zeabur の[専用サーバー](https://zeabur.com/docs/dedicated-server)が必要です。共有クラスターでは実行できません。
+
       ⚠️ 本テンプレートは事前設定済みですぐに使用できます。セットアップウィザードを実行する必要はありません。ウィザードを実行する場合は、bind を `lan` モードに設定するか、[公式ドキュメント](https://docs.openclaw.ai)を参照してより高度な設定を行ってください。
 
       ---
@@ -1546,6 +1561,7 @@ localization:
 
       ## 機能拡張
       - **ブラウザ**：ブラウザ機能（Web ブラウジング、スクリーンショットなど）が必要な場合は、[Browser テンプレート](https://zeabur.com/templates/H8L4G1)をデプロイしてください
+      - **Devbox**：多言語コード実行（Python、Go、Rust、C/C++）が必要な場合は、[Devbox テンプレート](https://zeabur.com/templates/ZBVZNH)を同じプロジェクトにデプロイしてください
 
       ## 使用方法
       1. デプロイ後、**指示**タブの「Web UI (with token)」URL をコピーしてブラウザに貼り付けて開く（初回ログインは token が必要、以降は直接 URL にアクセス可能）
@@ -1785,6 +1801,8 @@ localization:
 
       ⚠️ El software y paquetes específicos de macOS (como Homebrew) no son compatibles en este entorno de contenedor. Por favor busque soluciones alternativas.
 
+      ⚠️ Esta plantilla requiere un [Servidor Dedicado](https://zeabur.com/docs/dedicated-server) en Zeabur. No se puede ejecutar en clústeres compartidos.
+
       ⚠️ Esta plantilla está preconfigurada y lista para usar - no es necesario ejecutar el asistente de configuración. Si desea ejecutar el asistente, recuerde configurar bind en modo `lan`. Consulte la [documentación oficial](https://docs.openclaw.ai) para configuraciones más avanzadas.
 
       ---
@@ -1795,6 +1813,7 @@ localization:
 
       ## Extensiones de Funciones
       - **Navegador**: Si necesita funciones del navegador (navegación web, capturas de pantalla, etc.), despliegue la [Plantilla Browser](https://zeabur.com/templates/H8L4G1)
+      - **Devbox**: Si necesita ejecución de código multilenguaje (Python, Go, Rust, C/C++), despliegue la [Plantilla Devbox](https://zeabur.com/templates/ZBVZNH) en el mismo proyecto
 
       ## Uso
       1. Después del despliegue, copie la URL "Web UI (with token)" de la pestaña **Instrucciones** y péguela en su navegador (el primer inicio de sesión requiere token, después puede acceder directamente)
@@ -2034,6 +2053,8 @@ localization:
 
       ⚠️ Software dan paket khusus macOS (seperti Homebrew) tidak didukung di lingkungan container ini. Silakan cari solusi alternatif.
 
+      ⚠️ Template ini memerlukan [Dedicated Server](https://zeabur.com/docs/dedicated-server) di Zeabur. Tidak dapat berjalan di kluster bersama.
+
       ⚠️ Template ini sudah dikonfigurasi dan siap digunakan - tidak perlu menjalankan wizard pengaturan. Jika ingin menjalankan wizard, ingat untuk mengatur bind ke mode `lan`. Lihat [dokumentasi resmi](https://docs.openclaw.ai) untuk konfigurasi lebih lanjut.
 
       ---
@@ -2044,6 +2065,7 @@ localization:
 
       ## Ekstensi Fitur
       - **Browser**: Jika Anda memerlukan fitur browser (browsing web, screenshot, dll.), deploy [Template Browser](https://zeabur.com/templates/H8L4G1)
+      - **Devbox**: Jika Anda memerlukan eksekusi kode multi-bahasa (Python, Go, Rust, C/C++), deploy [Template Devbox](https://zeabur.com/templates/ZBVZNH) ke proyek yang sama
 
       ## Penggunaan
       1. Setelah deploy, salin URL "Web UI (with token)" dari tab **Instruksi** dan tempelkan di browser Anda (login pertama memerlukan token, setelah itu bisa langsung akses URL)
