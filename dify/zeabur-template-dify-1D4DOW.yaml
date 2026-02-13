@@ -52,6 +52,15 @@ spec:
 
     ## Changelog
 
+    ### v1.13.0
+
+    #### New
+    - Human-in-the-Loop (HITL) workflow node for AI-human collaboration
+    - Workflow streaming now runs in Celery workers for better reliability
+
+    #### Fixes
+    - Internal file URL for plugin daemon communication
+
     ### v1.12.1-2
 
     #### New
@@ -377,7 +386,7 @@ spec:
         - redis
       spec:
         source:
-          image: langgenius/dify-api:1.12.1
+          image: langgenius/dify-api:1.13.0
         ports:
           - id: api
             port: 5001
@@ -408,6 +417,8 @@ spec:
             expose: true
           HOSTED_FETCH_APP_TEMPLATES_MODE:
             default: builtin
+          INTERNAL_FILES_URL:
+            default: http://api:5001
           INNER_API:
             default: "true"
           INNER_API_KEY:
@@ -456,7 +467,7 @@ spec:
         - api
       spec:
         source:
-          image: langgenius/dify-api:1.12.1
+          image: langgenius/dify-api:1.13.0
         env:
           LOG_LEVEL:
             default: INFO
@@ -472,7 +483,7 @@ spec:
         - api
       spec:
         source:
-          image: langgenius/dify-api:1.12.1
+          image: langgenius/dify-api:1.13.0
         env:
           LOG_LEVEL:
             default: INFO
@@ -484,7 +495,7 @@ spec:
       template: PREBUILT_V2
       spec:
         source:
-          image: langgenius/dify-web:1.12.1
+          image: langgenius/dify-web:1.13.0
         ports:
           - id: web
             port: 3000
@@ -726,6 +737,15 @@ localization:
 
       ## 変更履歴
 
+      ### v1.13.0
+
+      #### 追加
+      - AI と人間の協働のための Human-in-the-Loop（HITL）ワークフローノード
+      - ワークフローストリーミングが Celery ワーカーで実行されるようになり、信頼性が向上
+
+      #### 修正
+      - プラグインデーモン通信用の内部ファイル URL を追加
+
       ### v1.12.1-2
 
       #### 追加
@@ -777,6 +797,15 @@ localization:
       另外，你可能需要在 `api` 服务的环境中设置 `UPLOAD_FILE_SIZE_LIMIT` 变量，使其与上述配置保持一致。请确保这个数值与 `/etc/nginx/nginx.conf` 配置中的 `client_max_body_size` 指令相同（例如：`100M` 表示 100 MB）。
 
       ## 更新日志
+
+      ### v1.13.0
+
+      #### 新增
+      - Human-in-the-Loop（HITL）工作流节点，支持 AI 与人类协作
+      - 工作流流式处理现在在 Celery worker 中运行，提升可靠性
+
+      #### 修正
+      - 新增插件守护进程通信用的内部文件 URL
 
       ### v1.12.1-2
 
@@ -830,6 +859,15 @@ localization:
 
       ## 更新日誌
 
+      ### v1.13.0
+
+      #### 新增
+      - Human-in-the-Loop（HITL）工作流程節點，支援 AI 與人類協作
+      - 工作流程串流處理現在在 Celery worker 中執行，提升可靠性
+
+      #### 修正
+      - 新增插件守護程式通訊用的內部檔案 URL
+
       ### v1.12.1-2
 
       #### 新增
@@ -882,6 +920,15 @@ localization:
 
       ## Registro de cambios
 
+      ### v1.13.0
+
+      #### Nuevo
+      - Nodo de flujo de trabajo Human-in-the-Loop (HITL) para colaboración entre IA y humanos
+      - El streaming de flujos de trabajo ahora se ejecuta en workers de Celery para mayor fiabilidad
+
+      #### Correcciones
+      - URL de archivo interno para la comunicación del plugin daemon
+
       ### v1.12.1-2
 
       #### Nuevo
@@ -933,6 +980,15 @@ localization:
       Selain itu, Anda mungkin perlu mengatur variabel `UPLOAD_FILE_SIZE_LIMIT` di lingkungan layanan `api` agar sesuai dengan nilai ini. Pastikan nilai ini sama dengan direktif `client_max_body_size` dalam konfigurasi `/etc/nginx/nginx.conf` (misalnya, `100M` untuk 100 MB).
 
       ## Catatan Perubahan
+
+      ### v1.13.0
+
+      #### Baru
+      - Node alur kerja Human-in-the-Loop (HITL) untuk kolaborasi AI-manusia
+      - Streaming alur kerja sekarang berjalan di worker Celery untuk keandalan yang lebih baik
+
+      #### Perbaikan
+      - URL file internal untuk komunikasi plugin daemon
 
       ### v1.12.1-2
 
