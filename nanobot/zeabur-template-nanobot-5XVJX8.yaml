@@ -5,7 +5,7 @@ metadata:
     name: Nanobot
 spec:
     description: |
-      Nanobot is an ultra-lightweight personal AI assistant (~4K lines core code) supporting multiple LLM providers and chat platforms including Telegram, Discord, Slack, DingTalk, Feishu, QQ, and Email.
+      Nanobot is an ultra-lightweight personal AI assistant (~4K lines core code) supporting multiple LLM providers and chat platforms including Telegram, Discord, WhatsApp, Slack, DingTalk, Feishu, QQ, and Email.
     icon: https://raw.githubusercontent.com/HKUDS/nanobot/main/nanobot_logo.png
     coverImage: https://raw.githubusercontent.com/HKUDS/nanobot/main/nanobot_arch.png
     tags:
@@ -14,15 +14,18 @@ spec:
       - Chatbot
       - Telegram
       - Discord
+    resourceRequirement:
+      minConfig:
+        cpu: 1
+        ram: 1
+      recommendedConfig:
+        cpu: 1
+        ram: 2
     variables:
       - key: ZEABUR_AI_HUB_API_KEY
         type: STRING
         name: Zeabur AI Hub API Key
         description: Zeabur AI Hub API key for multi-model access (get one at zeabur.com). Recommended for Zeabur users. Leave empty to use other providers.
-      - key: OPENROUTER_API_KEY
-        type: STRING
-        name: OpenRouter API Key
-        description: Your OpenRouter API key for multi-model access (get one at openrouter.ai). Leave empty to configure later.
       - key: TELEGRAM_BOT_TOKEN
         type: STRING
         name: Telegram Bot Token
@@ -30,13 +33,17 @@ spec:
     readme: |
       # Nanobot
 
+      > ⚠️ This template requires a [Dedicated Server](https://zeabur.com/docs/dedicated-server) on Zeabur and cannot run on shared clusters.
+
+      **Recommended resources:** 1 vCPU / 2 GB RAM (minimum: 0.5 vCPU / 256 MB RAM)
+
       Nanobot is an ultra-lightweight personal AI assistant framework (~4K lines of core agent code) from [HKUDS](https://github.com/HKUDS/nanobot). It supports multiple LLM providers and connects to various messaging platforms via a unified Gateway architecture.
+
+      **Official documentation:** [github.com/HKUDS/nanobot](https://github.com/HKUDS/nanobot)
 
       ## Supported Chat Platforms
 
-      Telegram, Discord, Slack, DingTalk, Feishu, QQ, and Email.
-
-      > **Note:** WhatsApp requires the Node.js bridge which is only available when building from source. This template installs from PyPI and does not include WhatsApp support.
+      Telegram, Discord, WhatsApp, Slack, DingTalk, Feishu, QQ, and Email.
 
       ## Quick Start
 
@@ -45,17 +52,21 @@ spec:
       3. If you entered a Telegram bot token, the bot is ready — send it a message to start chatting
       4. To add more platforms or change settings, edit `/root/.nanobot/config.json` via the **Files** tab
 
+      **Skipped a field during deployment?** You can add it later by editing `/root/.nanobot/config.json` in the **Files** tab, or by adding the corresponding environment variable in the Zeabur dashboard and restarting the service.
+
+      **Default model:** When using Zeabur AI Hub, the default model is `openai/claude-sonnet-4-5`. When using OpenRouter, the default model is `openrouter/anthropic/claude-sonnet-4`. You can change this in the config file at any time.
+
       ## LLM Providers
 
       Nanobot supports many providers. You can switch at any time by editing `/root/.nanobot/config.json` via the **Files** tab and restarting the service.
 
-      | Provider | `providers` config | Model ID example |
-      |----------|-------------------|-----------------|
-      | Zeabur AI Hub | `"openai": {"api_key":"...","api_base":"https://hnd1.aihub.zeabur.ai/v1"}` | `openai/claude-sonnet-4-5` |
-      | OpenRouter | `"openrouter": {"api_key":"sk-or-..."}` | `openrouter/anthropic/claude-sonnet-4` |
-      | Anthropic | `"anthropic": {"api_key":"sk-ant-..."}` | `anthropic/claude-sonnet-4-5` |
-      | OpenAI | `"openai": {"api_key":"sk-..."}` | `openai/gpt-4o` |
-      | DeepSeek | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
+      | Provider | How to get API key | `providers` config | Model ID example |
+      |----------|-------------------|-------------------|-----------------|
+      | Zeabur AI Hub | [zeabur.com/ai-hub](https://zeabur.com/ai-hub) | `"openai": {"api_key":"...","api_base":"https://hnd1.aihub.zeabur.ai/v1"}` | `openai/claude-sonnet-4-5` |
+      | OpenRouter | [openrouter.ai/keys](https://openrouter.ai/keys) | `"openrouter": {"api_key":"sk-or-..."}` | `openrouter/anthropic/claude-sonnet-4` |
+      | Anthropic | [console.anthropic.com](https://console.anthropic.com/) | `"anthropic": {"api_key":"sk-ant-..."}` | `anthropic/claude-sonnet-4-5` |
+      | OpenAI | [platform.openai.com](https://platform.openai.com/api-keys) | `"openai": {"api_key":"sk-..."}` | `openai/gpt-4o` |
+      | DeepSeek | [platform.deepseek.com](https://platform.deepseek.com/) | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
 
       **To switch provider:**
       1. Open `/root/.nanobot/config.json` in the **Files** tab
@@ -77,7 +88,7 @@ spec:
 
       ## Chat Platforms
 
-      Supported: Telegram, Discord, Slack, DingTalk, Feishu, QQ, and Email.
+      Supported: Telegram, Discord, WhatsApp, Slack, DingTalk, Feishu, QQ, and Email. See the [official documentation](https://github.com/HKUDS/nanobot#-chat-apps) for the full list and setup guides.
 
       **Telegram setup:**
       1. Search for `@BotFather` on Telegram and send `/newbot`
@@ -102,7 +113,7 @@ spec:
       }
       ```
 
-      **`allow_from`** — controls who can talk to the bot. Empty list `[]` = anyone can use it. To restrict access, add user IDs:
+      **`allow_from`** — controls who can talk to the bot. Empty list `[]` = anyone can use it. To restrict access, add user IDs (for Telegram, send a message to `@userinfobot` to find your user ID):
 
       ```json
       "allow_from": ["123456789", "987654321"]
@@ -123,6 +134,8 @@ spec:
       - `config.json` - Configuration
       - `workspace/` - Agent workspace and memory
 
+      It is recommended to use [Zeabur's backup feature](https://zeabur.com/docs/manage/backup) to regularly back up your data.
+
       ## Troubleshooting
 
       **Service won't start?**
@@ -132,13 +145,15 @@ spec:
 
       **Update version:** Modify the startup script to install a specific version: `uv pip install --system nanobot-ai==0.1.3.post6`
 
+      **More help:** See the [official documentation](https://github.com/HKUDS/nanobot) for detailed configuration and usage guides.
+
     services:
       - name: nanobot
         icon: https://raw.githubusercontent.com/HKUDS/nanobot/main/nanobot_logo.png
         template: PREBUILT_V2
         spec:
           source:
-            image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+            image: ghcr.io/canyugs/nanobot:latest
             command:
               - /bin/sh
               - -c
@@ -157,13 +172,6 @@ spec:
               template: |
                 #!/bin/sh
                 set -e
-
-                echo "=== Installing nanobot-ai ==="
-                if ! command -v nanobot >/dev/null 2>&1; then
-                  uv pip install --system nanobot-ai
-                else
-                  echo "nanobot-ai already installed"
-                fi
 
                 CONFIG_DIR="/root/.nanobot"
                 CONFIG_FILE="$CONFIG_DIR/config.json"
@@ -248,25 +256,28 @@ spec:
 localization:
   zh-TW:
     description: |
-      Nanobot 是一個超輕量級個人 AI 助手（約 4K 行核心程式碼），支援多種 LLM 供應商和聊天平台，包括 Telegram、Discord、Slack、釘釘、飛書、QQ 和電子郵件。
+      Nanobot 是一個超輕量級個人 AI 助手（約 4K 行核心程式碼），支援多種 LLM 供應商和聊天平台，包括 Telegram、Discord、WhatsApp、Slack、釘釘、飛書、QQ 和電子郵件。
     variables:
       - key: ZEABUR_AI_HUB_API_KEY
         name: Zeabur AI Hub API 金鑰
         description: Zeabur AI Hub API 金鑰，用於多模型存取（在 zeabur.com 取得）。推薦 Zeabur 用戶使用。留空可使用其他供應商。
-      - key: OPENROUTER_API_KEY
-        name: OpenRouter API 金鑰
-        description: 您的 OpenRouter API 金鑰，用於多模型存取（在 openrouter.ai 取得）。留空可稍後設定。
       - key: TELEGRAM_BOT_TOKEN
         name: Telegram Bot Token
         description: 您的 Telegram 機器人 Token（從 @BotFather 取得）。留空可稍後設定。
     readme: |
       # Nanobot
 
+      > ⚠️ 此模板需要在 Zeabur 上使用[專用伺服器](https://zeabur.com/docs/dedicated-server)，無法在共享叢集上運行。
+
+      **建議資源：** 1 vCPU / 2 GB RAM（最低：0.5 vCPU / 256 MB RAM）
+
       Nanobot 是來自 [HKUDS](https://github.com/HKUDS/nanobot) 的超輕量級個人 AI 助手框架（約 4K 行核心代理程式碼）。支援多種 LLM 供應商，並透過統一的 Gateway 架構連接各種訊息平台。
+
+      **官方文件：** [github.com/HKUDS/nanobot](https://github.com/HKUDS/nanobot)
 
       ## 支援的聊天平台
 
-      Telegram、Discord、Slack、釘釘、飛書、QQ 和電子郵件。
+      Telegram、Discord、WhatsApp、Slack、釘釘、飛書、QQ 和電子郵件。
 
       ## 快速開始
 
@@ -275,17 +286,21 @@ localization:
       3. 如果您輸入了 Telegram bot token，機器人已就緒 — 直接發訊息即可開始對話
       4. 如需新增更多平台或修改設定，透過**檔案**標籤編輯 `/root/.nanobot/config.json`
 
+      **部署時跳過了某個欄位？** 可以事後透過**檔案**標籤編輯 `/root/.nanobot/config.json`，或在 Zeabur 控制台新增對應的環境變數並重啟服務。
+
+      **預設模型：** 使用 Zeabur AI Hub 時預設為 `openai/claude-sonnet-4-5`，使用 OpenRouter 時預設為 `openrouter/anthropic/claude-sonnet-4`。可隨時在設定檔中修改。
+
       ## LLM 供應商
 
       Nanobot 支援多種供應商，您可以隨時透過**檔案**標籤編輯 `/root/.nanobot/config.json` 並重啟服務來切換。
 
-      | 供應商 | `providers` 設定 | 模型 ID 範例 |
-      |--------|-----------------|-------------|
-      | Zeabur AI Hub | `"openai": {"api_key":"...","api_base":"https://hnd1.aihub.zeabur.ai/v1"}` | `openai/claude-sonnet-4-5` |
-      | OpenRouter | `"openrouter": {"api_key":"sk-or-..."}` | `openrouter/anthropic/claude-sonnet-4` |
-      | Anthropic | `"anthropic": {"api_key":"sk-ant-..."}` | `anthropic/claude-sonnet-4-5` |
-      | OpenAI | `"openai": {"api_key":"sk-..."}` | `openai/gpt-4o` |
-      | DeepSeek | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
+      | 供應商 | 取得 API 金鑰 | `providers` 設定 | 模型 ID 範例 |
+      |--------|-------------|-----------------|-------------|
+      | Zeabur AI Hub | [zeabur.com/ai-hub](https://zeabur.com/ai-hub) | `"openai": {"api_key":"...","api_base":"https://hnd1.aihub.zeabur.ai/v1"}` | `openai/claude-sonnet-4-5` |
+      | OpenRouter | [openrouter.ai/keys](https://openrouter.ai/keys) | `"openrouter": {"api_key":"sk-or-..."}` | `openrouter/anthropic/claude-sonnet-4` |
+      | Anthropic | [console.anthropic.com](https://console.anthropic.com/) | `"anthropic": {"api_key":"sk-ant-..."}` | `anthropic/claude-sonnet-4-5` |
+      | OpenAI | [platform.openai.com](https://platform.openai.com/api-keys) | `"openai": {"api_key":"sk-..."}` | `openai/gpt-4o` |
+      | DeepSeek | [platform.deepseek.com](https://platform.deepseek.com/) | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
 
       **切換供應商步驟：**
       1. 在**檔案**標籤開啟 `/root/.nanobot/config.json`
@@ -295,7 +310,7 @@ localization:
 
       ## 聊天平台
 
-      支援：Telegram、Discord、Slack、釘釘、飛書、QQ 和電子郵件。
+      支援：Telegram、Discord、WhatsApp、Slack、釘釘、飛書、QQ 和電子郵件。完整的設定方式請參考[官方文件](https://github.com/HKUDS/nanobot#-chat-apps)。
 
       **Telegram 設定步驟：**
       1. 在 Telegram 搜尋 `@BotFather` 並發送 `/newbot`
@@ -319,7 +334,7 @@ localization:
       }
       ```
 
-      **`allow_from`** — 控制誰可以與機器人對話。空清單 `[]` = 任何人都可使用。如需限制存取，加入使用者 ID：
+      **`allow_from`** — 控制誰可以與機器人對話。空清單 `[]` = 任何人都可使用。如需限制存取，加入使用者 ID（Telegram 使用者可傳送訊息給 `@userinfobot` 查詢自己的 ID）：
 
       ```json
       "allow_from": ["123456789", "987654321"]
@@ -331,27 +346,34 @@ localization:
 
       所有資料儲存在 `/root/.nanobot`（掛載為持久卷）。
 
+      建議使用 [Zeabur 的備份功能](https://zeabur.com/docs/manage/backup)定期備份您的資料。
+
+      **更多說明：** 請參考[官方文件](https://github.com/HKUDS/nanobot)。
+
   zh-CN:
     description: |
-      Nanobot 是一个超轻量级个人 AI 助手（约 4K 行核心代码），支持多种 LLM 供应商和聊天平台，包括 Telegram、Discord、Slack、钉钉、飞书、QQ 和电子邮件。
+      Nanobot 是一个超轻量级个人 AI 助手（约 4K 行核心代码），支持多种 LLM 供应商和聊天平台，包括 Telegram、Discord、WhatsApp、Slack、钉钉、飞书、QQ 和电子邮件。
     variables:
       - key: ZEABUR_AI_HUB_API_KEY
         name: Zeabur AI Hub API 密钥
         description: Zeabur AI Hub API 密钥，用于多模型访问（在 zeabur.com 获取）。推荐 Zeabur 用户使用。留空可使用其他供应商。
-      - key: OPENROUTER_API_KEY
-        name: OpenRouter API 密钥
-        description: 您的 OpenRouter API 密钥，用于多模型访问（在 openrouter.ai 获取）。留空可稍后设置。
       - key: TELEGRAM_BOT_TOKEN
         name: Telegram Bot Token
         description: 您的 Telegram 机器人 Token（从 @BotFather 获取）。留空可稍后设置。
     readme: |
       # Nanobot
 
+      > ⚠️ 此模板需要在 Zeabur 上使用[专用服务器](https://zeabur.com/docs/dedicated-server)，无法在共享集群上运行。
+
+      **建议资源：** 1 vCPU / 2 GB RAM（最低：0.5 vCPU / 256 MB RAM）
+
       Nanobot 是来自 [HKUDS](https://github.com/HKUDS/nanobot) 的超轻量级个人 AI 助手框架（约 4K 行核心代理代码）。支持多种 LLM 供应商，并通过统一的 Gateway 架构连接各种消息平台。
+
+      **官方文档：** [github.com/HKUDS/nanobot](https://github.com/HKUDS/nanobot)
 
       ## 支持的聊天平台
 
-      Telegram、Discord、Slack、钉钉、飞书、QQ 和电子邮件。
+      Telegram、Discord、WhatsApp、Slack、钉钉、飞书、QQ 和电子邮件。
 
       ## 快速开始
 
@@ -360,17 +382,21 @@ localization:
       3. 如果您输入了 Telegram bot token，机器人已就绪 — 直接发消息即可开始对话
       4. 如需添加更多平台或修改设置，通过**文件**标签编辑 `/root/.nanobot/config.json`
 
+      **部署时跳过了某个字段？** 可以事后通过**文件**标签编辑 `/root/.nanobot/config.json`，或在 Zeabur 控制台添加对应的环境变量并重启服务。
+
+      **默认模型：** 使用 Zeabur AI Hub 时默认为 `openai/claude-sonnet-4-5`，使用 OpenRouter 时默认为 `openrouter/anthropic/claude-sonnet-4`。可随时在配置文件中修改。
+
       ## LLM 供应商
 
       Nanobot 支持多种供应商，您可以随时通过**文件**标签编辑 `/root/.nanobot/config.json` 并重启服务来切换。
 
-      | 供应商 | `providers` 配置 | 模型 ID 示例 |
-      |--------|-----------------|-------------|
-      | Zeabur AI Hub | `"openai": {"api_key":"...","api_base":"https://hnd1.aihub.zeabur.ai/v1"}` | `openai/claude-sonnet-4-5` |
-      | OpenRouter | `"openrouter": {"api_key":"sk-or-..."}` | `openrouter/anthropic/claude-sonnet-4` |
-      | Anthropic | `"anthropic": {"api_key":"sk-ant-..."}` | `anthropic/claude-sonnet-4-5` |
-      | OpenAI | `"openai": {"api_key":"sk-..."}` | `openai/gpt-4o` |
-      | DeepSeek | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
+      | 供应商 | 获取 API 密钥 | `providers` 配置 | 模型 ID 示例 |
+      |--------|-------------|-----------------|-------------|
+      | Zeabur AI Hub | [zeabur.com/ai-hub](https://zeabur.com/ai-hub) | `"openai": {"api_key":"...","api_base":"https://hnd1.aihub.zeabur.ai/v1"}` | `openai/claude-sonnet-4-5` |
+      | OpenRouter | [openrouter.ai/keys](https://openrouter.ai/keys) | `"openrouter": {"api_key":"sk-or-..."}` | `openrouter/anthropic/claude-sonnet-4` |
+      | Anthropic | [console.anthropic.com](https://console.anthropic.com/) | `"anthropic": {"api_key":"sk-ant-..."}` | `anthropic/claude-sonnet-4-5` |
+      | OpenAI | [platform.openai.com](https://platform.openai.com/api-keys) | `"openai": {"api_key":"sk-..."}` | `openai/gpt-4o` |
+      | DeepSeek | [platform.deepseek.com](https://platform.deepseek.com/) | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
 
       **切换供应商步骤：**
       1. 在**文件**标签打开 `/root/.nanobot/config.json`
@@ -380,7 +406,7 @@ localization:
 
       ## 聊天平台
 
-      支持：Telegram、Discord、Slack、钉钉、飞书、QQ 和电子邮件。
+      支持：Telegram、Discord、WhatsApp、Slack、钉钉、飞书、QQ 和电子邮件。完整的配置方式请参考[官方文档](https://github.com/HKUDS/nanobot#-chat-apps)。
 
       **Telegram 设置步骤：**
       1. 在 Telegram 搜索 `@BotFather` 并发送 `/newbot`
@@ -404,7 +430,7 @@ localization:
       }
       ```
 
-      **`allow_from`** — 控制谁可以与机器人对话。空列表 `[]` = 任何人都可使用。如需限制访问，添加用户 ID：
+      **`allow_from`** — 控制谁可以与机器人对话。空列表 `[]` = 任何人都可使用。如需限制访问，添加用户 ID（Telegram 用户可向 `@userinfobot` 发消息查询自己的 ID）：
 
       ```json
       "allow_from": ["123456789", "987654321"]
@@ -416,27 +442,34 @@ localization:
 
       所有数据存储在 `/root/.nanobot`（挂载为持久卷）。
 
+      建议使用 [Zeabur 的备份功能](https://zeabur.com/docs/manage/backup)定期备份您的数据。
+
+      **更多说明：** 请参考[官方文档](https://github.com/HKUDS/nanobot)。
+
   ja-JP:
     description: |
-      Nanobot は超軽量パーソナル AI アシスタント（コアコード約4K行）で、複数の LLM プロバイダーと Telegram、Discord、Slack、DingTalk、Feishu、QQ、メールなどのチャットプラットフォームをサポートしています。
+      Nanobot は超軽量パーソナル AI アシスタント（コアコード約4K行）で、複数の LLM プロバイダーと Telegram、Discord、WhatsApp、Slack、DingTalk、Feishu、QQ、メールなどのチャットプラットフォームをサポートしています。
     variables:
       - key: ZEABUR_AI_HUB_API_KEY
         name: Zeabur AI Hub API キー
         description: Zeabur AI Hub API キー（zeabur.com で取得）。Zeabur ユーザーにおすすめ。空欄の場合は他のプロバイダーを使用できます。
-      - key: OPENROUTER_API_KEY
-        name: OpenRouter API キー
-        description: マルチモデルアクセス用の OpenRouter API キー（openrouter.ai で取得）。後で設定する場合は空欄にしてください。
       - key: TELEGRAM_BOT_TOKEN
         name: Telegram Bot トークン
         description: BotFather から取得した Telegram ボットトークン。後で設定する場合は空欄にしてください。
     readme: |
       # Nanobot
 
+      > ⚠️ このテンプレートは Zeabur の[専用サーバー](https://zeabur.com/docs/dedicated-server)が必要です。共有クラスターでは実行できません。
+
+      **推奨リソース：** 1 vCPU / 2 GB RAM（最小：0.5 vCPU / 256 MB RAM）
+
       Nanobot は [HKUDS](https://github.com/HKUDS/nanobot) による超軽量パーソナル AI アシスタントフレームワーク（コアエージェントコード約4K行）です。複数の LLM プロバイダーをサポートし、統一された Gateway アーキテクチャを通じて様々なメッセージングプラットフォームに接続します。
+
+      **公式ドキュメント：** [github.com/HKUDS/nanobot](https://github.com/HKUDS/nanobot)
 
       ## サポートされるチャットプラットフォーム
 
-      Telegram、Discord、Slack、DingTalk、Feishu、QQ、メール。
+      Telegram、Discord、WhatsApp、Slack、DingTalk、Feishu、QQ、メール。
 
       ## クイックスタート
 
@@ -445,17 +478,21 @@ localization:
       3. Telegram ボットトークンを入力した場合、ボットは準備完了 — メッセージを送信して会話を開始
       4. プラットフォームの追加や設定変更は **Files** タブから `/root/.nanobot/config.json` を編集
 
+      **デプロイ時に入力をスキップした場合：** **Files** タブから `/root/.nanobot/config.json` を編集するか、Zeabur ダッシュボードで対応する環境変数を追加してサービスを再起動してください。
+
+      **デフォルトモデル：** Zeabur AI Hub 使用時は `openai/claude-sonnet-4-5`、OpenRouter 使用時は `openrouter/anthropic/claude-sonnet-4`。設定ファイルでいつでも変更できます。
+
       ## LLM プロバイダー
 
       Nanobot は複数のプロバイダーをサポートしています。**Files** タブから `/root/.nanobot/config.json` を編集し、サービスを再起動することでいつでも切り替えできます。
 
-      | プロバイダー | `providers` 設定 | モデル ID 例 |
-      |------------|-----------------|-------------|
-      | Zeabur AI Hub | `"openai": {"api_key":"...","api_base":"https://hnd1.aihub.zeabur.ai/v1"}` | `openai/claude-sonnet-4-5` |
-      | OpenRouter | `"openrouter": {"api_key":"sk-or-..."}` | `openrouter/anthropic/claude-sonnet-4` |
-      | Anthropic | `"anthropic": {"api_key":"sk-ant-..."}` | `anthropic/claude-sonnet-4-5` |
-      | OpenAI | `"openai": {"api_key":"sk-..."}` | `openai/gpt-4o` |
-      | DeepSeek | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
+      | プロバイダー | API キー取得先 | `providers` 設定 | モデル ID 例 |
+      |------------|--------------|-----------------|-------------|
+      | Zeabur AI Hub | [zeabur.com/ai-hub](https://zeabur.com/ai-hub) | `"openai": {"api_key":"...","api_base":"https://hnd1.aihub.zeabur.ai/v1"}` | `openai/claude-sonnet-4-5` |
+      | OpenRouter | [openrouter.ai/keys](https://openrouter.ai/keys) | `"openrouter": {"api_key":"sk-or-..."}` | `openrouter/anthropic/claude-sonnet-4` |
+      | Anthropic | [console.anthropic.com](https://console.anthropic.com/) | `"anthropic": {"api_key":"sk-ant-..."}` | `anthropic/claude-sonnet-4-5` |
+      | OpenAI | [platform.openai.com](https://platform.openai.com/api-keys) | `"openai": {"api_key":"sk-..."}` | `openai/gpt-4o` |
+      | DeepSeek | [platform.deepseek.com](https://platform.deepseek.com/) | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
 
       **プロバイダー切り替え手順：**
       1. **Files** タブで `/root/.nanobot/config.json` を開く
@@ -465,7 +502,7 @@ localization:
 
       ## チャットプラットフォーム
 
-      対応：Telegram、Discord、Slack、DingTalk、Feishu、QQ、メール。
+      対応：Telegram、Discord、WhatsApp、Slack、DingTalk、Feishu、QQ、メール。設定方法の詳細は[公式ドキュメント](https://github.com/HKUDS/nanobot#-chat-apps)をご覧ください。
 
       **Telegram セットアップ手順：**
       1. Telegram で `@BotFather` を検索し `/newbot` を送信
@@ -489,7 +526,7 @@ localization:
       }
       ```
 
-      **`allow_from`** — ボットと会話できるユーザーを制御。空リスト `[]` = 誰でも利用可能。アクセスを制限するにはユーザー ID を追加：
+      **`allow_from`** — ボットと会話できるユーザーを制御。空リスト `[]` = 誰でも利用可能。アクセスを制限するにはユーザー ID を追加（Telegram では `@userinfobot` にメッセージを送信して自分の ID を確認）：
 
       ```json
       "allow_from": ["123456789", "987654321"]
@@ -501,27 +538,34 @@ localization:
 
       すべてのデータは `/root/.nanobot`（永続ボリュームとしてマウント）に保存されます。
 
+      [Zeabur のバックアップ機能](https://zeabur.com/docs/manage/backup)を使用して定期的にデータをバックアップすることをお勧めします。
+
+      **詳細：** [公式ドキュメント](https://github.com/HKUDS/nanobot)をご覧ください。
+
   es-ES:
     description: |
-      Nanobot es un asistente personal de IA ultraligero (~4K lineas de codigo central) que soporta multiples proveedores de LLM y plataformas de chat incluyendo Telegram, Discord, Slack, DingTalk, Feishu, QQ y correo electronico.
+      Nanobot es un asistente personal de IA ultraligero (~4K lineas de codigo central) que soporta multiples proveedores de LLM y plataformas de chat incluyendo Telegram, Discord, WhatsApp, Slack, DingTalk, Feishu, QQ y correo electronico.
     variables:
       - key: ZEABUR_AI_HUB_API_KEY
         name: Clave API de Zeabur AI Hub
         description: Clave API de Zeabur AI Hub para acceso multimodelo (obtenga una en zeabur.com). Recomendado para usuarios de Zeabur. Dejelo vacio para usar otros proveedores.
-      - key: OPENROUTER_API_KEY
-        name: Clave API de OpenRouter
-        description: Su clave API de OpenRouter para acceso multimodelo (obtenga una en openrouter.ai). Dejelo vacio para configurar despues.
       - key: TELEGRAM_BOT_TOKEN
         name: Token de Bot de Telegram
         description: Su token de bot de Telegram de BotFather. Dejelo vacio para configurar despues.
     readme: |
       # Nanobot
 
+      > ⚠️ Esta plantilla requiere un [Dedicated Server](https://zeabur.com/docs/dedicated-server) en Zeabur y no puede ejecutarse en clusters compartidos.
+
+      **Recursos recomendados:** 1 vCPU / 2 GB RAM (minimo: 0.5 vCPU / 256 MB RAM)
+
       Nanobot es un framework de asistente personal de IA ultraligero (~4K lineas de codigo de agente central) de [HKUDS](https://github.com/HKUDS/nanobot). Soporta multiples proveedores de LLM y se conecta a varias plataformas de mensajeria a traves de una arquitectura Gateway unificada.
+
+      **Documentacion oficial:** [github.com/HKUDS/nanobot](https://github.com/HKUDS/nanobot)
 
       ## Plataformas de Chat Soportadas
 
-      Telegram, Discord, Slack, DingTalk, Feishu, QQ y correo electronico.
+      Telegram, Discord, WhatsApp, Slack, DingTalk, Feishu, QQ y correo electronico.
 
       ## Inicio Rapido
 
@@ -530,17 +574,21 @@ localization:
       3. Si ingreso un token de bot de Telegram, el bot esta listo — envie un mensaje para comenzar
       4. Para agregar mas plataformas o cambiar configuracion, edite `/root/.nanobot/config.json` en la pestana **Files**
 
+      **Omitio un campo durante el despliegue?** Puede agregarlo despues editando `/root/.nanobot/config.json` en la pestana **Files**, o agregando la variable de entorno correspondiente en el panel de Zeabur y reiniciando el servicio.
+
+      **Modelo predeterminado:** Con Zeabur AI Hub es `openai/claude-sonnet-4-5`, con OpenRouter es `openrouter/anthropic/claude-sonnet-4`. Puede cambiarlo en el archivo de configuracion en cualquier momento.
+
       ## Proveedores de LLM
 
       Nanobot soporta multiples proveedores. Puede cambiar en cualquier momento editando `/root/.nanobot/config.json` en la pestana **Files** y reiniciando el servicio.
 
-      | Proveedor | Configuracion `providers` | Ejemplo de Model ID |
-      |-----------|--------------------------|-------------------|
-      | Zeabur AI Hub | `"openai": {"api_key":"...","api_base":"https://hnd1.aihub.zeabur.ai/v1"}` | `openai/claude-sonnet-4-5` |
-      | OpenRouter | `"openrouter": {"api_key":"sk-or-..."}` | `openrouter/anthropic/claude-sonnet-4` |
-      | Anthropic | `"anthropic": {"api_key":"sk-ant-..."}` | `anthropic/claude-sonnet-4-5` |
-      | OpenAI | `"openai": {"api_key":"sk-..."}` | `openai/gpt-4o` |
-      | DeepSeek | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
+      | Proveedor | Obtener clave API | Configuracion `providers` | Ejemplo de Model ID |
+      |-----------|------------------|--------------------------|-------------------|
+      | Zeabur AI Hub | [zeabur.com/ai-hub](https://zeabur.com/ai-hub) | `"openai": {"api_key":"...","api_base":"https://hnd1.aihub.zeabur.ai/v1"}` | `openai/claude-sonnet-4-5` |
+      | OpenRouter | [openrouter.ai/keys](https://openrouter.ai/keys) | `"openrouter": {"api_key":"sk-or-..."}` | `openrouter/anthropic/claude-sonnet-4` |
+      | Anthropic | [console.anthropic.com](https://console.anthropic.com/) | `"anthropic": {"api_key":"sk-ant-..."}` | `anthropic/claude-sonnet-4-5` |
+      | OpenAI | [platform.openai.com](https://platform.openai.com/api-keys) | `"openai": {"api_key":"sk-..."}` | `openai/gpt-4o` |
+      | DeepSeek | [platform.deepseek.com](https://platform.deepseek.com/) | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
 
       **Para cambiar de proveedor:**
       1. Abra `/root/.nanobot/config.json` en la pestana **Files**
@@ -550,7 +598,7 @@ localization:
 
       ## Plataformas de Chat
 
-      Soportadas: Telegram, Discord, Slack, DingTalk, Feishu, QQ y correo electronico.
+      Soportadas: Telegram, Discord, WhatsApp, Slack, DingTalk, Feishu, QQ y correo electronico. Consulte la [documentacion oficial](https://github.com/HKUDS/nanobot#-chat-apps) para guias completas de configuracion.
 
       **Configuracion de Telegram:**
       1. Busque `@BotFather` en Telegram y envie `/newbot`
@@ -574,7 +622,7 @@ localization:
       }
       ```
 
-      **`allow_from`** — controla quien puede hablar con el bot. Lista vacia `[]` = cualquiera puede usarlo. Para restringir acceso, agregue IDs de usuario:
+      **`allow_from`** — controla quien puede hablar con el bot. Lista vacia `[]` = cualquiera puede usarlo. Para restringir acceso, agregue IDs de usuario (en Telegram, envie un mensaje a `@userinfobot` para obtener su ID):
 
       ```json
       "allow_from": ["123456789", "987654321"]
@@ -586,27 +634,34 @@ localization:
 
       Todos los datos se almacenan en `/root/.nanobot` (montado como volumen persistente).
 
+      Se recomienda usar la [funcion de respaldo de Zeabur](https://zeabur.com/docs/manage/backup) para respaldar sus datos regularmente.
+
+      **Mas informacion:** Consulte la [documentacion oficial](https://github.com/HKUDS/nanobot).
+
   id-ID:
     description: |
-      Nanobot adalah asisten AI pribadi yang sangat ringan (~4K baris kode inti) yang mendukung berbagai penyedia LLM dan platform chat termasuk Telegram, Discord, Slack, DingTalk, Feishu, QQ, dan Email.
+      Nanobot adalah asisten AI pribadi yang sangat ringan (~4K baris kode inti) yang mendukung berbagai penyedia LLM dan platform chat termasuk Telegram, Discord, WhatsApp, Slack, DingTalk, Feishu, QQ, dan Email.
     variables:
       - key: ZEABUR_AI_HUB_API_KEY
         name: Kunci API Zeabur AI Hub
         description: Kunci API Zeabur AI Hub untuk akses multi-model (dapatkan di zeabur.com). Direkomendasikan untuk pengguna Zeabur. Kosongkan untuk menggunakan penyedia lain.
-      - key: OPENROUTER_API_KEY
-        name: Kunci API OpenRouter
-        description: Kunci API OpenRouter Anda untuk akses multi-model (dapatkan di openrouter.ai). Kosongkan untuk mengonfigurasi nanti.
       - key: TELEGRAM_BOT_TOKEN
         name: Token Bot Telegram
         description: Token bot Telegram Anda dari BotFather. Kosongkan untuk mengonfigurasi nanti.
     readme: |
       # Nanobot
 
+      > ⚠️ Template ini memerlukan [Dedicated Server](https://zeabur.com/docs/dedicated-server) di Zeabur dan tidak dapat berjalan di cluster bersama.
+
+      **Sumber daya yang direkomendasikan:** 1 vCPU / 2 GB RAM (minimum: 0.5 vCPU / 256 MB RAM)
+
       Nanobot adalah framework asisten AI pribadi yang sangat ringan (~4K baris kode agen inti) dari [HKUDS](https://github.com/HKUDS/nanobot). Mendukung berbagai penyedia LLM dan terhubung ke berbagai platform pesan melalui arsitektur Gateway terpadu.
+
+      **Dokumentasi resmi:** [github.com/HKUDS/nanobot](https://github.com/HKUDS/nanobot)
 
       ## Platform Chat yang Didukung
 
-      Telegram, Discord, Slack, DingTalk, Feishu, QQ, dan Email.
+      Telegram, Discord, WhatsApp, Slack, DingTalk, Feishu, QQ, dan Email.
 
       ## Mulai Cepat
 
@@ -615,17 +670,21 @@ localization:
       3. Jika Anda memasukkan token bot Telegram, bot sudah siap — kirim pesan untuk mulai
       4. Untuk menambah platform atau mengubah pengaturan, edit `/root/.nanobot/config.json` di tab **Files**
 
+      **Melewatkan kolom saat deploy?** Anda dapat menambahkannya nanti dengan mengedit `/root/.nanobot/config.json` di tab **Files**, atau menambahkan variabel lingkungan yang sesuai di dashboard Zeabur dan me-restart layanan.
+
+      **Model default:** Dengan Zeabur AI Hub defaultnya `openai/claude-sonnet-4-5`, dengan OpenRouter defaultnya `openrouter/anthropic/claude-sonnet-4`. Dapat diubah di file konfigurasi kapan saja.
+
       ## Penyedia LLM
 
       Nanobot mendukung berbagai penyedia. Anda dapat beralih kapan saja dengan mengedit `/root/.nanobot/config.json` di tab **Files** dan me-restart layanan.
 
-      | Penyedia | Konfigurasi `providers` | Contoh Model ID |
-      |----------|------------------------|----------------|
-      | Zeabur AI Hub | `"openai": {"api_key":"...","api_base":"https://hnd1.aihub.zeabur.ai/v1"}` | `openai/claude-sonnet-4-5` |
-      | OpenRouter | `"openrouter": {"api_key":"sk-or-..."}` | `openrouter/anthropic/claude-sonnet-4` |
-      | Anthropic | `"anthropic": {"api_key":"sk-ant-..."}` | `anthropic/claude-sonnet-4-5` |
-      | OpenAI | `"openai": {"api_key":"sk-..."}` | `openai/gpt-4o` |
-      | DeepSeek | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
+      | Penyedia | Dapatkan kunci API | Konfigurasi `providers` | Contoh Model ID |
+      |----------|-------------------|------------------------|----------------|
+      | Zeabur AI Hub | [zeabur.com/ai-hub](https://zeabur.com/ai-hub) | `"openai": {"api_key":"...","api_base":"https://hnd1.aihub.zeabur.ai/v1"}` | `openai/claude-sonnet-4-5` |
+      | OpenRouter | [openrouter.ai/keys](https://openrouter.ai/keys) | `"openrouter": {"api_key":"sk-or-..."}` | `openrouter/anthropic/claude-sonnet-4` |
+      | Anthropic | [console.anthropic.com](https://console.anthropic.com/) | `"anthropic": {"api_key":"sk-ant-..."}` | `anthropic/claude-sonnet-4-5` |
+      | OpenAI | [platform.openai.com](https://platform.openai.com/api-keys) | `"openai": {"api_key":"sk-..."}` | `openai/gpt-4o` |
+      | DeepSeek | [platform.deepseek.com](https://platform.deepseek.com/) | `"deepseek": {"api_key":"..."}` | `deepseek/deepseek-chat` |
 
       **Cara beralih penyedia:**
       1. Buka `/root/.nanobot/config.json` di tab **Files**
@@ -635,7 +694,7 @@ localization:
 
       ## Platform Chat
 
-      Didukung: Telegram, Discord, Slack, DingTalk, Feishu, QQ, dan Email.
+      Didukung: Telegram, Discord, WhatsApp, Slack, DingTalk, Feishu, QQ, dan Email. Lihat [dokumentasi resmi](https://github.com/HKUDS/nanobot#-chat-apps) untuk panduan konfigurasi lengkap.
 
       **Pengaturan Telegram:**
       1. Cari `@BotFather` di Telegram dan kirim `/newbot`
@@ -659,7 +718,7 @@ localization:
       }
       ```
 
-      **`allow_from`** — mengontrol siapa yang dapat berbicara dengan bot. Daftar kosong `[]` = siapa saja bisa menggunakan. Untuk membatasi akses, tambahkan ID pengguna:
+      **`allow_from`** — mengontrol siapa yang dapat berbicara dengan bot. Daftar kosong `[]` = siapa saja bisa menggunakan. Untuk membatasi akses, tambahkan ID pengguna (di Telegram, kirim pesan ke `@userinfobot` untuk mengetahui ID Anda):
 
       ```json
       "allow_from": ["123456789", "987654321"]
@@ -670,3 +729,7 @@ localization:
       ## Persistensi Data
 
       Semua data disimpan di `/root/.nanobot` (dipasang sebagai volume persisten).
+
+      Disarankan untuk menggunakan [fitur backup Zeabur](https://zeabur.com/docs/manage/backup) untuk mencadangkan data Anda secara berkala.
+
+      **Info lebih lanjut:** Lihat [dokumentasi resmi](https://github.com/HKUDS/nanobot).
