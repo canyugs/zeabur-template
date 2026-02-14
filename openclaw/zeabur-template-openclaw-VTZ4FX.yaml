@@ -28,7 +28,7 @@ spec:
     resourceRequirement:
       minConfig:
         cpu: 2
-        ram: 2
+        ram: 4
       recommendedConfig:
         cpu: 4
         ram: 8
