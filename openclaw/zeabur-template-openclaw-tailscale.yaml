@@ -1,0 +1,790 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: OpenClaw 🦞 (Tailscale)
+spec:
+    description: |
+      OpenClaw 🦞 (formerly Clawdbot, Moltbot) is a personal AI assistant that runs locally and connects to multiple messaging platforms (WhatsApp, Telegram, Slack, Discord, etc.) via a WebSocket-based Gateway architecture.
+    icon: https://raw.githubusercontent.com/openclaw/openclaw/main/docs/assets/pixel-lobster.svg
+    coverImage: https://raw.githubusercontent.com/openclaw/openclaw/main/docs/assets/openclaw-logo-text.png
+    variables:
+      - key: ZEABUR_AI_HUB_API_KEY
+        type: AI_HUB_KEY
+        name: Zeabur AI Hub API Key (Recommended)
+        description: Your Zeabur AI Hub API key for using Gemini/GPT/Claude/DeepSeek via AI Hub (optional, can be configured later)
+      - key: TS_AUTHKEY
+        type: STRING
+        name: Tailscale Auth Key
+        description: Your Tailscale auth key (tskey-auth-xxx). Get one at https://login.tailscale.com/admin/settings/keys (recommended reusable + ephemeral)
+      - key: TS_HOSTNAME
+        type: STRING
+        name: Tailscale Hostname (Optional)
+        description: Hostname on your tailnet (default is "openclaw"). Your service will be accessible at https://<hostname>.<tailnet>.ts.net
+    tags:
+      - AI
+      - Assistant
+      - Chatbot
+      - WhatsApp
+      - Telegram
+      - Slack
+      - Discord
+    resourceRequirement:
+      minConfig:
+        cpu: 2
+        ram: 4
+      recommendedConfig:
+        cpu: 4
+        ram: 8
+
+    services:
+      - name: OpenClaw
+        icon: https://raw.githubusercontent.com/openclaw/openclaw/main/docs/assets/pixel-lobster.svg
+        template: PREBUILT
+        spec:
+          source:
+            image: ghcr.io/openclaw/openclaw:2026.2.9
+            command:
+              - /bin/sh
+              - -c
+              - /opt/openclaw/startup.sh && /opt/openclaw/start_gateway_tailscale.sh
+          ports:
+          - id: web
+            port: 18789
+            type: HTTP
+          volumes:
+            - id: data
+              dir: /home/node
+          configs:
+            - path: /opt/openclaw/startup.sh
+              envsubst: false
+              permission: 493
+              template: |
+                #!/bin/sh
+                set -e
+
+                echo "=== Setting up openclaw command ==="
+                WORKDIR="$(pwd)"
+                mkdir -p /home/node/bin
+                cat > /home/node/bin/openclaw << SCRIPT
+                #!/bin/sh
+                exec node ${WORKDIR}/dist/index.js "\$@"
+                SCRIPT
+                chmod +x /home/node/bin/openclaw
+                ln -sf /opt/openclaw/backup.sh /home/node/bin/backup
+                ln -sf /opt/openclaw/restore.sh /home/node/bin/restore
+                export PATH="/home/node/bin:$PATH"
+                echo "openclaw command ready at /home/node/bin/openclaw"
+
+                # Setup config directories
+                CONFIG_DIR="/home/node/.openclaw"
+                CONFIG_FILE="$CONFIG_DIR/openclaw.json"
+                PROVIDERS_DIR="$CONFIG_DIR/providers"
+                mkdir -p "$CONFIG_DIR" "$PROVIDERS_DIR"
+                chmod 700 "$CONFIG_DIR"
+
+                # Check if API key is a real value (not an unresolved template variable like '${ZEABUR_AI_HUB_API_KEY}')
+                HAS_AI_HUB_KEY=false
+                case "${ZEABUR_AI_HUB_API_KEY}" in '${'*'}') ;; '') ;; *) HAS_AI_HUB_KEY=true ;; esac
+
+                # Copy provider config from /opt (injected by Zeabur configs) if API key is set
+                if [ "$HAS_AI_HUB_KEY" = true ] && [ ! -f "$PROVIDERS_DIR/zeabur-ai-hub.json5" ]; then
+                  if [ -f /opt/openclaw/providers/zeabur-ai-hub.json5 ]; then
+                    cp /opt/openclaw/providers/zeabur-ai-hub.json5 "$PROVIDERS_DIR/"
+                    echo "Copied Zeabur AI Hub provider config"
+                  fi
+                fi
+
+                # Create initial config (only if not exists)
+                if [ ! -f "$CONFIG_FILE" ]; then
+                  echo "Creating initial config..."
+                  if [ "$HAS_AI_HUB_KEY" = true ]; then
+                    cat > "$CONFIG_FILE" << 'EOF'
+                {
+                  "gateway": { "controlUi": { "allowInsecureAuth": true } },
+                  "agents": { "defaults": { "model": { "primary": "zeabur-ai/gpt-5-mini" } } },
+                  "models": {
+                    "providers": { "$include": "./providers/zeabur-ai-hub.json5" }
+                  }
+                }
+                EOF
+                  else
+                    cat > "$CONFIG_FILE" << 'EOF'
+                {
+                  "gateway": { "controlUi": { "allowInsecureAuth": true } }
+                }
+                EOF
+                  fi
+                  chmod 600 "$CONFIG_FILE"
+                else
+                  echo "Config exists, checking for updates..."
+                  # Add Zeabur AI Hub provider via $include if API key is set but provider not configured
+                  if [ "$HAS_AI_HUB_KEY" = true ]; then
+                    node -e "
+                      const fs = require('fs');
+                      const configPath = '$CONFIG_FILE';
+
+                      try {
+                        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+
+                        // Check if zeabur-ai provider already exists (either directly or via \$include)
+                        const hasZeaburAi = config.models?.providers?.['zeabur-ai'] ||
+                          (config.models?.providers?.['\$include'] &&
+                           String(config.models.providers['\$include']).includes('zeabur-ai'));
+
+                        if (!hasZeaburAi) {
+                          console.log('Adding Zeabur AI Hub provider via \$include...');
+
+                          // Initialize models.providers if needed
+                          if (!config.models) config.models = {};
+                          if (!config.models.providers) config.models.providers = {};
+
+                          // Add \$include reference
+                          config.models.providers['\$include'] = './providers/zeabur-ai-hub.json5';
+
+                          // Only set default model if user hasn't configured any model
+                          if (!config.agents?.defaults?.model?.primary) {
+                            if (!config.agents) config.agents = {};
+                            if (!config.agents.defaults) config.agents.defaults = {};
+                            config.agents.defaults.model = { primary: 'zeabur-ai/gpt-5-mini' };
+                            console.log('Default model set to zeabur-ai/gpt-5-mini.');
+                          } else {
+                            console.log('Keeping existing default model: ' + config.agents.defaults.model.primary);
+                          }
+
+                          fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                          console.log('Zeabur AI Hub provider added.');
+                        } else {
+                          console.log('Zeabur AI Hub provider already configured.');
+                        }
+                      } catch (err) {
+                        console.error('Warning: Failed to update config for Zeabur AI Hub:', err.message);
+                        console.error('You may need to configure the provider manually via Web UI.');
+                      }
+                    "
+                  fi
+                  chmod 600 "$CONFIG_FILE" 2>/dev/null || true
+                fi
+
+                # Copy Zeabur image gen skill if API key is set
+                MANAGED_SKILLS_DIR="$CONFIG_DIR/skills"
+                if [ "$HAS_AI_HUB_KEY" = true ]; then
+                  SKILL_DIR="$MANAGED_SKILLS_DIR/zeabur-image-gen"
+                  if [ ! -d "$SKILL_DIR" ]; then
+                    mkdir -p "$SKILL_DIR/scripts"
+                    cp /opt/openclaw/skills/zeabur-image-gen/SKILL.md "$SKILL_DIR/"
+                    cp /opt/openclaw/skills/zeabur-image-gen/scripts/generate_image.mjs "$SKILL_DIR/scripts/"
+                    echo "Installed zeabur-image-gen skill"
+                  fi
+                fi
+
+                # Sync channel env vars into config file so they're visible to config-based patches
+                if [ -f "$CONFIG_FILE" ]; then
+                  node -e "
+                    const fs = require('fs');
+                    const configPath = '$CONFIG_FILE';
+                    const envMap = [
+                      { env: 'TELEGRAM_BOT_TOKEN',        channel: 'telegram', key: 'botToken' },
+                      { env: 'DISCORD_BOT_TOKEN',         channel: 'discord',  key: 'token' },
+                      { env: 'SLACK_BOT_TOKEN',           channel: 'slack',    key: 'botToken' },
+                      { env: 'SLACK_APP_TOKEN',           channel: 'slack',    key: 'appToken' },
+                      { env: 'LINE_CHANNEL_ACCESS_TOKEN', channel: 'line',     key: 'channelAccessToken' },
+                      { env: 'LINE_CHANNEL_SECRET',       channel: 'line',     key: 'channelSecret' },
+                    ];
+                    try {
+                      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                      let changed = false;
+                      const enabledPlugins = new Set();
+                      for (const { env, channel, key } of envMap) {
+                        const val = process.env[env];
+                        if (!val) continue;
+                        if (!config.channels) config.channels = {};
+                        if (!config.channels[channel]) config.channels[channel] = {};
+                        if (config.channels[channel][key]) {
+                          console.log(env + ': already set in config, skipping');
+                        } else {
+                          config.channels[channel][key] = val;
+                          changed = true;
+                          console.log(env + ' -> channels.' + channel + '.' + key);
+                        }
+                        enabledPlugins.add(channel);
+                      }
+                      // Auto-enable bundled channel plugins (they are disabled by default)
+                      // Respect explicit enabled:false (user intentionally disabled the plugin)
+                      for (const pluginId of enabledPlugins) {
+                        if (!config.plugins) config.plugins = {};
+                        if (!config.plugins.entries) config.plugins.entries = {};
+                        const entry = config.plugins.entries[pluginId];
+                        if (entry && entry.enabled === false) {
+                          console.log('Plugin ' + pluginId + ': explicitly disabled, skipping');
+                          continue;
+                        }
+                        if (!entry) config.plugins.entries[pluginId] = {};
+                        if (config.plugins.entries[pluginId].enabled !== true) {
+                          config.plugins.entries[pluginId].enabled = true;
+                          changed = true;
+                          console.log('Auto-enabled plugin: ' + pluginId);
+                        }
+                      }
+                      if (changed) {
+                        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                        console.log('Channel config updated from env vars');
+                      }
+                    } catch (err) {
+                      console.error('Warning: Failed to sync env vars to config:', err.message);
+                    }
+                  "
+                fi
+
+                # Patch heartbeat config: auto-detect channel and set explicit delivery target
+                # This fixes cron proactive notifications which require a resolved delivery target.
+                # Without this, heartbeat defaults to target:"last" which resolves to "none" if
+                # no one has messaged the bot yet.
+                # Reference: https://github.com/cloudflare/moltworker/blob/main/start-openclaw.sh
+                if [ -f "$CONFIG_FILE" ]; then
+                  node -e "
+                    const fs = require('fs');
+                    const configPath = '$CONFIG_FILE';
+                    try {
+                      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                      const channels = config.channels || {};
+                      const heartbeat = config.agents?.defaults?.heartbeat;
+
+                      // Skip if user already configured heartbeat target explicitly
+                      if (heartbeat?.target && heartbeat.target !== 'last') {
+                        console.log('Heartbeat target already set to: ' + heartbeat.target);
+                      } else {
+                        // Auto-detect first configured channel as heartbeat target
+                        const channelPriority = ['telegram', 'whatsapp', 'discord', 'slack', 'line'];
+                        let detected = null;
+                        for (const ch of channelPriority) {
+                          const chCfg = channels[ch];
+                          if (chCfg && (chCfg.enabled !== false)) {
+                            // Check channel has credentials configured
+                            if (ch === 'telegram' && chCfg.botToken) { detected = ch; break; }
+                            if (ch === 'whatsapp' && (chCfg.phoneNumberId || chCfg.enabled)) { detected = ch; break; }
+                            if (ch === 'discord' && chCfg.token) { detected = ch; break; }
+                            if (ch === 'slack' && chCfg.botToken) { detected = ch; break; }
+                            if (ch === 'line' && chCfg.channelAccessToken) { detected = ch; break; }
+                          }
+                        }
+                        if (detected) {
+                          if (!config.agents) config.agents = {};
+                          if (!config.agents.defaults) config.agents.defaults = {};
+                          config.agents.defaults.heartbeat = {
+                            ...(config.agents.defaults.heartbeat || {}),
+                            target: detected,
+                          };
+                          fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                          console.log('Heartbeat target auto-set to: ' + detected);
+                        } else {
+                          console.log('No channel detected, heartbeat target unchanged (last)');
+                        }
+                      }
+                    } catch (err) {
+                      console.error('Warning: Failed to patch heartbeat config:', err.message);
+                    }
+                  "
+                fi
+
+                # Initialize workspace
+                mkdir -p "${OPENCLAW_WORKSPACE_DIR}"
+                if [ ! -f "${OPENCLAW_WORKSPACE_DIR}/MEMORY.md" ]; then
+                  echo "# Memory" > "${OPENCLAW_WORKSPACE_DIR}/MEMORY.md"
+                fi
+
+                # Ensure HEARTBEAT.md has actionable content for cron notifications.
+                # OpenClaw skips heartbeat when HEARTBEAT.md is effectively empty (only
+                # comments/headers), which silently blocks cron-triggered notifications.
+                # Only write for NEW workspaces to avoid overwriting existing user config.
+                HEARTBEAT_FILE="${OPENCLAW_WORKSPACE_DIR}/HEARTBEAT.md"
+                if [ ! -f "$HEARTBEAT_FILE" ]; then
+                  printf '%s\n' '# HEARTBEAT.md' '' 'Check for pending notifications, cron job results, and system events.' 'If nothing needs attention, reply HEARTBEAT_OK.' > "$HEARTBEAT_FILE"
+                  echo "HEARTBEAT.md initialized with actionable content"
+                fi
+
+            - path: /opt/openclaw/start_gateway.sh
+              envsubst: true
+              permission: 493
+              template: |
+                #!/bin/sh
+                exec node dist/index.js gateway --allow-unconfigured --bind "${OPENCLAW_GATEWAY_BIND}" --port "${OPENCLAW_GATEWAY_PORT}" --token "${OPENCLAW_GATEWAY_TOKEN}"
+            - path: /opt/openclaw/backup.sh
+              envsubst: false
+              permission: 493
+              template: |
+                #!/bin/sh
+                set -e
+                cd /home/node
+                BACKUP_FILE="backup-$(date +%H%M).tar.gz"
+                echo "Creating backup..."
+                tar -czvf "$BACKUP_FILE" .openclaw
+                echo ""
+                echo "=== Backup Complete ==="
+                echo "File: /home/node/$BACKUP_FILE"
+                echo "Download it from Files tab in Zeabur dashboard"
+            - path: /opt/openclaw/restore.sh
+              envsubst: false
+              permission: 493
+              template: |
+                #!/bin/sh
+                set -e
+                if [ -z "$1" ]; then
+                  echo "Usage: restore <backup-file> [--strip N]"
+                  echo ""
+                  echo "Supports .tar.gz and .zip formats."
+                  echo ""
+                  echo "Examples:"
+                  echo "  restore backup-1430.tar.gz"
+                  echo "  restore backup-xxxxx.zip"
+                  echo "  restore backup-xxxxx.tar.gz --strip 2  # For Zeabur backup service files"
+                  exit 1
+                fi
+                cd /home/node
+                BACKUP_FILE="$1"
+                if [ ! -f "$BACKUP_FILE" ]; then
+                  echo "Error: File not found: $BACKUP_FILE"
+                  exit 1
+                fi
+                case "$BACKUP_FILE" in
+                  *.zip)
+                    echo "Restoring from $BACKUP_FILE (zip)..."
+                    TMPDIR=$(mktemp -d)
+                    unzip -o "$BACKUP_FILE" -d "$TMPDIR"
+                    if [ -d "$TMPDIR/data" ]; then
+                      cp -a "$TMPDIR/data/." /home/node/
+                    else
+                      cp -a "$TMPDIR/." /home/node/
+                    fi
+                    rm -rf "$TMPDIR"
+                    ;;
+                  *.tar.gz|*.tgz)
+                    if [ "$2" = "--strip" ] && [ -n "$3" ]; then
+                      echo "Restoring from $BACKUP_FILE (strip-components=$3)..."
+                      tar -xzvf "$BACKUP_FILE" --strip-components="$3" -C /home/node
+                    else
+                      echo "Restoring from $BACKUP_FILE..."
+                      tar -xzvf "$BACKUP_FILE"
+                    fi
+                    ;;
+                  *)
+                    echo "Error: Unsupported format. Use .tar.gz or .zip"
+                    exit 1
+                    ;;
+                esac
+                echo ""
+                echo "=== Restore Complete ==="
+                echo "Please restart the service for changes to take effect."
+            - path: /opt/openclaw/rescue.sh
+              envsubst: false
+              permission: 493
+              template: |
+                #!/bin/sh
+                echo "=== Rescue Mode ==="
+                echo "Container is running but OpenClaw service is not started."
+                echo "Use the Command tab to access the container for debugging."
+                echo ""
+                echo "To exit rescue mode:"
+                echo "1. Fix the issue"
+                echo "2. Change the startup command back to:"
+                echo "   /opt/openclaw/startup.sh && /opt/openclaw/start_gateway_tailscale.sh"
+                echo "3. Restart the service"
+                sleep infinity
+            - path: /opt/openclaw/setup-tailscale.sh
+              envsubst: false
+              permission: 493
+              template: |
+                #!/bin/sh
+                set -e
+
+                # setup-tailscale.sh — Install and configure Tailscale for OpenClaw
+                # Enables HTTPS access via Tailscale + MagicDNS with OpenClaw's built-in
+                # Tailscale Serve integration (gateway --tailscale serve).
+                #
+                # This script only installs Tailscale and authenticates.
+                # OpenClaw gateway handles `tailscale serve` itself.
+                #
+                # Usage: sh /opt/openclaw/setup-tailscale.sh
+                # Safe to run multiple times (idempotent).
+                #
+                # Environment variables:
+                #   TS_AUTHKEY   (required)  Tailscale auth key. Script skips if unset.
+                #                            Get one at: https://login.tailscale.com/admin/settings/keys
+                #   TS_VERSION   (optional)  Tailscale version to install. Default: 1.94.2
+                #   TS_HOSTNAME  (optional)  Hostname on tailnet. Default: openclaw
+
+                echo "=== Tailscale Setup ==="
+
+                # --- Config variables ---
+                TS_VERSION="${TS_VERSION:-1.94.2}"
+                TS_HOSTNAME="${TS_HOSTNAME:-openclaw}"
+                BIN_DIR="$HOME/bin"
+                STATE_DIR="$HOME/.tailscale/state"
+                SOCK="$HOME/.tailscale/tailscaled.sock"
+                LOG="$HOME/.tailscale/tailscaled.log"
+
+                # --- 0. Check TS_AUTHKEY ---
+                if [ -z "$TS_AUTHKEY" ]; then
+                  echo "TS_AUTHKEY not set — skipping Tailscale setup."
+                  exit 0
+                fi
+
+                # --- 1. Detect architecture ---
+                ARCH="$(uname -m)"
+                case "$ARCH" in
+                  x86_64)  TS_ARCH="amd64" ;;
+                  aarch64) TS_ARCH="arm64" ;;
+                  arm64)   TS_ARCH="arm64" ;;
+                  *)
+                    echo "Error: Unsupported architecture: $ARCH"
+                    exit 1
+                    ;;
+                esac
+                echo "Architecture: $ARCH ($TS_ARCH)"
+
+                # --- 2. Install Tailscale binaries ---
+                INSTALLED_VERSION=""
+                if [ -x "$BIN_DIR/tailscale" ]; then
+                  INSTALLED_VERSION="$("$BIN_DIR/tailscale" version 2>/dev/null | head -1 || true)"
+                fi
+
+                if [ "$INSTALLED_VERSION" = "$TS_VERSION" ]; then
+                  echo "Tailscale $TS_VERSION already installed."
+                else
+                  echo "Installing Tailscale $TS_VERSION..."
+                  TARBALL="tailscale_${TS_VERSION}_${TS_ARCH}.tgz"
+                  URL="https://pkgs.tailscale.com/stable/${TARBALL}"
+                  TMPDIR="$(mktemp -d)"
+
+                  curl -fsSL "$URL" -o "$TMPDIR/$TARBALL"
+                  tar -xzf "$TMPDIR/$TARBALL" -C "$TMPDIR"
+
+                  mkdir -p "$BIN_DIR"
+                  cp "$TMPDIR/tailscale_${TS_VERSION}_${TS_ARCH}/tailscale" "$BIN_DIR/tailscale"
+                  cp "$TMPDIR/tailscale_${TS_VERSION}_${TS_ARCH}/tailscaled" "$BIN_DIR/tailscaled"
+                  chmod +x "$BIN_DIR/tailscale" "$BIN_DIR/tailscaled"
+
+                  rm -rf "$TMPDIR"
+                  echo "Tailscale $TS_VERSION installed to $BIN_DIR"
+                fi
+
+                # --- 3. Start tailscaled ---
+                mkdir -p "$HOME/.tailscale/state"
+
+                # Check if tailscaled is already running
+                if [ -S "$SOCK" ] && "$BIN_DIR/tailscale" --socket="$SOCK" status >/dev/null 2>&1; then
+                  echo "tailscaled already running."
+                else
+                  echo "Starting tailscaled..."
+
+                  # Kill any stale tailscaled process
+                  if [ -f "$HOME/.tailscale/tailscaled.pid" ]; then
+                    OLD_PID="$(cat "$HOME/.tailscale/tailscaled.pid")"
+                    kill "$OLD_PID" 2>/dev/null || true
+                    sleep 1
+                  fi
+
+                  # Remove stale socket
+                  rm -f "$SOCK"
+
+                  "$BIN_DIR/tailscaled" \
+                    --tun=userspace-networking \
+                    --statedir="$STATE_DIR" \
+                    --socket="$SOCK" \
+                    >"$LOG" 2>&1 &
+
+                  TAILSCALED_PID=$!
+                  echo "$TAILSCALED_PID" > "$HOME/.tailscale/tailscaled.pid"
+                  echo "tailscaled started (PID $TAILSCALED_PID)"
+
+                  # Wait for socket to be ready
+                  echo "Waiting for tailscaled socket..."
+                  WAIT=0
+                  while [ ! -S "$SOCK" ]; do
+                    sleep 1
+                    WAIT=$((WAIT + 1))
+                    if [ "$WAIT" -ge 30 ]; then
+                      echo "Error: tailscaled socket not ready after 30s"
+                      echo "Check logs: $LOG"
+                      exit 1
+                    fi
+                  done
+                  echo "tailscaled socket ready."
+                fi
+
+                # --- 4. Authenticate ---
+                BACKEND_STATE="$("$BIN_DIR/tailscale" --socket="$SOCK" status --json 2>/dev/null | node -e "
+                  let d = '';
+                  process.stdin.on('data', c => d += c);
+                  process.stdin.on('end', () => {
+                    try { console.log(JSON.parse(d).BackendState); }
+                    catch(e) { console.log('Unknown'); }
+                  });
+                " 2>/dev/null || echo "Unknown")"
+
+                if [ "$BACKEND_STATE" = "Running" ]; then
+                  echo "Tailscale already authenticated."
+                else
+                  echo "Authenticating with Tailscale..."
+                  "$BIN_DIR/tailscale" --socket="$SOCK" up \
+                    --authkey="$TS_AUTHKEY" \
+                    --hostname="$TS_HOSTNAME"
+                  echo "Tailscale authenticated."
+                fi
+
+                # --- 5. Print status ---
+                echo ""
+                echo "=== Tailscale Setup Complete ==="
+                "$BIN_DIR/tailscale" --socket="$SOCK" status || true
+                echo ""
+                echo "Tailscale state: $STATE_DIR"
+                echo "Daemon log:      $LOG"
+                echo "Socket:          $SOCK"
+                echo ""
+                echo "Gateway will start with Tailscale Serve (HTTPS)."
+                echo "Access OpenClaw at: https://${TS_HOSTNAME}.<your-tailnet>.ts.net"
+            - path: /opt/openclaw/start_gateway_tailscale.sh
+              envsubst: false
+              permission: 493
+              template: |
+                #!/bin/sh
+                set -e
+
+                # Setup Tailscale (install + authenticate)
+                sh /opt/openclaw/setup-tailscale.sh
+
+                # Symlink socket to default path so tailscale CLI finds it
+                mkdir -p /var/run/tailscale
+                ln -sf "$HOME/.tailscale/tailscaled.sock" /var/run/tailscale/tailscaled.sock
+
+                # Start gateway with Tailscale Serve
+                exec node dist/index.js gateway --tailscale serve --allow-unconfigured
+            - path: /opt/openclaw/providers/zeabur-ai-hub.json5
+              envsubst: true
+              template: |
+                {
+                  "zeabur-ai": {
+                    "baseUrl": "https://hnd1.aihub.zeabur.ai/v1",
+                    "apiKey": "${ZEABUR_AI_HUB_API_KEY}",
+                    "api": "openai-completions",
+                    "models": [
+                      { "id": "gemini-3-pro-image-preview", "name": "Gemini 3 Pro Image Preview (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 2, "output": 120, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 1000000, "maxTokens": 8192 },
+                      { "id": "gemini-3-pro-preview", "name": "Gemini 3 Pro Preview (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 2, "output": 12, "cacheRead": 0.2, "cacheWrite": 0 }, "contextWindow": 1000000, "maxTokens": 8192 },
+                      { "id": "gpt-5", "name": "GPT-5 (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.25, "output": 10, "cacheRead": 0.13, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
+                      { "id": "claude-sonnet-4-5", "name": "Claude Sonnet 4.5 (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 3.3, "output": 16.5, "cacheRead": 0.33, "cacheWrite": 0 }, "contextWindow": 1000000, "maxTokens": 8192, "compat": { "supportsStore": false } },
+                      { "id": "gemini-3-flash-preview", "name": "Gemini 3 Flash Preview (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.5, "output": 3, "cacheRead": 0.05, "cacheWrite": 0 }, "contextWindow": 1000000, "maxTokens": 8192 },
+                      { "id": "gpt-5-mini", "name": "GPT-5 Mini (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 2, "cacheRead": 0.03, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
+                      { "id": "claude-haiku-4-5", "name": "Claude Haiku 4.5 (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.1, "output": 5.5, "cacheRead": 0.11, "cacheWrite": 0 }, "contextWindow": 1000000, "maxTokens": 8192, "compat": { "supportsStore": false } },
+                      { "id": "gemini-2.5-pro", "name": "Gemini 2.5 Pro (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.25, "output": 10, "cacheRead": 0.125, "cacheWrite": 0 }, "contextWindow": 1000000, "maxTokens": 8192 },
+                      { "id": "gemini-2.5-flash", "name": "Gemini 2.5 Flash (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.3, "output": 2.5, "cacheRead": 0.03, "cacheWrite": 0 }, "contextWindow": 1000000, "maxTokens": 8192 },
+                      { "id": "gemini-2.5-flash-lite", "name": "Gemini 2.5 Flash Lite (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.1, "output": 0.4, "cacheRead": 0.01, "cacheWrite": 0 }, "contextWindow": 1000000, "maxTokens": 8192 },
+                      { "id": "gemini-2.5-flash-image", "name": "Gemini 2.5 Flash Image (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.3, "output": 30, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 1000000, "maxTokens": 8192 },
+                      { "id": "deepseek-v3.2", "name": "DeepSeek V3.2 (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.27, "output": 0.4, "cacheRead": 0.216, "cacheWrite": 0 }, "contextWindow": 164000, "maxTokens": 8192 },
+                      { "id": "gpt-4.1", "name": "GPT-4.1 (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 2, "output": 8, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 1048576, "maxTokens": 8192 },
+                      { "id": "gpt-4.1-mini", "name": "GPT-4.1 mini (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.4, "output": 1.6, "cacheRead": 0.1, "cacheWrite": 0 }, "contextWindow": 1048576, "maxTokens": 8192 },
+                      { "id": "gpt-4o", "name": "GPT-4o (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 2.5, "output": 10, "cacheRead": 1.25, "cacheWrite": 0 }, "contextWindow": 128000, "maxTokens": 8192 },
+                      { "id": "gpt-4o-mini", "name": "GPT-4o mini (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.15, "output": 0.6, "cacheRead": 0.075, "cacheWrite": 0 }, "contextWindow": 128000, "maxTokens": 8192 },
+                      { "id": "gpt-oss-120b", "name": "GPT OSS 120B (Zeabur AI Hub)", "reasoning": true, "input": ["text"], "cost": { "input": 0.35, "output": 0.75, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192, "compat": { "supportsStore": false } },
+                      { "id": "grok-4-fast-non-reasoning", "name": "Grok 4 Fast (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.2, "output": 0.5, "cacheRead": 0.05, "cacheWrite": 0 }, "contextWindow": 2000000, "maxTokens": 8192 },
+                      { "id": "glm-4.6", "name": "GLM-4.6 (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.45, "output": 1.9, "cacheRead": 0.11, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
+                      { "id": "llama-3.3-70b", "name": "Llama 3.3 70B (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.85, "output": 1.2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 65536, "maxTokens": 8192, "compat": { "supportsStore": false } },
+                      { "id": "qwen-3-32", "name": "Qwen 3 32B (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.4, "output": 0.8, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 32768, "maxTokens": 8192, "compat": { "supportsStore": false } },
+                      { "id": "qwen3-next", "name": "Qwen 3 Next 80B (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.14, "output": 1.1, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 32768, "maxTokens": 8192 },
+                      { "id": "kimi-k2-thinking", "name": "Kimi K2 Thinking (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.55, "output": 2.5, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 },
+                      { "id": "gpt-5.2", "name": "GPT-5.2 (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.5, "output": 12, "cacheRead": 0.15, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
+                      { "id": "gpt-5.1", "name": "GPT-5.1 (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.35, "output": 11, "cacheRead": 0.14, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
+                      { "id": "gpt-5-nano", "name": "GPT-5 Nano (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.1, "output": 0.8, "cacheRead": 0.01, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
+                      { "id": "glm-4.7", "name": "GLM-4.7 (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.5, "output": 2, "cacheRead": 0.12, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
+                      { "id": "glm-4.7-flash", "name": "GLM-4.7 Flash (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 1, "cacheRead": 0.06, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
+                      { "id": "kimi-k2.5", "name": "Kimi K2.5 (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
+                    ]
+                  }
+                }
+            - path: /opt/openclaw/skills/zeabur-image-gen/SKILL.md
+              envsubst: false
+              permission: 420
+              template: |
+                ---
+                name: zeabur-image-gen
+                description: Generate images via Zeabur AI Hub using Gemini image models.
+                homepage: https://zeabur.com/ai-hub
+                metadata:
+                  {
+                    "openclaw":
+                      {
+                        "emoji": "🎨",
+                        "requires": { "env": ["ZEABUR_AI_HUB_API_KEY"] },
+                        "primaryEnv": "ZEABUR_AI_HUB_API_KEY",
+                      },
+                  }
+                ---
+
+                # Zeabur Image Gen
+
+                Generate images via Zeabur AI Hub using Gemini image models.
+
+                ## Run
+
+                ```bash
+                node {baseDir}/scripts/generate_image.mjs --prompt "your image description" --filename "output.png"
+                ```
+
+                Useful flags:
+
+                ```bash
+                # Use a specific model
+                node {baseDir}/scripts/generate_image.mjs --prompt "a cat on the moon" --filename "cat-moon.png" --model gemini-3-pro-image-preview
+
+                # Use SFO1 endpoint (default is HND1 Tokyo)
+                node {baseDir}/scripts/generate_image.mjs --prompt "cherry blossoms" --filename "sakura.png" --endpoint sfo1
+                ```
+
+                ## Supported Models
+
+                - `gemini-2.5-flash-image` (default) - faster
+                - `gemini-3-pro-image-preview` - higher quality
+
+                ## API Key
+
+                - `ZEABUR_AI_HUB_API_KEY` env var
+                - Or set `skills."zeabur-image-gen".apiKey` / `skills."zeabur-image-gen".env.ZEABUR_AI_HUB_API_KEY` in `~/.openclaw/openclaw.json`
+
+                ## Notes
+
+                - Endpoints: `hnd1` (Tokyo, default), `sfo1` (San Francisco).
+                - Use timestamps in filenames: `yyyy-mm-dd-hh-mm-ss-name.png`.
+                - The script prints a `MEDIA:` line for OpenClaw to auto-attach on supported chat providers.
+                - Do not read the image back; report the saved path only.
+            - path: /opt/openclaw/skills/zeabur-image-gen/scripts/generate_image.mjs
+              envsubst: false
+              permission: 420
+              template: |
+                #!/usr/bin/env node
+                /**
+                 * Generate images using Zeabur AI Hub via Chat Completions API.
+                 *
+                 * Usage:
+                 *   node generate_image.mjs --prompt "your image description" --filename "output.png"
+                 *   node generate_image.mjs --prompt "a cat" --filename "cat.png" --model gemini-2.5-flash-image
+                 */
+
+                import { parseArgs } from "node:util";
+                import { writeFile, mkdir } from "node:fs/promises";
+                import { resolve, dirname } from "node:path";
+
+                const ENDPOINTS = {
+                  hnd1: "https://hnd1.aihub.zeabur.ai",
+                  sfo1: "https://sfo1.aihub.zeabur.ai",
+                };
+
+                const DEFAULT_MODEL = "gemini-2.5-flash-image";
+
+                const { values } = parseArgs({
+                  options: {
+                    prompt: { type: "string", short: "p" },
+                    filename: { type: "string", short: "f" },
+                    model: { type: "string", short: "m", default: DEFAULT_MODEL },
+                    endpoint: { type: "string", short: "e", default: "hnd1" },
+                    "api-key": { type: "string", short: "k" },
+                  },
+                  strict: true,
+                });
+
+                if (!values.prompt || !values.filename) {
+                  console.error("Usage: node generate_image.mjs --prompt <text> --filename <path>");
+                  process.exit(1);
+                }
+
+                const apiKey = values["api-key"] || process.env.ZEABUR_AI_HUB_API_KEY;
+                if (!apiKey) {
+                  console.error("Error: No API key provided.");
+                  console.error("  1. Provide --api-key argument");
+                  console.error("  2. Set ZEABUR_AI_HUB_API_KEY environment variable");
+                  process.exit(1);
+                }
+
+                const baseUrl = ENDPOINTS[values.endpoint];
+                if (!baseUrl) {
+                  console.error(`Error: Unknown endpoint "${values.endpoint}". Use: ${Object.keys(ENDPOINTS).join(", ")}`);
+                  process.exit(1);
+                }
+
+                const model = values.model;
+                const prompt = values.prompt;
+                const outputPath = resolve(values.filename);
+
+                await mkdir(dirname(outputPath), { recursive: true });
+
+                console.log(`Generating image with ${model} via ${values.endpoint}...`);
+                console.log(`Prompt: ${prompt}`);
+
+                const resp = await fetch(`${baseUrl}/v1/chat/completions`, {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    model,
+                    messages: [{ role: "user", content: prompt }],
+                    stream: false,
+                  }),
+                  signal: AbortSignal.timeout(300_000),
+                });
+
+                if (!resp.ok) {
+                  const body = await resp.text();
+                  console.error(`Zeabur AI Hub API failed (${resp.status}): ${body}`);
+                  process.exit(1);
+                }
+
+                const res = await resp.json();
+                const msg = res.choices?.[0]?.message;
+
+                // Extract base64 image from response
+                const imgEntry = msg?.images?.[0]?.image_url?.url;
+                if (!imgEntry) {
+                  console.error("Error: No image in response.");
+                  console.error(`Response: ${JSON.stringify(res).slice(0, 400)}`);
+                  process.exit(1);
+                }
+
+                const b64 = imgEntry.replace(/^data:image\/\w+;base64,/, "");
+                await writeFile(outputPath, Buffer.from(b64, "base64"));
+
+                console.log(`\nImage saved: ${outputPath}`);
+                console.log(`MEDIA: ${outputPath}`);
+          env:
+            HOME:
+              default: /home/node
+            PATH:
+              default: /home/node/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+            NODE_ENV:
+              default: production
+            NODE_OPTIONS:
+              default: --max-old-space-size=1024
+            OPENCLAW_WORKSPACE_DIR:
+              default: /home/node/.openclaw/workspace
+            OPENCLAW_GATEWAY_PORT:
+              default: "18789"
+            OPENCLAW_STATE_DIR:
+              default: /home/node/.openclaw
+            OPENCLAW_GATEWAY_TOKEN:
+              default: ${PASSWORD}
+            ZEABUR_AI_HUB_API_KEY:
+              default: ${ZEABUR_AI_HUB_API_KEY}
+            OPENCLAW_DISABLE_BONJOUR:
+              default: "1"
+            TS_AUTHKEY:
+              default: ${TS_AUTHKEY}
+            TS_HOSTNAME:
+              default: ${TS_HOSTNAME}
+          instructions:
+            - type: TEXT
+              title: Tailscale URL
+              content: https://${TS_HOSTNAME}.<your-tailnet>.ts.net
+            - type: PASSWORD
+              title: Gateway Token
+              content: ${OPENCLAW_GATEWAY_TOKEN}
+              category: Credentials
+
