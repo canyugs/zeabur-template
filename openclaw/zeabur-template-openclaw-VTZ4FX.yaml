@@ -37,7 +37,7 @@ spec:
       # OpenClaw 🦞
       OpenClaw 🦞 (formerly Clawdbot, Moltbot) is a personal AI assistant that runs locally and connects to multiple messaging platforms via a WebSocket-based Gateway architecture.
 
-      ⚠️ This template uses `ghcr.io/openclaw/openclaw:2026.2.14`. OpenClaw 🦞 is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues.
+      ⚠️ This template uses `ghcr.io/openclaw/openclaw:latest`. OpenClaw 🦞 is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues.
 
       ⚠️ If you encounter any issues, feel free to check the [GitHub issues](https://github.com/openclaw/openclaw/issues) for solutions or to report new ones. For Zeabur platform-related issues, please contact Zeabur support.
 
@@ -262,7 +262,10 @@ spec:
       ```
       Restart the service.
 
-      **Step 3: First login to Web UI**
+      **Step 3: Install Tailscale on your device**
+      Install [Tailscale](https://tailscale.com/download) on the device you want to access OpenClaw from (macOS, Windows, iOS, Android, Linux), and log in with the same Tailscale account used to create the Auth Key.
+
+      **Step 4: First login to Web UI**
       Once started, open in your browser (must be on the same tailnet):
       ```
       https://<TS_HOSTNAME>.<your-tailnet>.ts.net
@@ -275,12 +278,14 @@ spec:
 
       You can find the Gateway Token in the Zeabur dashboard **Instructions** tab or **Environment Variables** (`OPENCLAW_GATEWAY_TOKEN`).
 
-      **Step 4: Connect macOS/iOS/Android devices**
-      1. Install Tailscale on the device and join the same tailnet
+      **Step 5: Connect OpenClaw app (Optional, macOS example)**
+      1. Install [OpenClaw for macOS](https://docs.openclaw.ai/platforms/macos) and Tailscale on the same device
       2. Open OpenClaw app → **Settings → General** → select **Remote** mode
       3. Set Transport to **Direct (ws/wss)**
       4. Set Gateway URL to `wss://<TS_HOSTNAME>.<your-tailnet>.ts.net`
       5. First connection requires pairing approval — go to the Web UI **Nodes** page and click approve
+
+      For iOS and Android setup, see the [official documentation](https://docs.openclaw.ai/platforms).
 
       **Switch back to public domain mode:**
       Change the startup command back to `/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh` and restart.
@@ -293,6 +298,9 @@ spec:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Changelog
+      **2026/2/16**
+      - Switch image tag to `latest` to keep up with rapid security fixes
+
       **2026/2/15**
       - Add Tailscale private network access: users can switch to `start_gateway_tailscale.sh` for private HTTPS access via tailnet without exposing to public internet
       - Bump image to `2026.2.14`
@@ -330,7 +338,7 @@ spec:
         domainKey: PUBLIC_DOMAIN
         spec:
           source:
-            image: ghcr.io/openclaw/openclaw:2026.2.14
+            image: ghcr.io/openclaw/openclaw:latest
             command:
               - /bin/sh
               - -c
@@ -1091,7 +1099,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞（原 Clawdbot、Moltbot）是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台。
 
-      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.2.14`。OpenClaw 🦞 正在快速開發中，可能存在尚未發現的 bug。更改版本後也無法確保穩定性。
+      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:latest`。OpenClaw 🦞 正在快速開發中，可能存在尚未發現的 bug。更改版本後也無法確保穩定性。
 
       ⚠️ 如果遇到任何問題，歡迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 尋找解決方案或回報新問題。Zeabur 平台相關問題請聯繫 Zeabur 支援。
 
@@ -1316,7 +1324,10 @@ localization:
       ```
       重新啟動服務。
 
-      **步驟 3：首次登入 Web UI**
+      **步驟 3：在本機安裝 Tailscale**
+      在您要存取 OpenClaw 的裝置上安裝 [Tailscale](https://tailscale.com/download)（macOS、Windows、iOS、Android、Linux），並使用建立 Auth Key 時的同一個 Tailscale 帳號登入。
+
+      **步驟 4：首次登入 Web UI**
       啟動完成後，在瀏覽器開啟（需在同一個 tailnet 的裝置上）：
       ```
       https://<TS_HOSTNAME>.<您的tailnet>.ts.net
@@ -1329,12 +1340,14 @@ localization:
 
       Gateway Token 可在 Zeabur 控制台的**使用說明**頁籤或**環境變數**中找到（`OPENCLAW_GATEWAY_TOKEN`）。
 
-      **步驟 4：連接 macOS/iOS/Android 裝置**
-      1. 在裝置上安裝 Tailscale 並加入同一個 tailnet
+      **步驟 5：連接 OpenClaw app（選用，以 macOS 為例）**
+      1. 在 Mac 上安裝 [OpenClaw for macOS](https://docs.openclaw.ai/platforms/macos) 和 Tailscale
       2. 開啟 OpenClaw app → **Settings → General** → 選擇 **Remote** 模式
       3. Transport 選擇 **Direct (ws/wss)**
       4. Gateway URL 填入 `wss://<TS_HOSTNAME>.<您的tailnet>.ts.net`
       5. 裝置首次連線時需要配對核准 — 在 Web UI 的 **Nodes** 頁面點擊 approve
+
+      iOS 和 Android 的設定請參閱[官方文件](https://docs.openclaw.ai/platforms)。
 
       **切換回公開網域模式：**
       將啟動指令改回 `/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh` 並重新啟動即可。
@@ -1347,6 +1360,9 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 更新日誌
+      **2026/2/16**
+      - 映像檔標籤切換為 `latest`，以跟上快速的安全性修正
+
       **2026/2/15**
       - 新增 Tailscale 私有網路存取：用戶可切換至 `start_gateway_tailscale.sh`，透過 tailnet 私有 HTTPS 存取，無需暴露到公網
       - 映像檔升級至 `2026.2.14`
@@ -1391,7 +1407,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞（原 Clawdbot、Moltbot）是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台。
 
-      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.2.14`。OpenClaw 🦞 正在快速开发中，可能存在尚未发现的 bug。更改版本后也无法确保稳定性。
+      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:latest`。OpenClaw 🦞 正在快速开发中，可能存在尚未发现的 bug。更改版本后也无法确保稳定性。
 
       ⚠️ 如果遇到任何问题，欢迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 寻找解决方案或回报新问题。Zeabur 平台相关问题请联系 Zeabur 支持。
 
@@ -1616,7 +1632,10 @@ localization:
       ```
       重新启动服务。
 
-      **步骤 3：首次登录 Web UI**
+      **步骤 3：在本机安装 Tailscale**
+      在您要访问 OpenClaw 的设备上安装 [Tailscale](https://tailscale.com/download)（macOS、Windows、iOS、Android、Linux），并使用创建 Auth Key 时的同一个 Tailscale 账号登录。
+
+      **步骤 4：首次登录 Web UI**
       启动完成后，在浏览器打开（需在同一个 tailnet 的设备上）：
       ```
       https://<TS_HOSTNAME>.<您的tailnet>.ts.net
@@ -1629,12 +1648,14 @@ localization:
 
       Gateway Token 可在 Zeabur 控制台的**使用说明**标签页或**环境变量**中找到（`OPENCLAW_GATEWAY_TOKEN`）。
 
-      **步骤 4：连接 macOS/iOS/Android 设备**
-      1. 在设备上安装 Tailscale 并加入同一个 tailnet
+      **步骤 5：连接 OpenClaw app（可选，以 macOS 为例）**
+      1. 在 Mac 上安装 [OpenClaw for macOS](https://docs.openclaw.ai/platforms/macos) 和 Tailscale
       2. 打开 OpenClaw app → **Settings → General** → 选择 **Remote** 模式
       3. Transport 选择 **Direct (ws/wss)**
       4. Gateway URL 填入 `wss://<TS_HOSTNAME>.<您的tailnet>.ts.net`
       5. 设备首次连接时需要配对核准 — 在 Web UI 的 **Nodes** 页面点击 approve
+
+      iOS 和 Android 的设置请参阅[官方文档](https://docs.openclaw.ai/platforms)。
 
       **切换回公开域名模式：**
       将启动命令改回 `/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh` 并重新启动即可。
@@ -1647,6 +1668,9 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 更新日志
+      **2026/2/16**
+      - 镜像标签切换为 `latest`，以跟上快速的安全性修复
+
       **2026/2/15**
       - 新增 Tailscale 私有网络访问：用户可切换至 `start_gateway_tailscale.sh`，通过 tailnet 私有 HTTPS 访问，无需暴露到公网
       - 镜像升级至 `2026.2.14`
@@ -1691,7 +1715,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞（旧 Clawdbot、Moltbot）は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォームに接続する個人用 AI アシスタントです。
 
-      ⚠️ 本テンプレートは `ghcr.io/openclaw/openclaw:2026.2.14` を使用しています。OpenClaw 🦞 は急速に開発中のため、未発見のバグがある可能性があります。バージョンを変更した場合も安定性を保証できません。
+      ⚠️ 本テンプレートは `ghcr.io/openclaw/openclaw:latest` を使用しています。OpenClaw 🦞 は急速に開発中のため、未発見のバグがある可能性があります。バージョンを変更した場合も安定性を保証できません。
 
       ⚠️ 問題が発生した場合は、[GitHub issues](https://github.com/openclaw/openclaw/issues) で解決策を探したり、新しい問題を報告したりしてください。Zeabur プラットフォーム関連の問題については、Zeabur サポートにお問い合わせください。
 
@@ -1916,7 +1940,10 @@ localization:
       ```
       サービスを再起動します。
 
-      **ステップ 3：Web UI に初回ログイン**
+      **ステップ 3：デバイスに Tailscale をインストール**
+      OpenClaw にアクセスするデバイスに [Tailscale](https://tailscale.com/download) をインストールし（macOS、Windows、iOS、Android、Linux）、Auth Key を作成した同じ Tailscale アカウントでログインしてください。
+
+      **ステップ 4：Web UI に初回ログイン**
       起動後、ブラウザで開きます（同じ tailnet のデバイスで）：
       ```
       https://<TS_HOSTNAME>.<your-tailnet>.ts.net
@@ -1929,12 +1956,14 @@ localization:
 
       Gateway Token は Zeabur ダッシュボードの**手順**タブまたは**環境変数**（`OPENCLAW_GATEWAY_TOKEN`）で確認できます。
 
-      **ステップ 4：macOS/iOS/Android デバイスの接続**
-      1. デバイスに Tailscale をインストールし、同じ tailnet に参加
+      **ステップ 5：OpenClaw アプリの接続（オプション、macOS の例）**
+      1. Mac に [OpenClaw for macOS](https://docs.openclaw.ai/platforms/macos) と Tailscale をインストール
       2. OpenClaw アプリ → **Settings → General** → **Remote** モードを選択
       3. Transport を **Direct (ws/wss)** に設定
       4. Gateway URL に `wss://<TS_HOSTNAME>.<your-tailnet>.ts.net` を入力
       5. 初回接続時はペアリング承認が必要です — Web UI の **Nodes** ページで approve をクリック
+
+      iOS と Android のセットアップについては、[公式ドキュメント](https://docs.openclaw.ai/platforms)を参照してください。
 
       **パブリックドメインモードに戻す：**
       起動コマンドを `/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh` に戻して再起動してください。
@@ -1947,6 +1976,9 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 変更履歴
+      **2026/2/16**
+      - イメージタグを `latest` に切替、迅速なセキュリティ修正に追従するため
+
       **2026/2/15**
       - Tailscale プライベートネットワークアクセスを追加：`start_gateway_tailscale.sh` に切替で tailnet 経由のプライベート HTTPS アクセスが可能（パブリックインターネットへの公開不要）
       - イメージを `2026.2.14` にアップグレード
@@ -1991,7 +2023,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞 (anteriormente Clawdbot, Moltbot) es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería a través de una arquitectura Gateway basada en WebSocket.
 
-      ⚠️ Esta plantilla usa `ghcr.io/openclaw/openclaw:2026.2.14`. OpenClaw 🦞 está en desarrollo rápido, por lo que puede haber errores no descubiertos. Cambiar de versión tampoco garantiza estabilidad.
+      ⚠️ Esta plantilla usa `ghcr.io/openclaw/openclaw:latest`. OpenClaw 🦞 está en desarrollo rápido, por lo que puede haber errores no descubiertos. Cambiar de versión tampoco garantiza estabilidad.
 
       ⚠️ Si encuentra algún problema, no dude en consultar los [GitHub issues](https://github.com/openclaw/openclaw/issues) para buscar soluciones o reportar nuevos problemas. Para problemas relacionados con la plataforma Zeabur, contacte al soporte de Zeabur.
 
@@ -2216,7 +2248,10 @@ localization:
       ```
       Reinicie el servicio.
 
-      **Paso 3: Primer inicio de sesión en Web UI**
+      **Paso 3: Instalar Tailscale en su dispositivo**
+      Instale [Tailscale](https://tailscale.com/download) en el dispositivo desde el que quiere acceder a OpenClaw (macOS, Windows, iOS, Android, Linux), e inicie sesión con la misma cuenta de Tailscale usada para crear la Auth Key.
+
+      **Paso 4: Primer inicio de sesión en Web UI**
       Una vez iniciado, abra en su navegador (debe estar en la misma tailnet):
       ```
       https://<TS_HOSTNAME>.<su-tailnet>.ts.net
@@ -2229,12 +2264,14 @@ localization:
 
       Puede encontrar el Gateway Token en la pestaña **Instrucciones** o **Variables de Entorno** del dashboard de Zeabur (`OPENCLAW_GATEWAY_TOKEN`).
 
-      **Paso 4: Conectar dispositivos macOS/iOS/Android**
-      1. Instale Tailscale en el dispositivo y únase a la misma tailnet
+      **Paso 5: Conectar OpenClaw app (Opcional, ejemplo macOS)**
+      1. Instale [OpenClaw for macOS](https://docs.openclaw.ai/platforms/macos) y Tailscale en su Mac
       2. Abra OpenClaw app → **Settings → General** → seleccione modo **Remote**
       3. Configure Transport en **Direct (ws/wss)**
       4. Configure Gateway URL en `wss://<TS_HOSTNAME>.<su-tailnet>.ts.net`
       5. La primera conexión requiere aprobación de emparejamiento — vaya a la página **Nodes** de la Web UI y haga clic en approve
+
+      Para configuración de iOS y Android, consulte la [documentación oficial](https://docs.openclaw.ai/platforms).
 
       **Volver al modo de dominio público:**
       Cambie el comando de inicio a `/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh` y reinicie.
@@ -2247,6 +2284,9 @@ localization:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Registro de Cambios
+      **2026/2/16**
+      - Cambiar etiqueta de imagen a `latest` para seguir las correcciones de seguridad rápidas
+
       **2026/2/15**
       - Agregar acceso por red privada Tailscale: los usuarios pueden cambiar a `start_gateway_tailscale.sh` para acceso HTTPS privado vía tailnet sin exponer a internet público
       - Actualizar imagen a `2026.2.14`
@@ -2291,7 +2331,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞 (sebelumnya Clawdbot, Moltbot) adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan melalui arsitektur Gateway berbasis WebSocket.
 
-      ⚠️ Template ini menggunakan `ghcr.io/openclaw/openclaw:2026.2.14`. OpenClaw 🦞 sedang dalam pengembangan cepat, jadi mungkin ada bug yang belum ditemukan. Mengubah versi juga tidak menjamin stabilitas.
+      ⚠️ Template ini menggunakan `ghcr.io/openclaw/openclaw:latest`. OpenClaw 🦞 sedang dalam pengembangan cepat, jadi mungkin ada bug yang belum ditemukan. Mengubah versi juga tidak menjamin stabilitas.
 
       ⚠️ Jika Anda mengalami masalah, silakan kunjungi [GitHub issues](https://github.com/openclaw/openclaw/issues) untuk mencari solusi atau melaporkan masalah baru. Untuk masalah terkait platform Zeabur, silakan hubungi dukungan Zeabur.
 
@@ -2516,7 +2556,10 @@ localization:
       ```
       Restart layanan.
 
-      **Langkah 3: Login pertama ke Web UI**
+      **Langkah 3: Instal Tailscale di perangkat Anda**
+      Instal [Tailscale](https://tailscale.com/download) di perangkat yang ingin Anda gunakan untuk mengakses OpenClaw (macOS, Windows, iOS, Android, Linux), dan login dengan akun Tailscale yang sama yang digunakan untuk membuat Auth Key.
+
+      **Langkah 4: Login pertama ke Web UI**
       Setelah dimulai, buka di browser (harus di perangkat tailnet yang sama):
       ```
       https://<TS_HOSTNAME>.<tailnet-anda>.ts.net
@@ -2529,12 +2572,14 @@ localization:
 
       Gateway Token dapat ditemukan di tab **Instructions** atau **Environment Variables** dashboard Zeabur (`OPENCLAW_GATEWAY_TOKEN`).
 
-      **Langkah 4: Menghubungkan perangkat macOS/iOS/Android**
-      1. Instal Tailscale di perangkat dan bergabung ke tailnet yang sama
+      **Langkah 5: Menghubungkan OpenClaw app (Opsional, contoh macOS)**
+      1. Instal [OpenClaw for macOS](https://docs.openclaw.ai/platforms/macos) dan Tailscale di Mac Anda
       2. Buka OpenClaw app → **Settings → General** → pilih mode **Remote**
       3. Atur Transport ke **Direct (ws/wss)**
       4. Atur Gateway URL ke `wss://<TS_HOSTNAME>.<tailnet-anda>.ts.net`
       5. Koneksi pertama memerlukan persetujuan pairing — buka halaman **Nodes** di Web UI dan klik approve
+
+      Untuk pengaturan iOS dan Android, lihat [dokumentasi resmi](https://docs.openclaw.ai/platforms).
 
       **Kembali ke mode domain publik:**
       Ubah perintah startup kembali ke `/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh` dan restart.
@@ -2547,6 +2592,9 @@ localization:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Catatan Perubahan
+      **2026/2/16**
+      - Mengubah tag image ke `latest` untuk mengikuti perbaikan keamanan yang cepat
+
       **2026/2/15**
       - Menambahkan akses jaringan pribadi Tailscale: pengguna dapat beralih ke `start_gateway_tailscale.sh` untuk akses HTTPS pribadi via tailnet tanpa diekspos ke internet publik
       - Memperbarui image ke `2026.2.14`
