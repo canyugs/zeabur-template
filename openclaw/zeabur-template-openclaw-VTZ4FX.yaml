@@ -37,7 +37,7 @@ spec:
       # OpenClaw 🦞
       OpenClaw 🦞 (formerly Clawdbot, Moltbot) is a personal AI assistant that runs locally and connects to multiple messaging platforms via a WebSocket-based Gateway architecture.
 
-      ⚠️ This template uses `ghcr.io/openclaw/openclaw:latest`. OpenClaw 🦞 is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues.
+      ⚠️ This template uses `ghcr.io/openclaw/openclaw:2026.2.19`. OpenClaw 🦞 is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues.
 
       ⚠️ If you encounter any issues, feel free to check the [GitHub issues](https://github.com/openclaw/openclaw/issues) for solutions or to report new ones. For Zeabur platform-related issues, please contact Zeabur support.
 
@@ -61,7 +61,7 @@ spec:
       1. After deployment, copy "Web UI (with token)" URL from the **Instructions** tab and paste it into your browser (first login requires token, after that you can access directly)
       2. **Configure AI model** (choose one):
          - **Zeabur AI Hub** (default model: `gpt-5-mini`): If you entered the API Key during deployment, go directly to step 3. You can also add `ZEABUR_AI_HUB_API_KEY` later via **Variables** tab in Zeabur dashboard (restart service after adding).
-         - **Other providers** (Anthropic, OpenAI, etc.): If you did not enter a Zeabur AI Hub API Key, the default model is `anthropic/claude-opus-4-5`. Go to Web UI Settings or add API key via environment variables. See: https://docs.openclaw.ai/providers/anthropic
+         - **Other providers** (Anthropic, OpenAI, etc.): If you did not enter a Zeabur AI Hub API Key, the default model is `anthropic/claude-opus-4-6`. Go to Web UI Settings or add API key via environment variables. See: https://docs.openclaw.ai/providers/anthropic
       3. Go to the **Chat** page to test if your AI model is working
       4. (Optional) Set up messaging platforms like Telegram, WhatsApp, etc.
 
@@ -148,7 +148,7 @@ spec:
       **Verify your setup:**
       1. Your default model depends on deployment:
          - With Zeabur AI Hub API Key → default model: `zeabur-ai/gpt-5-mini`
-         - Without → default model: `anthropic/claude-opus-4-5` (requires API key)
+         - Without → default model: `anthropic/claude-opus-4-6` (requires API key)
       2. Open **Chat** page and send a test message
       3. If you get a response → model is working
       4. If you get an error → check that your API key is configured correctly
@@ -298,6 +298,9 @@ spec:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Changelog
+      **2026/2/20**
+      - Pin image tag to `2026.2.19` — add `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY` env var to fix Telegram connection issues
+
       **2026/2/16**
       - Switch image tag to `latest` to keep up with rapid security fixes
 
@@ -338,7 +341,7 @@ spec:
         domainKey: PUBLIC_DOMAIN
         spec:
           source:
-            image: ghcr.io/openclaw/openclaw:latest
+            image: ghcr.io/openclaw/openclaw:2026.2.19
             command:
               - /bin/sh
               - -c
@@ -1075,6 +1078,8 @@ spec:
               default: ${ZEABUR_AI_HUB_API_KEY}
             OPENCLAW_DISABLE_BONJOUR:
               default: "1"
+            OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY:
+              default: "true"
           instructions:
             - type: TEXT
               title: Web UI (with token)
@@ -1099,7 +1104,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞（原 Clawdbot、Moltbot）是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台。
 
-      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:latest`。OpenClaw 🦞 正在快速開發中，可能存在尚未發現的 bug。更改版本後也無法確保穩定性。
+      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.2.19`。OpenClaw 🦞 正在快速開發中，可能存在尚未發現的 bug。更改版本後也無法確保穩定性。
 
       ⚠️ 如果遇到任何問題，歡迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 尋找解決方案或回報新問題。Zeabur 平台相關問題請聯繫 Zeabur 支援。
 
@@ -1123,7 +1128,7 @@ localization:
       1. 部署完成後，在**使用說明**頁籤複製「Web UI (with token)」網址，貼到瀏覽器開啟（首次登入需要 token，之後可直接開啟網址）
       2. **設定 AI 模型**（二擇一）：
          - **Zeabur AI Hub**（預設模型：`gpt-5-mini`）：若部署時已輸入 API Key，直接前往步驟 3。也可之後在 Zeabur 控制台的**變數**頁籤新增 `ZEABUR_AI_HUB_API_KEY`（新增後記得重新啟動服務）。
-         - **其他供應商**（Anthropic、OpenAI 等）：若未輸入 Zeabur AI Hub API Key，預設模型為 `anthropic/claude-opus-4-5`。前往 Web UI Settings 或環境變數新增 API 金鑰。詳情請見：https://docs.openclaw.ai/providers/anthropic
+         - **其他供應商**（Anthropic、OpenAI 等）：若未輸入 Zeabur AI Hub API Key，預設模型為 `anthropic/claude-opus-4-6`。前往 Web UI Settings 或環境變數新增 API 金鑰。詳情請見：https://docs.openclaw.ai/providers/anthropic
       3. 前往 **Chat** 頁面測試 AI 模型是否正常運作
       4. （選擇性）設定 Telegram、WhatsApp 等通訊平台
 
@@ -1210,7 +1215,7 @@ localization:
       **確認模型是否正常運作：**
       1. 預設模型取決於部署方式：
          - 有填 Zeabur AI Hub API Key → 預設模型：`zeabur-ai/gpt-5-mini`
-         - 沒有填 → 預設模型：`anthropic/claude-opus-4-5`（需要 API 金鑰）
+         - 沒有填 → 預設模型：`anthropic/claude-opus-4-6`（需要 API 金鑰）
       2. 開啟 **Chat** 頁面，發送一則測試訊息
       3. 如果收到回覆 → 模型正常運作
       4. 如果出現錯誤 → 確認 API 金鑰是否正確設定
@@ -1360,6 +1365,9 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 更新日誌
+      **2026/2/20**
+      - 映像檔標籤固定為 `2026.2.19` — 新增 `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY` 環境變數以修復 Telegram 連線問題
+
       **2026/2/16**
       - 映像檔標籤切換為 `latest`，以跟上快速的安全性修正
 
@@ -1407,7 +1415,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞（原 Clawdbot、Moltbot）是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台。
 
-      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:latest`。OpenClaw 🦞 正在快速开发中，可能存在尚未发现的 bug。更改版本后也无法确保稳定性。
+      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.2.19`。OpenClaw 🦞 正在快速开发中，可能存在尚未发现的 bug。更改版本后也无法确保稳定性。
 
       ⚠️ 如果遇到任何问题，欢迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 寻找解决方案或回报新问题。Zeabur 平台相关问题请联系 Zeabur 支持。
 
@@ -1431,7 +1439,7 @@ localization:
       1. 部署完成后，在**使用说明**页签复制「Web UI (with token)」网址，贴到浏览器打开（首次登录需要 token，之后可直接打开网址）
       2. **设置 AI 模型**（二选一）：
          - **Zeabur AI Hub**（默认模型：`gpt-5-mini`）：若部署时已输入 API Key，直接前往步骤 3。也可之后在 Zeabur 控制台的**变量**页签添加 `ZEABUR_AI_HUB_API_KEY`（添加后记得重新启动服务）。
-         - **其他供应商**（Anthropic、OpenAI 等）：若未输入 Zeabur AI Hub API Key，默认模型为 `anthropic/claude-opus-4-5`。前往 Web UI Settings 或环境变量添加 API 密钥。详情请见：https://docs.openclaw.ai/providers/anthropic
+         - **其他供应商**（Anthropic、OpenAI 等）：若未输入 Zeabur AI Hub API Key，默认模型为 `anthropic/claude-opus-4-6`。前往 Web UI Settings 或环境变量添加 API 密钥。详情请见：https://docs.openclaw.ai/providers/anthropic
       3. 前往 **Chat** 页面测试 AI 模型是否正常运作
       4. （可选）设置 Telegram、WhatsApp 等通讯平台
 
@@ -1518,7 +1526,7 @@ localization:
       **确认模型是否正常运作：**
       1. 默认模型取决于部署方式：
          - 有填 Zeabur AI Hub API Key → 默认模型：`zeabur-ai/gpt-5-mini`
-         - 没有填 → 默认模型：`anthropic/claude-opus-4-5`（需要 API 密钥）
+         - 没有填 → 默认模型：`anthropic/claude-opus-4-6`（需要 API 密钥）
       2. 打开 **Chat** 页面，发送一条测试消息
       3. 如果收到回复 → 模型正常运作
       4. 如果出现错误 → 确认 API 密钥是否正确设置
@@ -1668,6 +1676,9 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 更新日志
+      **2026/2/20**
+      - 镜像标签固定为 `2026.2.19` — 新增 `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY` 环境变量以修复 Telegram 连接问题
+
       **2026/2/16**
       - 镜像标签切换为 `latest`，以跟上快速的安全性修复
 
@@ -1715,7 +1726,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞（旧 Clawdbot、Moltbot）は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォームに接続する個人用 AI アシスタントです。
 
-      ⚠️ 本テンプレートは `ghcr.io/openclaw/openclaw:latest` を使用しています。OpenClaw 🦞 は急速に開発中のため、未発見のバグがある可能性があります。バージョンを変更した場合も安定性を保証できません。
+      ⚠️ 本テンプレートは `ghcr.io/openclaw/openclaw:2026.2.19` を使用しています。OpenClaw 🦞 は急速に開発中のため、未発見のバグがある可能性があります。バージョンを変更した場合も安定性を保証できません。
 
       ⚠️ 問題が発生した場合は、[GitHub issues](https://github.com/openclaw/openclaw/issues) で解決策を探したり、新しい問題を報告したりしてください。Zeabur プラットフォーム関連の問題については、Zeabur サポートにお問い合わせください。
 
@@ -1739,7 +1750,7 @@ localization:
       1. デプロイ後、**指示**タブの「Web UI (with token)」URL をコピーしてブラウザに貼り付けて開く（初回ログインは token が必要、以降は直接 URL にアクセス可能）
       2. **AI モデルを設定**（いずれかを選択）：
          - **Zeabur AI Hub**（デフォルトモデル：`gpt-5-mini`）：デプロイ時に API Key を入力済みの場合、ステップ 3 へ進む。後から Zeabur ダッシュボードの**変数**タブで `ZEABUR_AI_HUB_API_KEY` を追加も可能（追加後はサービスを再起動）。
-         - **他のプロバイダー**（Anthropic、OpenAI など）：Zeabur AI Hub API Key を入力しなかった場合、デフォルトモデルは `anthropic/claude-opus-4-5` です。Web UI Settings または環境変数で API キーを追加してください。詳細：https://docs.openclaw.ai/providers/anthropic
+         - **他のプロバイダー**（Anthropic、OpenAI など）：Zeabur AI Hub API Key を入力しなかった場合、デフォルトモデルは `anthropic/claude-opus-4-6` です。Web UI Settings または環境変数で API キーを追加してください。詳細：https://docs.openclaw.ai/providers/anthropic
       3. **Chat** ページで AI モデルが正常に動作しているかテスト
       4. （オプション）Telegram、WhatsApp などのメッセージングプラットフォームを設定
 
@@ -1826,7 +1837,7 @@ localization:
       **セットアップの確認：**
       1. デフォルトモデルはデプロイ方法に依存します：
          - Zeabur AI Hub API Key を入力した場合 → デフォルトモデル：`zeabur-ai/gpt-5-mini`
-         - 入力しなかった場合 → デフォルトモデル：`anthropic/claude-opus-4-5`（API キーが必要）
+         - 入力しなかった場合 → デフォルトモデル：`anthropic/claude-opus-4-6`（API キーが必要）
       2. **Chat** ページを開き、テストメッセージを送信
       3. 返答があれば → モデルは正常に動作しています
       4. エラーが出た場合 → API キーが正しく設定されているか確認
@@ -1976,6 +1987,9 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 変更履歴
+      **2026/2/20**
+      - イメージタグを `2026.2.19` に固定 — `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY` 環境変数を追加し Telegram 接続の問題を修正
+
       **2026/2/16**
       - イメージタグを `latest` に切替、迅速なセキュリティ修正に追従するため
 
@@ -2023,7 +2037,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞 (anteriormente Clawdbot, Moltbot) es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería a través de una arquitectura Gateway basada en WebSocket.
 
-      ⚠️ Esta plantilla usa `ghcr.io/openclaw/openclaw:latest`. OpenClaw 🦞 está en desarrollo rápido, por lo que puede haber errores no descubiertos. Cambiar de versión tampoco garantiza estabilidad.
+      ⚠️ Esta plantilla usa `ghcr.io/openclaw/openclaw:2026.2.19`. OpenClaw 🦞 está en desarrollo rápido, por lo que puede haber errores no descubiertos. Cambiar de versión tampoco garantiza estabilidad.
 
       ⚠️ Si encuentra algún problema, no dude en consultar los [GitHub issues](https://github.com/openclaw/openclaw/issues) para buscar soluciones o reportar nuevos problemas. Para problemas relacionados con la plataforma Zeabur, contacte al soporte de Zeabur.
 
@@ -2047,7 +2061,7 @@ localization:
       1. Después del despliegue, copie la URL "Web UI (with token)" de la pestaña **Instrucciones** y péguela en su navegador (el primer inicio de sesión requiere token, después puede acceder directamente)
       2. **Configure el modelo de AI** (elija uno):
          - **Zeabur AI Hub** (modelo predeterminado: `gpt-5-mini`): Si ingresó la API Key durante el despliegue, vaya directamente al paso 3. También puede agregar `ZEABUR_AI_HUB_API_KEY` después en la pestaña **Variables** del panel de Zeabur (reinicie el servicio después de agregar).
-         - **Otros proveedores** (Anthropic, OpenAI, etc.): Si no ingresó una API Key de Zeabur AI Hub, el modelo predeterminado es `anthropic/claude-opus-4-5`. Vaya a Web UI Settings o agregue la clave API mediante variables de entorno. Más info: https://docs.openclaw.ai/providers/anthropic
+         - **Otros proveedores** (Anthropic, OpenAI, etc.): Si no ingresó una API Key de Zeabur AI Hub, el modelo predeterminado es `anthropic/claude-opus-4-6`. Vaya a Web UI Settings o agregue la clave API mediante variables de entorno. Más info: https://docs.openclaw.ai/providers/anthropic
       3. Vaya a la página **Chat** para probar si su modelo de AI funciona
       4. (Opcional) Configure plataformas de mensajería como Telegram, WhatsApp, etc.
 
@@ -2134,7 +2148,7 @@ localization:
       **Verifique su configuración:**
       1. El modelo predeterminado depende del despliegue:
          - Con Zeabur AI Hub API Key → modelo predeterminado: `zeabur-ai/gpt-5-mini`
-         - Sin → modelo predeterminado: `anthropic/claude-opus-4-5` (requiere clave API)
+         - Sin → modelo predeterminado: `anthropic/claude-opus-4-6` (requiere clave API)
       2. Abra la página **Chat** y envíe un mensaje de prueba
       3. Si recibe una respuesta → el modelo funciona correctamente
       4. Si obtiene un error → verifique que su clave API esté configurada correctamente
@@ -2284,6 +2298,9 @@ localization:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Registro de Cambios
+      **2026/2/20**
+      - Fijar etiqueta de imagen a `2026.2.19` — agregar variable `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY` para solucionar problemas de conexión con Telegram
+
       **2026/2/16**
       - Cambiar etiqueta de imagen a `latest` para seguir las correcciones de seguridad rápidas
 
@@ -2331,7 +2348,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞 (sebelumnya Clawdbot, Moltbot) adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan melalui arsitektur Gateway berbasis WebSocket.
 
-      ⚠️ Template ini menggunakan `ghcr.io/openclaw/openclaw:latest`. OpenClaw 🦞 sedang dalam pengembangan cepat, jadi mungkin ada bug yang belum ditemukan. Mengubah versi juga tidak menjamin stabilitas.
+      ⚠️ Template ini menggunakan `ghcr.io/openclaw/openclaw:2026.2.19`. OpenClaw 🦞 sedang dalam pengembangan cepat, jadi mungkin ada bug yang belum ditemukan. Mengubah versi juga tidak menjamin stabilitas.
 
       ⚠️ Jika Anda mengalami masalah, silakan kunjungi [GitHub issues](https://github.com/openclaw/openclaw/issues) untuk mencari solusi atau melaporkan masalah baru. Untuk masalah terkait platform Zeabur, silakan hubungi dukungan Zeabur.
 
@@ -2355,7 +2372,7 @@ localization:
       1. Setelah deploy, salin URL "Web UI (with token)" dari tab **Instruksi** dan tempelkan di browser Anda (login pertama memerlukan token, setelah itu bisa langsung akses URL)
       2. **Konfigurasi model AI** (pilih salah satu):
          - **Zeabur AI Hub** (model default: `gpt-5-mini`): Jika sudah memasukkan API Key saat deploy, langsung ke langkah 3. Bisa juga menambahkan `ZEABUR_AI_HUB_API_KEY` nanti di tab **Variables** dashboard Zeabur (restart layanan setelah menambahkan).
-         - **Penyedia lain** (Anthropic, OpenAI, dll.): Jika tidak memasukkan API Key Zeabur AI Hub, model default adalah `anthropic/claude-opus-4-5`. Buka Web UI Settings atau tambahkan kunci API melalui variabel lingkungan. Info: https://docs.openclaw.ai/providers/anthropic
+         - **Penyedia lain** (Anthropic, OpenAI, dll.): Jika tidak memasukkan API Key Zeabur AI Hub, model default adalah `anthropic/claude-opus-4-6`. Buka Web UI Settings atau tambahkan kunci API melalui variabel lingkungan. Info: https://docs.openclaw.ai/providers/anthropic
       3. Buka halaman **Chat** untuk menguji apakah model AI Anda berfungsi
       4. (Opsional) Atur platform pesan seperti Telegram, WhatsApp, dll.
 
@@ -2442,7 +2459,7 @@ localization:
       **Verifikasi setup Anda:**
       1. Model default tergantung pada cara deploy:
          - Dengan Zeabur AI Hub API Key → model default: `zeabur-ai/gpt-5-mini`
-         - Tanpa → model default: `anthropic/claude-opus-4-5` (memerlukan kunci API)
+         - Tanpa → model default: `anthropic/claude-opus-4-6` (memerlukan kunci API)
       2. Buka halaman **Chat** dan kirim pesan percobaan
       3. Jika mendapat balasan → model berfungsi dengan baik
       4. Jika ada error → pastikan kunci API sudah dikonfigurasi dengan benar
@@ -2592,6 +2609,9 @@ localization:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Catatan Perubahan
+      **2026/2/20**
+      - Menetapkan tag image ke `2026.2.19` — menambahkan variabel `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY` untuk memperbaiki masalah koneksi Telegram
+
       **2026/2/16**
       - Mengubah tag image ke `latest` untuk mengikuti perbaikan keamanan yang cepat
 
