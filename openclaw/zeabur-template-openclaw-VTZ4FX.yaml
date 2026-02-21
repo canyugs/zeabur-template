@@ -200,46 +200,24 @@ spec:
 
       ⚠️ Restore will overwrite existing configuration and data on the new service. Remember to also restore related environment variables (e.g. `TELEGRAM_BOT_TOKEN`). Channel backup/restore has only been tested with Telegram and WhatsApp.
 
-      ## Migrating from Clawdbot / Moltbot
-      **Old version (without commands) data locations:**
-      - **Clawdbot**: config `~/.clawdbot`, workspace `~/clawd`
-      - **Moltbot**: config `~/.moltbot` or `~/.clawdbot`, workspace `~/clawd`
-
-      **New OpenClaw location:** `/home/node/.openclaw` (includes config and workspace)
-
-      OpenClaw has backward compatibility and will automatically read from `.clawdbot` and `.moltbot` folders, so you can extract directly without renaming.
-
-      **Migration steps:**
-      1. Backup data on your old service:
-         - Open **Command** in old service
-         - `cd /home/node && tar -czvf backup.tar.gz .clawdbot .moltbot clawd 2>/dev/null` (ignores missing folders)
-         - Download `backup.tar.gz` from **Files** tab
-      2. Deploy this new OpenClaw template
-      3. Restore backup to new service:
-         - Drag `backup.tar.gz` to `/home/node` folder in **Files** tab
-         - Open **Command**: `cd /home/node && tar -xzvf backup.tar.gz && rm backup.tar.gz`
-         - Restart service
-      4. Your configuration, sessions, and credentials will be preserved
-
-      The `clawdbot` and `moltbot` CLI commands are still available for backward compatibility.
-
       ## Troubleshooting
-      **Service won't start after config change?** Use rescue mode:
-      1. Go to **Settings** → **Command**, change to: `/opt/openclaw/rescue.sh` (or `sleep infinity` for older versions without commands)
-      2. Go to **Settings** → **Health Check**, disable it (rescue mode won't respond to health checks)
-      3. Restart service - container will run without starting OpenClaw
-      4. Open **Files** tab to access the file browser
-      5. Check **Logs** to find the error. Example: `Invalid config at /home/node/.openclaw/openclaw.json: - agents.list.0: Unrecognized key: "allowModels"` — fix the config at `/home/node/.openclaw/openclaw.json` in the file browser, or open **Command** and run `openclaw doctor --fix` to remove unrecognized keys automatically
-      6. Change startup command back to: `/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh`
-         - Older versions (without commands): `node dist/index.js gateway --allow-unconfigured --bind "${OPENCLAW_GATEWAY_BIND}" --port "${OPENCLAW_GATEWAY_PORT}" --token "${OPENCLAW_GATEWAY_TOKEN}"`
-      7. Re-enable health check and restart service
+
+      ### New deployments (with helper page)
+      When the gateway stops, a helper page appears at the service URL with error details and steps to fix it:
+      1. Check the **error logs** — the helper page shows recent logs inline; for complete logs, open the **Logs** tab in Zeabur Dashboard
+      2. Fix the configuration — open the **Files** tab in Zeabur Dashboard, navigate to the config file (`/home/node/.openclaw/openclaw.json`), and correct the issue
+      3. Click **Restart** in Zeabur Dashboard to apply the fix
+
+      ### Existing deployments (without helper page)
+      If your deployment does not have the helper page, follow these steps:
+      1. Check the **Logs** tab in Zeabur Dashboard to find the error
+      2. Go to **Settings** → **Command**, change the startup command to `sleep 3600`, then click **Restart** — this keeps the container running so you can edit files
+      3. Fix the configuration — open the **Files** tab, navigate to the config file (`/home/node/.openclaw/openclaw.json`), and correct the issue
+      4. Change the startup command back to `/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh` and click **Restart**
+
+      > 💡 To enable the helper page, redeploy from this template.
 
       **Update version:** Go to **Settings** → **Service Image Source** → modify `ghcr.io/openclaw/openclaw:<tag>`.
-
-      **Health check error `Startup probe failed: dial tcp ... connect: connection refused`?** This means the service hasn't finished starting yet or the port is not ready. OpenClaw may need more time to start, especially on first launch. Try:
-      1. Wait a few minutes — the service may still be initializing
-      2. If the error persists, increase resources (minimum 2 vCPU / 4 GB RAM, recommended 4 vCPU / 8 GB RAM)
-      3. If the service keeps restarting, disable **Health Check** temporarily to prevent restart loops, then check logs for the actual error
 
       ## Tailscale Private Network Access (Optional)
       > ⚠️ This feature requires a fresh deployment from this template. Existing deployments do not have the Tailscale startup scripts — please redeploy to use this feature.
@@ -293,13 +271,19 @@ spec:
       ## Zeabur-Specific Configuration
       This template disables mDNS/Bonjour (`OPENCLAW_DISABLE_BONJOUR=1`) because Zeabur container hostnames can exceed the 63-byte DNS label limit. mDNS is only used for local network discovery (like AirPlay/Chromecast) and is not needed in cloud environments where services connect via internal DNS.
 
+      This template sets `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true` to fix Telegram connection issues in containerized environments. This variable is required for image versions `2026.2.17` and later. Set to `true` (default) to disable Node.js automatic address family selection, or `false` to re-enable it.
+
       ## Documentation
       - Documentation: https://docs.openclaw.ai
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Changelog
+      **2026/2/22**
+      - Replace health check with auto-restart wrapper: gateway now restarts automatically on crash with a helper page showing error details and fix steps, with 5-second service recovery detection
+      - Remove rescue mode (`rescue.sh`) — replaced by the helper page
+
       **2026/2/20**
-      - Pin image tag to `2026.2.19` — add `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY` env var to fix Telegram connection issues
+      - Pin image tag to `2026.2.19` — add `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true` env var to fix Telegram connection issues (required for image versions `2026.2.17` and later)
 
       **2026/2/16**
       - Switch image tag to `latest` to keep up with rapid security fixes
@@ -322,13 +306,12 @@ spec:
       **2026/2/4**
       - Use Zeabur configs for startup scripts (easier to maintain)
       - Add `backup` and `restore` global commands
-      - Add `rescue.sh` for troubleshooting when config is broken
+      - Add auto-restart wrapper with fallback page for gateway crash recovery
       - Add 6 new Zeabur AI Hub models: gpt-5.2, gpt-5.1, gpt-5-nano, glm-4.7, glm-4.7-flash, kimi-k2.5
       - Add store compatibility setting for Zeabur AI Hub Claude models
 
       **2026/2/2**
       - Add AI model configuration section (global vs conversation settings)
-      - Add migration guide from Clawdbot / Moltbot with data paths
       - Add backup & restore section with Zeabur backup service
       - Add tip to backup after initial setup
       - Remove Google Gemini CLI patch (fixed upstream)
@@ -350,9 +333,6 @@ spec:
           - id: web
             port: 18789
             type: HTTP
-          healthCheck:
-            type: TCP
-            port: web
           volumes:
             - id: data
               dir: /home/node
@@ -605,11 +585,171 @@ spec:
                 fi
 
             - path: /opt/openclaw/start_gateway.sh
-              envsubst: true
+              envsubst: false
               permission: 493
               template: |
                 #!/bin/sh
-                exec node dist/index.js gateway --allow-unconfigured --bind "${OPENCLAW_GATEWAY_BIND}" --port "${OPENCLAW_GATEWAY_PORT}" --token "${OPENCLAW_GATEWAY_TOKEN}"
+                GATEWAY_LOG="/tmp/openclaw-gateway.log"
+                PORT="${OPENCLAW_GATEWAY_PORT}"
+
+                while true; do
+                  echo "=== Starting OpenClaw Gateway ==="
+                  node dist/index.js gateway --allow-unconfigured --bind "${OPENCLAW_GATEWAY_BIND}" --port "$PORT" --token "${OPENCLAW_GATEWAY_TOKEN}" 2>&1 | tee "$GATEWAY_LOG"
+                  EXIT_CODE=$?
+                  echo "=== Gateway exited (code: $EXIT_CODE), restarting in 1h... ==="
+
+                  # Start fallback page on the same port
+                  node /opt/openclaw/fallback.js "$PORT" "$EXIT_CODE" "$GATEWAY_LOG" &
+                  FALLBACK_PID=$!
+
+                  sleep 3600
+                  kill $FALLBACK_PID 2>/dev/null
+                  wait $FALLBACK_PID 2>/dev/null
+                done
+            - path: /opt/openclaw/fallback.html
+              envsubst: false
+              permission: 420
+              template: |
+                <!DOCTYPE html>
+                <html lang="en" class="dark">
+                <head>
+                  <meta charset="UTF-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <meta http-equiv="refresh" content="60">
+                  <title>OpenClaw 🦞 Unavailable — Zeabur</title>
+                  <link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+                  <style>
+                    :root{
+                      --bg:#0F0E11;--surface:#19181B;--surface-hover:#212023;
+                      --border:#322F37;--border-light:#3F3C44;
+                      --text:#fff;--text-secondary:#B7B4BB;--text-tertiary:#7E7A85;--text-muted:#4C4851;
+                      --violet:#6300FF;--violet-hover:#501ECB;--violet-subtle:rgba(99,0,255,.08);
+                      --orange:#EE430E;--orange-subtle:rgba(238,67,14,.1);--orange-border:rgba(238,67,14,.2);
+                      --success:#22D180;
+                      --radius-lg:12px;--radius-xl:16px;
+                    }
+                    *{margin:0;padding:0;box-sizing:border-box}
+                    body{font-family:'Albert Sans','Inter',sans-serif;background:var(--bg);color:var(--text-secondary);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem}
+
+                    .page{max-width:480px;width:100%;text-align:center}
+
+                    /* Zeabur logo */
+                    .logo{margin-bottom:2rem;display:flex;justify-content:center}
+                    .logo svg{height:28px;color:var(--text)}
+
+                    /* Hero section */
+                    .status-dot{display:inline-block;width:10px;height:10px;background:var(--orange);border-radius:50%;margin-right:8px;vertical-align:middle;position:relative}
+                    .status-dot::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid rgba(238,67,14,.3);animation:pulse-ring 2s ease-out infinite}
+                    @keyframes pulse-ring{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.6)}}
+
+                    h1{font-size:1.5rem;font-weight:700;color:var(--text);letter-spacing:-.02em;line-height:1.3;margin-bottom:.75rem}
+                    .desc{font-size:.9375rem;line-height:1.6;color:var(--text-tertiary);margin-bottom:2rem;max-width:400px;margin-left:auto;margin-right:auto}
+
+                    /* Steps card */
+                    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);overflow:hidden;text-align:left;margin-bottom:1.5rem}
+                    .card-header{padding:.875rem 1rem;border-bottom:1px solid var(--border);font-size:.8125rem;font-weight:600;color:var(--text);display:flex;align-items:center;gap:.5rem}
+                    .card-header svg{width:16px;height:16px;color:var(--text-tertiary)}
+                    .step{padding:.875rem 1rem;display:flex;gap:.75rem;align-items:flex-start}
+                    .step+.step{border-top:1px solid var(--border)}
+                    .step-num{flex-shrink:0;width:20px;height:20px;display:flex;align-items:center;justify-content:center;background:var(--violet-subtle);color:var(--violet);font-size:.6875rem;font-weight:700;border-radius:6px;margin-top:1px}
+                    .step-content{flex:1;font-size:.8125rem;line-height:1.5;color:var(--text-secondary)}
+                    .step-content strong{color:var(--text);font-weight:600}
+                    .step-content a{color:var(--violet);text-decoration:none}
+                    .step-content a:hover{text-decoration:underline}
+                    .step-content code{font-family:'Inter',monospace;background:rgba(255,255,255,.05);padding:.0625rem .375rem;border-radius:4px;font-size:.75rem;color:var(--text-tertiary)}
+
+                    /* Log viewer */
+                    .log-box{margin-top:.625rem;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:.75rem;max-height:240px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+                    .log-box::-webkit-scrollbar{width:3px}
+                    .log-box::-webkit-scrollbar-track{background:transparent}
+                    .log-box::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+                    .log-box pre{font-family:'Inter',monospace;font-size:.6875rem;line-height:1.7;color:var(--text-muted);white-space:pre-wrap;word-break:break-all}
+
+                  </style>
+                </head>
+                <body>
+                  <div class="page">
+                    <!-- Zeabur logo -->
+                    <div class="logo">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="31.229" height="24.403" viewBox="0 0 31.229 24.403"><g transform="translate(-289.741 -131.96)"><g transform="translate(289.741 131.96)"><path d="M301.875,151.848h19.1v8.963H289.741v-8.963h8.779l12.087-6.477H289.741v-8.963h31.229v8.963Z" transform="translate(-289.741 -136.408)" fill="#fff"/><rect width="20.761" height="8.963" fill="#6300ff"/><rect width="18.999" height="8.963" transform="translate(12.231 15.44)" fill="#f40"/></g></g></svg>
+                    </div>
+
+                    <!-- Status indicator + heading -->
+                    <h1><span class="status-dot"></span>OpenClaw 🦞 Unavailable</h1>
+                    <p class="desc">Your OpenClaw service ran into a problem and stopped. This is a Zeabur helper page — it will disappear automatically once the service is running again.</p>
+
+                    <!-- How to fix it -->
+                    <div class="card">
+                      <div class="card-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.403 12.652a3 3 0 0 0 0-5.304 3 3 0 0 0-3.75-3.751 3 3 0 0 0-5.305 0 3 3 0 0 0-3.751 3.75 3 3 0 0 0 0 5.305 3 3 0 0 0 3.75 3.751 3 3 0 0 0 5.305 0 3 3 0 0 0 3.751-3.75Zm-2.546-4.46a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd"/></svg>
+                        How to fix it
+                      </div>
+                      <div class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                          <strong>Check the error message</strong> &mdash; see what went wrong below. For complete logs, go to your Zeabur Dashboard and open the <strong>Logs</strong> tab.
+                          <div class="log-box"><pre>{{LOGS}}</pre></div>
+                        </div>
+                      </div>
+                      <div class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-content"><strong>If config invalid, fix the configuration</strong> &mdash; open the <strong>Files</strong> tab in your dashboard, navigate to the config file (`/home/node/.openclaw/openclaw.json`), and correct the issue. Then click <strong>Restart</strong>.</div>
+                      </div>
+                    </div>
+                  </div>
+                  <script>
+                    setInterval(function(){
+                      fetch(location.href,{method:'HEAD'}).then(function(r){
+                        if(r.status!==503) location.reload();
+                      }).catch(function(){});
+                    },5000);
+                  </script>
+                </body>
+                </html>
+            - path: /opt/openclaw/fallback.js
+              envsubst: false
+              permission: 493
+              template: |
+                const http = require('http');
+                const fs = require('fs');
+
+                const port = parseInt(process.argv[2], 10) || 18789;
+                const exitCode = process.argv[3] || 'unknown';
+                const logFile = process.argv[4] || '/tmp/openclaw-gateway.log';
+
+                function getLastLines(filePath, n) {
+                  try {
+                    const data = fs.readFileSync(filePath, 'utf8');
+                    const lines = data.split('\n');
+                    return lines.slice(-n).join('\n');
+                  } catch (e) {
+                    return '(no logs available)';
+                  }
+                }
+
+                function escapeHtml(str) {
+                  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                }
+
+                let template;
+                try {
+                  template = fs.readFileSync('/opt/openclaw/fallback.html', 'utf8');
+                } catch (e) {
+                  template = '<html><body><h1>OpenClaw is restarting (exit code: {{EXIT_CODE}})</h1><pre>{{LOGS}}</pre></body></html>';
+                }
+
+                const server = http.createServer((req, res) => {
+                  const logs = escapeHtml(getLastLines(logFile, 50));
+                  const html = template
+                    .replace(/\{\{EXIT_CODE\}\}/g, escapeHtml(String(exitCode)))
+                    .replace(/\{\{LOGS\}\}/g, logs);
+                  res.writeHead(503, { 'Content-Type': 'text/html; charset=utf-8' });
+                  res.end(html);
+                });
+
+                server.listen(port, '0.0.0.0', () => {
+                  console.log('Fallback page serving on port ' + port);
+                });
             - path: /opt/openclaw/backup.sh
               envsubst: false
               permission: 493
@@ -676,21 +816,6 @@ spec:
                 echo ""
                 echo "=== Restore Complete ==="
                 echo "Please restart the service for changes to take effect."
-            - path: /opt/openclaw/rescue.sh
-              envsubst: false
-              permission: 493
-              template: |
-                #!/bin/sh
-                echo "=== Rescue Mode ==="
-                echo "Container is running but OpenClaw service is not started."
-                echo "Use the Command tab to access the container for debugging."
-                echo ""
-                echo "To exit rescue mode:"
-                echo "1. Fix the issue"
-                echo "2. Change the startup command back to:"
-                echo "   /opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh"
-                echo "3. Restart the service"
-                sleep infinity
             - path: /opt/openclaw/setup-tailscale.sh
               envsubst: false
               permission: 493
@@ -858,8 +983,24 @@ spec:
                 mkdir -p /var/run/tailscale
                 ln -sf "$HOME/.tailscale/tailscaled.sock" /var/run/tailscale/tailscaled.sock
 
-                # Start gateway with Tailscale Serve (HTTPS + identity auth)
-                exec node dist/index.js gateway --tailscale serve --allow-unconfigured
+                set +e
+                GATEWAY_LOG="/tmp/openclaw-gateway.log"
+                PORT="${OPENCLAW_GATEWAY_PORT:-18789}"
+
+                while true; do
+                  echo "=== Starting OpenClaw Gateway (Tailscale) ==="
+                  node dist/index.js gateway --tailscale serve --allow-unconfigured 2>&1 | tee "$GATEWAY_LOG"
+                  EXIT_CODE=$?
+                  echo "=== Gateway exited (code: $EXIT_CODE), restarting in 1h... ==="
+
+                  # Start fallback page on the same port
+                  node /opt/openclaw/fallback.js "$PORT" "$EXIT_CODE" "$GATEWAY_LOG" &
+                  FALLBACK_PID=$!
+
+                  sleep 3600
+                  kill $FALLBACK_PID 2>/dev/null
+                  wait $FALLBACK_PID 2>/dev/null
+                done
             - path: /opt/openclaw/providers/zeabur-ai-hub.json5
               envsubst: true
               template: |
@@ -1267,46 +1408,24 @@ localization:
 
       ⚠️ 還原會覆蓋新服務上現有的設定和資料。記得也要將相關的環境變數（如 `TELEGRAM_BOT_TOKEN`）設定回去。Channel 的備份還原目前只測試過 Telegram 和 WhatsApp 可以成功還原。
 
-      ## 從 Clawdbot / Moltbot 遷移
-      **舊版（沒有這些指令）資料位置：**
-      - **Clawdbot**：設定 `~/.clawdbot`、工作區 `~/clawd`
-      - **Moltbot**：設定 `~/.moltbot` 或 `~/.clawdbot`、工作區 `~/clawd`
-
-      **新版 OpenClaw 位置：**`/home/node/.openclaw`（包含設定和工作區）
-
-      OpenClaw 具有向下相容性，會自動讀取 `.clawdbot` 和 `.moltbot` 資料夾，直接解壓縮即可使用，不需要重新命名。
-
-      **遷移步驟：**
-      1. 在舊服務上備份資料：
-         - 在舊服務開啟**指令**
-         - `cd /home/node && tar -czvf backup.tar.gz .clawdbot .moltbot clawd 2>/dev/null`（會忽略不存在的資料夾）
-         - 從**檔案**頁籤下載 `backup.tar.gz`
-      2. 部署這個新的 OpenClaw 模板
-      3. 將備份還原到新服務：
-         - 將 `backup.tar.gz` 拖移到**檔案**頁籤的 `/home/node` 資料夾
-         - 開啟**指令**：`cd /home/node && tar -xzvf backup.tar.gz && rm backup.tar.gz`
-         - 重新啟動服務
-      4. 您的設定、對話記錄和憑證都會保留
-
-      為了向下相容，`clawdbot` 和 `moltbot` CLI 指令仍可使用。
-
       ## 疑難排解
-      **設定檔改壞導致服務無法啟動？** 使用救援模式：
-      1. 前往**設定** → **啟動指令**，改成：`/opt/openclaw/rescue.sh`（舊版沒有這些指令，可用 `sleep infinity`）
-      2. 前往**設定** → **健康檢查**，關閉它（救援模式不會回應健康檢查）
-      3. 重新啟動服務 - 容器會運行但不啟動 OpenClaw
-      4. 開啟**檔案**頁籤進入檔案瀏覽器
-      5. 從**紀錄**中查看錯誤原因，例如：`Invalid config at /home/node/.openclaw/openclaw.json: - agents.list.0: Unrecognized key: "allowModels"` — 在檔案瀏覽器中修復 `/home/node/.openclaw/openclaw.json`，或開啟**指令**執行 `openclaw doctor --fix` 自動移除無法識別的設定項
-      6. 將啟動指令改回：`/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh`
-         - 舊版（沒有這些指令）：`node dist/index.js gateway --allow-unconfigured --bind "${OPENCLAW_GATEWAY_BIND}" --port "${OPENCLAW_GATEWAY_PORT}" --token "${OPENCLAW_GATEWAY_TOKEN}"`
-      7. 重新開啟健康檢查並重新啟動服務
+
+      ### 全新部署（有輔助頁面）
+      當 Gateway 停止時，服務網址會顯示輔助頁面，包含錯誤資訊與修復步驟：
+      1. 查看**錯誤紀錄** — 輔助頁面會直接顯示最近的紀錄；完整紀錄請到 Zeabur Dashboard 的**紀錄**頁籤查看
+      2. 修復設定檔 — 到 Zeabur Dashboard 的**檔案**頁籤，找到設定檔（`/home/node/.openclaw/openclaw.json`）並修正問題
+      3. 在 Zeabur Dashboard 點擊**重新啟動**套用修正
+
+      ### 舊版部署（無輔助頁面）
+      如果您的部署沒有輔助頁面，請依照以下步驟操作：
+      1. 到 Zeabur Dashboard 的**紀錄**頁籤查看錯誤訊息
+      2. 前往**設定** → **指令**，將啟動指令改為 `sleep 3600`，然後點擊**重新啟動** — 這樣容器會持續運行，方便您編輯檔案
+      3. 修復設定檔 — 到**檔案**頁籤，找到設定檔（`/home/node/.openclaw/openclaw.json`）並修正問題
+      4. 將啟動指令改回 `/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh`，然後點擊**重新啟動**
+
+      > 💡 如需啟用輔助頁面，請重新部署此模板。
 
       **更新版本：** 前往**設定** → **服務映像檔來源** → 修改 `ghcr.io/openclaw/openclaw:<tag>`。
-
-      **健康檢查錯誤 `Startup probe failed: dial tcp ... connect: connection refused`？** 表示服務尚未啟動完成或埠號未就緒。OpenClaw 可能需要更多時間啟動，特別是首次啟動時。嘗試：
-      1. 等待幾分鐘 — 服務可能仍在初始化中
-      2. 如果錯誤持續，增加資源配置（最低 2 vCPU / 4 GB RAM，建議 4 vCPU / 8 GB RAM）
-      3. 如果服務不斷重啟，暫時關閉**健康檢查**以防止重啟循環，再查看日誌找出實際錯誤
 
       ## Tailscale 私有網路存取（選用）
       > ⚠️ 此功能僅適用於全新部署。舊版部署不包含 Tailscale 啟動腳本，請重新部署模板才能使用此功能。
@@ -1360,13 +1479,19 @@ localization:
       ## Zeabur 專屬設定
       此模板停用了 mDNS/Bonjour（`OPENCLAW_DISABLE_BONJOUR=1`），因為 Zeabur 容器主機名稱可能超過 63 bytes 的 DNS 標籤限制。mDNS 僅用於區域網路發現（類似 AirPlay/Chromecast），在雲端環境中服務透過內部 DNS 連線，因此不需要此功能。
 
+      此模板設定 `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true` 以修復容器環境中的 Telegram 連線問題。此變數為 `2026.2.17` 及之後的映像檔版本所需。設為 `true`（預設）停用 Node.js 自動位址族選擇，設為 `false` 可重新啟用。
+
       ## 文件
       - 文件：https://docs.openclaw.ai
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 更新日誌
+      **2026/2/22**
+      - 以自動重啟機制取代健康檢查：Gateway 崩潰時自動重啟，並顯示輔助頁面提供錯誤資訊與修復步驟，每 5 秒偵測服務是否恢復
+      - 移除救援模式（`rescue.sh`）— 已由輔助頁面取代
+
       **2026/2/20**
-      - 映像檔標籤固定為 `2026.2.19` — 新增 `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY` 環境變數以修復 Telegram 連線問題
+      - 映像檔標籤固定為 `2026.2.19` — 新增 `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true` 環境變數以修復 Telegram 連線問題（`2026.2.17` 及之後的版本需要）
 
       **2026/2/16**
       - 映像檔標籤切換為 `latest`，以跟上快速的安全性修正
@@ -1389,13 +1514,12 @@ localization:
       **2026/2/4**
       - 使用 Zeabur configs 管理啟動腳本（更易維護）
       - 新增 `backup` 和 `restore` 全域指令
-      - 新增 `rescue.sh` 救援模式，設定檔改壞時可用
+      - 新增自動重啟機制與 fallback 頁面，Gateway 崩潰時自動恢復
       - Zeabur AI Hub 新增 6 個模型：gpt-5.2, gpt-5.1, gpt-5-nano, glm-4.7, glm-4.7-flash, kimi-k2.5
       - Zeabur AI Hub 的 Claude 模型加入 store 相容性設定
 
       **2026/2/2**
       - 新增 AI 模型設定區塊（全域 vs 本次對話設定）
-      - 新增從 Clawdbot / Moltbot 遷移指南及資料路徑
       - 新增備份與還原區塊，支援 Zeabur 備份服務
       - 新增初始設定完成後備份提醒
       - 移除 Google Gemini CLI patch（上游已修復）
@@ -1578,46 +1702,24 @@ localization:
 
       ⚠️ 还原会覆盖新服务上现有的配置和数据。记得也要将相关的环境变量（如 `TELEGRAM_BOT_TOKEN`）设置回去。Channel 的备份还原目前只测试过 Telegram 和 WhatsApp 可以成功还原。
 
-      ## 从 Clawdbot / Moltbot 迁移
-      **旧版（没有这些命令）数据位置：**
-      - **Clawdbot**：配置 `~/.clawdbot`、工作区 `~/clawd`
-      - **Moltbot**：配置 `~/.moltbot` 或 `~/.clawdbot`、工作区 `~/clawd`
-
-      **新版 OpenClaw 位置：**`/home/node/.openclaw`（包含配置和工作区）
-
-      OpenClaw 具有向下兼容性，会自动读取 `.clawdbot` 和 `.moltbot` 文件夹，直接解压缩即可使用，不需要重命名。
-
-      **迁移步骤：**
-      1. 在旧服务上备份数据：
-         - 在旧服务打开**命令**
-         - `cd /home/node && tar -czvf backup.tar.gz .clawdbot .moltbot clawd 2>/dev/null`（会忽略不存在的文件夹）
-         - 从**文件**页签下载 `backup.tar.gz`
-      2. 部署这个新的 OpenClaw 模板
-      3. 将备份还原到新服务：
-         - 将 `backup.tar.gz` 拖移到**文件**页签的 `/home/node` 文件夹
-         - 打开**命令**：`cd /home/node && tar -xzvf backup.tar.gz && rm backup.tar.gz`
-         - 重新启动服务
-      4. 您的配置、对话记录和凭证都会保留
-
-      为了向下兼容，`clawdbot` 和 `moltbot` CLI 命令仍可使用。
-
       ## 疑难排解
-      **配置文件改坏导致服务无法启动？** 使用救援模式：
-      1. 前往**设置** → **启动命令**，改成：`/opt/openclaw/rescue.sh`（旧版没有这些命令，可用 `sleep infinity`）
-      2. 前往**设置** → **健康检查**，关闭它（救援模式不会响应健康检查）
-      3. 重新启动服务 - 容器会运行但不启动 OpenClaw
-      4. 打开**文件**页签进入文件浏览器
-      5. 从**日志**中查看错误原因，例如：`Invalid config at /home/node/.openclaw/openclaw.json: - agents.list.0: Unrecognized key: "allowModels"` — 在文件浏览器中修复 `/home/node/.openclaw/openclaw.json`，或打开**命令**执行 `openclaw doctor --fix` 自动移除无法识别的配置项
-      6. 将启动命令改回：`/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh`
-         - 旧版（没有这些命令）：`node dist/index.js gateway --allow-unconfigured --bind "${OPENCLAW_GATEWAY_BIND}" --port "${OPENCLAW_GATEWAY_PORT}" --token "${OPENCLAW_GATEWAY_TOKEN}"`
-      7. 重新开启健康检查并重新启动服务
+
+      ### 全新部署（有辅助页面）
+      当 Gateway 停止时，服务网址会显示辅助页面，包含错误信息与修复步骤：
+      1. 查看**错误日志** — 辅助页面会直接显示最近的日志；完整日志请到 Zeabur Dashboard 的**日志**页签查看
+      2. 修复配置文件 — 到 Zeabur Dashboard 的**文件**页签，找到配置文件（`/home/node/.openclaw/openclaw.json`）并修正问题
+      3. 在 Zeabur Dashboard 点击**重新启动**应用修复
+
+      ### 旧版部署（无辅助页面）
+      如果您的部署没有辅助页面，请按照以下步骤操作：
+      1. 到 Zeabur Dashboard 的**日志**页签查看错误信息
+      2. 前往**设置** → **命令**，将启动命令改为 `sleep 3600`，然后点击**重新启动** — 这样容器会持续运行，方便您编辑文件
+      3. 修复配置文件 — 到**文件**页签，找到配置文件（`/home/node/.openclaw/openclaw.json`）并修正问题
+      4. 将启动命令改回 `/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh`，然后点击**重新启动**
+
+      > 💡 如需启用辅助页面，请重新部署此模板。
 
       **更新版本：** 前往**设置** → **服务镜像来源** → 修改 `ghcr.io/openclaw/openclaw:<tag>`。
-
-      **健康检查错误 `Startup probe failed: dial tcp ... connect: connection refused`？** 表示服务尚未启动完成或端口未就绪。OpenClaw 可能需要更多时间启动，特别是首次启动时。尝试：
-      1. 等待几分钟 — 服务可能仍在初始化中
-      2. 如果错误持续，增加资源配置（最低 2 vCPU / 4 GB RAM，建议 4 vCPU / 8 GB RAM）
-      3. 如果服务不断重启，暂时关闭**健康检查**以防止重启循环，再查看日志找出实际错误
 
       ## Tailscale 私有网络访问（可选）
       > ⚠️ 此功能仅适用于全新部署。旧版部署不包含 Tailscale 启动脚本，请重新部署模板才能使用此功能。
@@ -1671,13 +1773,19 @@ localization:
       ## Zeabur 专属配置
       此模板停用了 mDNS/Bonjour（`OPENCLAW_DISABLE_BONJOUR=1`），因为 Zeabur 容器主机名称可能超过 63 bytes 的 DNS 标签限制。mDNS 仅用于区域网络发现（类似 AirPlay/Chromecast），在云端环境中服务通过内部 DNS 连接，因此不需要此功能。
 
+      此模板设置 `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true` 以修复容器环境中的 Telegram 连接问题。此变量为 `2026.2.17` 及之后的镜像版本所需。设为 `true`（默认）停用 Node.js 自动地址族选择，设为 `false` 可重新启用。
+
       ## 文档
       - 文档：https://docs.openclaw.ai
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 更新日志
+      **2026/2/22**
+      - 以自动重启机制取代健康检查：Gateway 崩溃时自动重启，并显示辅助页面提供错误信息与修复步骤，每 5 秒检测服务是否恢复
+      - 移除救援模式（`rescue.sh`）— 已由辅助页面取代
+
       **2026/2/20**
-      - 镜像标签固定为 `2026.2.19` — 新增 `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY` 环境变量以修复 Telegram 连接问题
+      - 镜像标签固定为 `2026.2.19` — 新增 `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true` 环境变量以修复 Telegram 连接问题（`2026.2.17` 及之后的版本需要）
 
       **2026/2/16**
       - 镜像标签切换为 `latest`，以跟上快速的安全性修复
@@ -1700,13 +1808,12 @@ localization:
       **2026/2/4**
       - 使用 Zeabur configs 管理启动脚本（更易维护）
       - 新增 `backup` 和 `restore` 全局命令
-      - 新增 `rescue.sh` 救援模式，配置文件改坏时可用
+      - 新增自动重启机制与 fallback 页面，Gateway 崩溃时自动恢复
       - Zeabur AI Hub 新增 6 个模型：gpt-5.2, gpt-5.1, gpt-5-nano, glm-4.7, glm-4.7-flash, kimi-k2.5
       - Zeabur AI Hub 的 Claude 模型加入 store 兼容性设置
 
       **2026/2/2**
       - 新增 AI 模型设置区块（全局 vs 本次对话设置）
-      - 新增从 Clawdbot / Moltbot 迁移指南及数据路径
       - 新增备份与还原区块，支持 Zeabur 备份服务
       - 新增初始设置完成后备份提醒
       - 移除 Google Gemini CLI patch（上游已修复）
@@ -1889,46 +1996,24 @@ localization:
 
       ⚠️ 復元すると、新サービス上の既存の設定とデータが上書きされます。関連する環境変数（例：`TELEGRAM_BOT_TOKEN`）も忘れずに設定してください。チャンネルのバックアップ復元は現在 Telegram と WhatsApp でのみテスト済みです。
 
-      ## Clawdbot / Moltbot からの移行
-      **旧バージョン（コマンドなし）のデータ場所：**
-      - **Clawdbot**：設定 `~/.clawdbot`、ワークスペース `~/clawd`
-      - **Moltbot**：設定 `~/.moltbot` または `~/.clawdbot`、ワークスペース `~/clawd`
-
-      **新しい OpenClaw の場所：**`/home/node/.openclaw`（設定とワークスペースを含む）
-
-      OpenClaw は下位互換性があり、`.clawdbot` と `.moltbot` フォルダを自動的に読み取ります。そのまま解凍するだけで使用でき、名前変更は不要です。
-
-      **移行手順：**
-      1. 旧サービスでデータをバックアップ：
-         - 旧サービスで**コマンド**を開く
-         - `cd /home/node && tar -czvf backup.tar.gz .clawdbot .moltbot clawd 2>/dev/null`（存在しないフォルダは無視）
-         - **ファイル**タブから `backup.tar.gz` をダウンロード
-      2. この新しい OpenClaw テンプレートをデプロイ
-      3. バックアップを新サービスに復元：
-         - `backup.tar.gz` を**ファイル**タブの `/home/node` フォルダにドラッグ
-         - **コマンド**を開く：`cd /home/node && tar -xzvf backup.tar.gz && rm backup.tar.gz`
-         - サービスを再起動
-      4. 設定、会話履歴、認証情報は保持されます
-
-      下位互換性のため、`clawdbot` と `moltbot` CLI コマンドは引き続き使用可能です。
-
       ## トラブルシューティング
-      **設定ファイルの変更でサービスが起動しない？** レスキューモードを使用：
-      1. **設定** → **コマンド** に移動、変更：`/opt/openclaw/rescue.sh`（旧バージョンはコマンドがないため `sleep infinity` を使用）
-      2. **設定** → **ヘルスチェック** に移動、無効化（レスキューモードはヘルスチェックに応答しません）
-      3. サービスを再起動 - コンテナは実行されますが OpenClaw は起動しません
-      4. **ファイル** タブを開いてファイルブラウザにアクセス
-      5. **ログ**でエラー原因を確認。例：`Invalid config at /home/node/.openclaw/openclaw.json: - agents.list.0: Unrecognized key: "allowModels"` — ファイルブラウザで `/home/node/.openclaw/openclaw.json` を修正するか、**コマンド**を開いて `openclaw doctor --fix` を実行して認識できないキーを自動削除
-      6. スタートコマンドを戻す：`/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh`
-         - 旧バージョン（コマンドなし）：`node dist/index.js gateway --allow-unconfigured --bind "${OPENCLAW_GATEWAY_BIND}" --port "${OPENCLAW_GATEWAY_PORT}" --token "${OPENCLAW_GATEWAY_TOKEN}"`
-      7. ヘルスチェックを再有効化してサービスを再起動
+
+      ### 新規デプロイ（ヘルパーページあり）
+      Gateway が停止すると、サービスURLにエラー情報と修復手順を含むヘルパーページが表示されます：
+      1. **エラーログ**を確認 — ヘルパーページに最近のログが表示されます。完全なログは Zeabur Dashboard の**ログ**タブで確認
+      2. 設定ファイルを修正 — Zeabur Dashboard の**ファイル**タブで設定ファイル（`/home/node/.openclaw/openclaw.json`）を見つけて問題を修正
+      3. Zeabur Dashboard で**再起動**をクリックして修正を適用
+
+      ### 既存のデプロイ（ヘルパーページなし）
+      ヘルパーページがないデプロイの場合は、以下の手順に従ってください：
+      1. Zeabur Dashboard の**ログ**タブでエラーを確認
+      2. **設定** → **コマンド**で起動コマンドを `sleep 3600` に変更し、**再起動**をクリック — コンテナが稼働し続けるため、ファイルを編集できます
+      3. 設定ファイルを修正 — **ファイル**タブで設定ファイル（`/home/node/.openclaw/openclaw.json`）を見つけて問題を修正
+      4. 起動コマンドを `/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh` に戻し、**再起動**をクリック
+
+      > 💡 ヘルパーページを有効にするには、このテンプレートから再デプロイしてください。
 
       **バージョン更新：** **設定**タブ → **サービスイメージソース** → `ghcr.io/openclaw/openclaw:<tag>` を編集してください。
-
-      **ヘルスチェックエラー `Startup probe failed: dial tcp ... connect: connection refused`？** サービスがまだ起動完了していないか、ポートが準備できていません。OpenClaw は起動に時間がかかる場合があります（特に初回起動時）。対処法：
-      1. 数分待つ — サービスがまだ初期化中の可能性があります
-      2. エラーが続く場合、リソースを増やす（最小 2 vCPU / 4 GB RAM、推奨 4 vCPU / 8 GB RAM）
-      3. サービスが繰り返し再起動する場合、**ヘルスチェック**を一時的に無効化して再起動ループを防ぎ、ログで実際のエラーを確認
 
       ## Tailscale プライベートネットワークアクセス（オプション）
       > ⚠️ この機能は新規デプロイのみに対応しています。旧バージョンのデプロイには Tailscale 起動スクリプトが含まれていないため、この機能を使用するにはテンプレートを再デプロイしてください。
@@ -1982,13 +2067,19 @@ localization:
       ## Zeabur 固有の設定
       このテンプレートでは mDNS/Bonjour を無効化しています（`OPENCLAW_DISABLE_BONJOUR=1`）。Zeabur コンテナのホスト名が 63 バイトの DNS ラベル制限を超える可能性があるためです。mDNS はローカルネットワーク検出（AirPlay/Chromecast のような）にのみ使用され、クラウド環境ではサービスは内部 DNS を通じて接続するため、この機能は不要です。
 
+      このテンプレートでは `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true` を設定し、コンテナ環境での Telegram 接続問題を修正しています。この変数はイメージバージョン `2026.2.17` 以降で必要です。`true`（デフォルト）で Node.js の自動アドレスファミリー選択を無効化、`false` で再有効化できます。
+
       ## ドキュメント
       - ドキュメント：https://docs.openclaw.ai
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 変更履歴
+      **2026/2/22**
+      - ヘルスチェックを自動再起動ラッパーに置換：Gateway クラッシュ時に自動再起動し、エラー情報と修復手順を含むヘルパーページを表示（5秒ごとにサービス復旧を検出）
+      - レスキューモード（`rescue.sh`）を削除 — ヘルパーページに置換
+
       **2026/2/20**
-      - イメージタグを `2026.2.19` に固定 — `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY` 環境変数を追加し Telegram 接続の問題を修正
+      - イメージタグを `2026.2.19` に固定 — `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true` 環境変数を追加し Telegram 接続の問題を修正（イメージバージョン `2026.2.17` 以降で必要）
 
       **2026/2/16**
       - イメージタグを `latest` に切替、迅速なセキュリティ修正に追従するため
@@ -2011,13 +2102,12 @@ localization:
       **2026/2/4**
       - Zeabur configs でスタートアップスクリプトを管理（メンテナンスが容易に）
       - `backup` と `restore` グローバルコマンドを追加
-      - `rescue.sh` レスキューモードを追加（設定ファイルが壊れた時に使用）
+      - 自動再起動ラッパーとフォールバックページを追加（Gateway クラッシュ時の自動復旧）
       - Zeabur AI Hub に 6 つのモデルを追加：gpt-5.2, gpt-5.1, gpt-5-nano, glm-4.7, glm-4.7-flash, kimi-k2.5
       - Zeabur AI Hub の Claude モデルに store 互換性設定を追加
 
       **2026/2/2**
       - AI モデル設定セクションを追加（グローバル vs 会話ごとの設定）
-      - Clawdbot / Moltbot からの移行ガイドとデータパスを追加
       - バックアップと復元セクションを追加、Zeabur バックアップサービス対応
       - 初期設定完了後のバックアップ推奨を追加
       - Google Gemini CLI パッチを削除（上流で修正済み）
@@ -2200,46 +2290,24 @@ localization:
 
       ⚠️ La restauración sobrescribirá la configuración y los datos existentes en el nuevo servicio. Recuerde también restaurar las variables de entorno relacionadas (ej. `TELEGRAM_BOT_TOKEN`). La copia de seguridad/restauración de canales solo se ha probado con Telegram y WhatsApp.
 
-      ## Migración desde Clawdbot / Moltbot
-      **Ubicaciones de datos de versiones anteriores (sin comandos):**
-      - **Clawdbot**: config `~/.clawdbot`, workspace `~/clawd`
-      - **Moltbot**: config `~/.moltbot` o `~/.clawdbot`, workspace `~/clawd`
-
-      **Nueva ubicación de OpenClaw:** `/home/node/.openclaw` (incluye config y workspace)
-
-      OpenClaw tiene compatibilidad hacia atrás y leerá automáticamente las carpetas `.clawdbot` y `.moltbot`, puede extraer directamente sin renombrar.
-
-      **Pasos de migración:**
-      1. Haga copia de seguridad en su servicio antiguo:
-         - Abra **Comando** en el servicio antiguo
-         - `cd /home/node && tar -czvf backup.tar.gz .clawdbot .moltbot clawd 2>/dev/null` (ignora carpetas inexistentes)
-         - Descargue `backup.tar.gz` desde **Archivos**
-      2. Despliegue esta nueva plantilla de OpenClaw
-      3. Restaure en el nuevo servicio:
-         - Arrastre `backup.tar.gz` a la carpeta `/home/node` en **Archivos**
-         - Abra **Comando**: `cd /home/node && tar -xzvf backup.tar.gz && rm backup.tar.gz`
-         - Reinicie el servicio
-      4. Su configuración, historial de conversaciones y credenciales se conservarán
-
-      Los comandos CLI `clawdbot` y `moltbot` siguen disponibles para compatibilidad.
-
       ## Solución de Problemas
-      **¿El servicio no inicia después de cambiar la configuración?** Use el modo de rescate:
-      1. Vaya a **Configuración** → **Comando**, cambie a: `/opt/openclaw/rescue.sh` (o `sleep infinity` para versiones anteriores sin comandos)
-      2. Vaya a **Configuración** → **Health Check**, desactívelo (el modo de rescate no responde a health checks)
-      3. Reinicie el servicio - el contenedor se ejecutará pero OpenClaw no se iniciará
-      4. Abra la pestaña **Comando** para acceder al contenedor
-      5. Repare el archivo de configuración `/home/node/.openclaw/openclaw.json`
-      6. Cambie el comando de inicio de vuelta a: `/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh`
-         - Versiones anteriores (sin comandos): `node dist/index.js gateway --allow-unconfigured --bind "${OPENCLAW_GATEWAY_BIND}" --port "${OPENCLAW_GATEWAY_PORT}" --token "${OPENCLAW_GATEWAY_TOKEN}"`
-      7. Reactive el health check y reinicie el servicio
+
+      ### Despliegues nuevos (con página de ayuda)
+      Cuando el gateway se detiene, aparece una página de ayuda en la URL del servicio con detalles del error y pasos para solucionarlo:
+      1. Revise los **registros de error** — la página de ayuda muestra los registros recientes; para registros completos, abra la pestaña **Logs** en el Dashboard de Zeabur
+      2. Corrija la configuración — abra la pestaña **Files** en el Dashboard de Zeabur, busque el archivo de configuración (`/home/node/.openclaw/openclaw.json`) y corrija el problema
+      3. Haga clic en **Reiniciar** en el Dashboard de Zeabur para aplicar la corrección
+
+      ### Despliegues existentes (sin página de ayuda)
+      Si su despliegue no tiene la página de ayuda, siga estos pasos:
+      1. Revise la pestaña **Logs** en el Dashboard de Zeabur para encontrar el error
+      2. Vaya a **Configuración** → **Comando**, cambie el comando de inicio a `sleep 3600`, luego haga clic en **Reiniciar** — esto mantiene el contenedor en ejecución para poder editar archivos
+      3. Corrija la configuración — abra la pestaña **Files**, busque el archivo de configuración (`/home/node/.openclaw/openclaw.json`) y corrija el problema
+      4. Cambie el comando de inicio de vuelta a `/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh` y haga clic en **Reiniciar**
+
+      > 💡 Para activar la página de ayuda, redespliegue desde esta plantilla.
 
       **Actualizar versión:** Vaya a **Configuración** → **Fuente de imagen del servicio** → modifique `ghcr.io/openclaw/openclaw:<tag>`.
-
-      **¿Error de health check `Startup probe failed: dial tcp ... connect: connection refused`?** Significa que el servicio aún no ha terminado de iniciar o el puerto no está listo. OpenClaw puede necesitar más tiempo para iniciar, especialmente en el primer arranque. Intente:
-      1. Espere unos minutos — el servicio puede estar aún inicializándose
-      2. Si el error persiste, aumente los recursos (mínimo 2 vCPU / 4 GB RAM, recomendado 4 vCPU / 8 GB RAM)
-      3. Si el servicio sigue reiniciándose, desactive **Health Check** temporalmente para prevenir bucles de reinicio, luego revise los logs para encontrar el error real
 
       ## Acceso por Red Privada con Tailscale (Opcional)
       > ⚠️ Esta función solo está disponible para despliegues nuevos. Los despliegues existentes no incluyen los scripts de inicio de Tailscale — por favor redespliegue la plantilla para usar esta función.
@@ -2293,13 +2361,19 @@ localization:
       ## Configuración Específica de Zeabur
       Esta plantilla deshabilita mDNS/Bonjour (`OPENCLAW_DISABLE_BONJOUR=1`) porque los nombres de host de los contenedores de Zeabur pueden exceder el límite de 63 bytes de las etiquetas DNS. mDNS solo se usa para el descubrimiento de red local (como AirPlay/Chromecast) y no es necesario en entornos de nube donde los servicios se conectan a través de DNS interno.
 
+      Esta plantilla configura `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true` para solucionar problemas de conexión con Telegram en entornos de contenedores. Esta variable es necesaria para versiones de imagen `2026.2.17` en adelante. Establezca `true` (por defecto) para deshabilitar la selección automática de familia de direcciones de Node.js, o `false` para reactivarla.
+
       ## Documentación
       - Documentación: https://docs.openclaw.ai
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Registro de Cambios
+      **2026/2/22**
+      - Reemplazar health check con reinicio automático: el gateway se reinicia automáticamente al fallar, mostrando una página de ayuda con detalles del error y pasos para solucionarlo (detección de recuperación cada 5 segundos)
+      - Eliminar modo de rescate (`rescue.sh`) — reemplazado por la página de ayuda
+
       **2026/2/20**
-      - Fijar etiqueta de imagen a `2026.2.19` — agregar variable `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY` para solucionar problemas de conexión con Telegram
+      - Fijar etiqueta de imagen a `2026.2.19` — agregar variable `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true` para solucionar problemas de conexión con Telegram (requerido para versiones de imagen `2026.2.17` en adelante)
 
       **2026/2/16**
       - Cambiar etiqueta de imagen a `latest` para seguir las correcciones de seguridad rápidas
@@ -2322,13 +2396,12 @@ localization:
       **2026/2/4**
       - Usar Zeabur configs para scripts de inicio (más fácil de mantener)
       - Añadir comandos globales `backup` y `restore`
-      - Añadir `rescue.sh` modo de rescate para cuando la configuración está rota
+      - Añadir reinicio automático con página de respaldo para recuperación de fallos del gateway
       - Añadir 6 nuevos modelos de Zeabur AI Hub: gpt-5.2, gpt-5.1, gpt-5-nano, glm-4.7, glm-4.7-flash, kimi-k2.5
       - Añadir configuración de compatibilidad store para modelos Claude de Zeabur AI Hub
 
       **2026/2/2**
       - Añadir sección de configuración de modelos de AI (global vs conversación)
-      - Añadir guía de migración desde Clawdbot / Moltbot con rutas de datos
       - Añadir sección de copia de seguridad y restauración con servicio de Zeabur
       - Añadir consejo de hacer copia de seguridad después de la configuración inicial
       - Eliminar parche de Google Gemini CLI (corregido en upstream)
@@ -2511,46 +2584,24 @@ localization:
 
       ⚠️ Pemulihan akan menimpa konfigurasi dan data yang ada di layanan baru. Jangan lupa untuk juga mengatur kembali variabel lingkungan terkait (contoh: `TELEGRAM_BOT_TOKEN`). Cadangan/pemulihan channel hanya diuji dengan Telegram dan WhatsApp.
 
-      ## Migrasi dari Clawdbot / Moltbot
-      **Lokasi data versi lama (tanpa perintah):**
-      - **Clawdbot**: config `~/.clawdbot`, workspace `~/clawd`
-      - **Moltbot**: config `~/.moltbot` atau `~/.clawdbot`, workspace `~/clawd`
-
-      **Lokasi OpenClaw baru:** `/home/node/.openclaw` (termasuk config dan workspace)
-
-      OpenClaw memiliki kompatibilitas mundur dan akan otomatis membaca folder `.clawdbot` dan `.moltbot`, cukup ekstrak langsung tanpa perlu mengganti nama.
-
-      **Langkah migrasi:**
-      1. Cadangkan data di layanan lama Anda:
-         - Buka **Command** di layanan lama
-         - `cd /home/node && tar -czvf backup.tar.gz .clawdbot .moltbot clawd 2>/dev/null` (mengabaikan folder yang tidak ada)
-         - Unduh `backup.tar.gz` dari **Files**
-      2. Deploy template OpenClaw baru ini
-      3. Pulihkan ke layanan baru:
-         - Seret `backup.tar.gz` ke folder `/home/node` di **Files**
-         - Buka **Command**: `cd /home/node && tar -xzvf backup.tar.gz && rm backup.tar.gz`
-         - Restart layanan
-      4. Konfigurasi, riwayat percakapan, dan kredensial Anda akan dipertahankan
-
-      Perintah CLI `clawdbot` dan `moltbot` masih tersedia untuk kompatibilitas.
-
       ## Pemecahan Masalah
-      **Layanan tidak bisa dimulai setelah mengubah konfigurasi?** Gunakan mode penyelamatan:
-      1. Buka **Settings** → **Perintah**, ubah ke: `/opt/openclaw/rescue.sh` (atau `sleep infinity` untuk versi lama tanpa perintah)
-      2. Buka **Settings** → **Health Check**, nonaktifkan (mode penyelamatan tidak merespons health check)
-      3. Restart layanan - container akan berjalan tapi OpenClaw tidak akan dimulai
-      4. Buka tab **Command** untuk mengakses container
-      5. Perbaiki file konfigurasi `/home/node/.openclaw/openclaw.json`
-      6. Ubah perintah startup kembali ke: `/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh`
-         - Versi lama (tanpa perintah): `node dist/index.js gateway --allow-unconfigured --bind "${OPENCLAW_GATEWAY_BIND}" --port "${OPENCLAW_GATEWAY_PORT}" --token "${OPENCLAW_GATEWAY_TOKEN}"`
-      7. Aktifkan kembali health check dan restart layanan
+
+      ### Deployment baru (dengan halaman bantuan)
+      Ketika gateway berhenti, halaman bantuan akan muncul di URL layanan dengan detail error dan langkah perbaikan:
+      1. Periksa **log error** — halaman bantuan menampilkan log terbaru; untuk log lengkap, buka tab **Logs** di Dashboard Zeabur
+      2. Perbaiki konfigurasi — buka tab **Files** di Dashboard Zeabur, cari file konfigurasi (`/home/node/.openclaw/openclaw.json`) dan perbaiki masalahnya
+      3. Klik **Restart** di Dashboard Zeabur untuk menerapkan perbaikan
+
+      ### Deployment lama (tanpa halaman bantuan)
+      Jika deployment Anda tidak memiliki halaman bantuan, ikuti langkah berikut:
+      1. Periksa tab **Logs** di Dashboard Zeabur untuk menemukan error
+      2. Buka **Settings** → **Command**, ubah perintah startup menjadi `sleep 3600`, lalu klik **Restart** — ini menjaga container tetap berjalan agar Anda bisa mengedit file
+      3. Perbaiki konfigurasi — buka tab **Files**, cari file konfigurasi (`/home/node/.openclaw/openclaw.json`) dan perbaiki masalahnya
+      4. Ubah perintah startup kembali ke `/opt/openclaw/startup.sh && /opt/openclaw/start_gateway.sh` dan klik **Restart**
+
+      > 💡 Untuk mengaktifkan halaman bantuan, deploy ulang dari template ini.
 
       **Perbarui versi:** Buka **Settings** → **Service Image Source** → ubah `ghcr.io/openclaw/openclaw:<tag>`.
-
-      **Error health check `Startup probe failed: dial tcp ... connect: connection refused`?** Ini berarti layanan belum selesai memulai atau port belum siap. OpenClaw mungkin memerlukan lebih banyak waktu untuk memulai, terutama pada peluncuran pertama. Coba:
-      1. Tunggu beberapa menit — layanan mungkin masih dalam proses inisialisasi
-      2. Jika error berlanjut, tingkatkan sumber daya (minimum 2 vCPU / 4 GB RAM, disarankan 4 vCPU / 8 GB RAM)
-      3. Jika layanan terus restart, nonaktifkan **Health Check** sementara untuk mencegah loop restart, lalu periksa log untuk menemukan error sebenarnya
 
       ## Akses Jaringan Pribadi Tailscale (Opsional)
       > ⚠️ Fitur ini hanya tersedia untuk deployment baru. Deployment lama tidak menyertakan skrip startup Tailscale — silakan deploy ulang template untuk menggunakan fitur ini.
@@ -2604,13 +2655,19 @@ localization:
       ## Konfigurasi Khusus Zeabur
       Template ini menonaktifkan mDNS/Bonjour (`OPENCLAW_DISABLE_BONJOUR=1`) karena nama host container Zeabur dapat melebihi batas label DNS 63 byte. mDNS hanya digunakan untuk penemuan jaringan lokal (seperti AirPlay/Chromecast) dan tidak diperlukan di lingkungan cloud di mana layanan terhubung melalui DNS internal.
 
+      Template ini mengatur `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true` untuk memperbaiki masalah koneksi Telegram di lingkungan container. Variabel ini diperlukan untuk versi image `2026.2.17` dan setelahnya. Atur ke `true` (default) untuk menonaktifkan pemilihan address family otomatis Node.js, atau `false` untuk mengaktifkannya kembali.
+
       ## Dokumentasi
       - Dokumentasi: https://docs.openclaw.ai
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Catatan Perubahan
+      **2026/2/22**
+      - Mengganti health check dengan wrapper restart otomatis: gateway restart otomatis saat crash, menampilkan halaman bantuan dengan detail error dan langkah perbaikan (deteksi pemulihan layanan setiap 5 detik)
+      - Menghapus mode penyelamatan (`rescue.sh`) — digantikan oleh halaman bantuan
+
       **2026/2/20**
-      - Menetapkan tag image ke `2026.2.19` — menambahkan variabel `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY` untuk memperbaiki masalah koneksi Telegram
+      - Menetapkan tag image ke `2026.2.19` — menambahkan variabel `OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true` untuk memperbaiki masalah koneksi Telegram (diperlukan untuk versi image `2026.2.17` dan setelahnya)
 
       **2026/2/16**
       - Mengubah tag image ke `latest` untuk mengikuti perbaikan keamanan yang cepat
@@ -2633,13 +2690,12 @@ localization:
       **2026/2/4**
       - Menggunakan Zeabur configs untuk skrip startup (lebih mudah dipelihara)
       - Menambah perintah global `backup` dan `restore`
-      - Menambah `rescue.sh` mode penyelamatan untuk ketika konfigurasi rusak
+      - Menambah wrapper restart otomatis dengan halaman fallback untuk pemulihan crash gateway
       - Menambah 6 model Zeabur AI Hub baru: gpt-5.2, gpt-5.1, gpt-5-nano, glm-4.7, glm-4.7-flash, kimi-k2.5
       - Menambah pengaturan kompatibilitas store untuk model Claude Zeabur AI Hub
 
       **2026/2/2**
       - Tambah bagian konfigurasi model AI (global vs percakapan)
-      - Tambah panduan migrasi dari Clawdbot / Moltbot dengan jalur data
       - Tambah bagian cadangan & pemulihan dengan layanan Zeabur
       - Tambah tips untuk membuat cadangan setelah pengaturan awal
       - Hapus patch Google Gemini CLI (sudah diperbaiki di upstream)
