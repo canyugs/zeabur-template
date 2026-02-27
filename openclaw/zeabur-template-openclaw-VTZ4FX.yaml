@@ -265,10 +265,11 @@ spec:
       **Restore:**
       1. Upload backup file to `/home/node` folder in **Files** tab
       2. Open **Command** and run:
-         - From Zeabur Backup Service: `restore <backup-file> --strip 2`
-         - From Manual Backup: `restore <backup-file>`
+         - From Zeabur Backup Service: `restore <backup-file> --strip 2` (e.g. `restore data-2026-02-27.zip --strip 2`)
+         - From Manual Backup: `restore <backup-file>` (e.g. `restore backup-1430.tar.gz`)
          - Older versions (without commands): `cd /home/node && tar -xzvf <backup-file>`
-      3. Restart service
+      3. Delete the uploaded backup file from `/home/node` in **Files** tab to free up disk space
+      4. Restart service
 
       ⚠️ Restore will overwrite existing configuration and data on the new service. Remember to also restore related environment variables (e.g. `TELEGRAM_BOT_TOKEN`). Channel backup/restore has only been tested with Telegram and WhatsApp.
 
@@ -308,6 +309,13 @@ spec:
       - **Option 2:** Open the Web UI **Overview** page and enter the Gateway Token there
 
       You can find the Gateway Token in the Zeabur Dashboard **Instructions** tab or **Environment Variables** (`OPENCLAW_GATEWAY_TOKEN`).
+
+      ### "disconnected (1008): pairing required"
+      This means your device (browser/app) has not been paired with the gateway yet. To pair:
+      1. Open the Web UI and complete the Gateway Token authentication (see above)
+      2. Open **Command** in Zeabur dashboard to access the terminal, then run:
+         - `openclaw devices list` — view pending pairing requests and find the `requestId`
+         - `openclaw devices approve <requestId>` — approve the device
 
       ### "non-loopback Control UI requires gateway.controlUi.allowedOrigins"
       This error occurs after upgrading to image `2026.2.23` or later without updating the config. Fix: edit `/home/node/.openclaw/openclaw.json` and add `"dangerouslyAllowHostHeaderOriginFallback": true` under `gateway.controlUi`:
@@ -958,7 +966,9 @@ spec:
                     echo "Restoring from $BACKUP_FILE (zip)..."
                     TMPDIR=$(mktemp -d)
                     unzip -o "$BACKUP_FILE" -d "$TMPDIR"
-                    if [ -d "$TMPDIR/data" ]; then
+                    if [ -d "$TMPDIR/data/data" ]; then
+                      cp -a "$TMPDIR/data/data/." /home/node/
+                    elif [ -d "$TMPDIR/data" ]; then
                       cp -a "$TMPDIR/data/." /home/node/
                     else
                       cp -a "$TMPDIR/." /home/node/
@@ -1625,10 +1635,11 @@ localization:
       **還原：**
       1. 在**檔案**頁籤將備份檔上傳到 `/home/node` 資料夾
       2. 開啟**指令**執行：
-         - Zeabur 備份服務的檔案：`restore <備份檔名> --strip 2`
-         - 手動備份的檔案：`restore <備份檔名>`
+         - Zeabur 備份服務的檔案：`restore <備份檔名> --strip 2`（例如 `restore data-2026-02-27.zip --strip 2`）
+         - 手動備份的檔案：`restore <備份檔名>`（例如 `restore backup-1430.tar.gz`）
          - 舊版（沒有這些指令）：`cd /home/node && tar -xzvf <備份檔名>`
-      3. 重新啟動服務
+      3. 在**檔案**頁籤刪除 `/home/node` 中已上傳的備份檔，釋放磁碟空間
+      4. 重新啟動服務
 
       ⚠️ 還原會覆蓋新服務上現有的設定和資料。記得也要將相關的環境變數（如 `TELEGRAM_BOT_TOKEN`）設定回去。Channel 的備份還原目前只測試過 Telegram 和 WhatsApp 可以成功還原。
 
@@ -1668,6 +1679,13 @@ localization:
       - **方法 2：** 開啟 Web UI 的 **Overview** 頁面，輸入 Gateway Token
 
       Gateway Token 可在 Zeabur Dashboard 的**說明**頁籤或**環境變數**（`OPENCLAW_GATEWAY_TOKEN`）中找到。
+
+      ### "disconnected (1008): pairing required"
+      表示您的裝置（瀏覽器/應用程式）尚未與 Gateway 完成配對。配對方式：
+      1. 開啟 Web UI 並完成 Gateway Token 認證（參見上方說明）
+      2. 在 Zeabur 控制台開啟**指令**進入終端機，執行：
+         - `openclaw devices list` — 查看待配對的請求，找到 `requestId`
+         - `openclaw devices approve <requestId>` — 核准該裝置
 
       ### "non-loopback Control UI requires gateway.controlUi.allowedOrigins"
       升級映像檔至 `2026.2.23` 或更新版本後，若未更新設定檔會出現此錯誤。修復方式：編輯 `/home/node/.openclaw/openclaw.json`，在 `gateway.controlUi` 下加入 `"dangerouslyAllowHostHeaderOriginFallback": true`：
@@ -2041,10 +2059,11 @@ localization:
       **还原：**
       1. 在**文件**页签将备份文件上传到 `/home/node` 文件夹
       2. 打开**命令**执行：
-         - Zeabur 备份服务的文件：`restore <备份文件名> --strip 2`
-         - 手动备份的文件：`restore <备份文件名>`
+         - Zeabur 备份服务的文件：`restore <备份文件名> --strip 2`（例如 `restore data-2026-02-27.zip --strip 2`）
+         - 手动备份的文件：`restore <备份文件名>`（例如 `restore backup-1430.tar.gz`）
          - 旧版（没有这些命令）：`cd /home/node && tar -xzvf <备份文件名>`
-      3. 重新启动服务
+      3. 在**文件**页签删除 `/home/node` 中已上传的备份文件，释放磁盘空间
+      4. 重新启动服务
 
       ⚠️ 还原会覆盖新服务上现有的配置和数据。记得也要将相关的环境变量（如 `TELEGRAM_BOT_TOKEN`）设置回去。Channel 的备份还原目前只测试过 Telegram 和 WhatsApp 可以成功还原。
 
@@ -2084,6 +2103,13 @@ localization:
       - **方法 2：** 打开 Web UI 的 **Overview** 页面，输入 Gateway Token
 
       Gateway Token 可在 Zeabur Dashboard 的**说明**页签或**环境变量**（`OPENCLAW_GATEWAY_TOKEN`）中找到。
+
+      ### "disconnected (1008): pairing required"
+      表示您的设备（浏览器/应用程序）尚未与 Gateway 完成配对。配对方式：
+      1. 打开 Web UI 并完成 Gateway Token 认证（参见上方说明）
+      2. 在 Zeabur 控制台打开**命令**进入终端，执行：
+         - `openclaw devices list` — 查看待配对的请求，找到 `requestId`
+         - `openclaw devices approve <requestId>` — 批准该设备
 
       ### "non-loopback Control UI requires gateway.controlUi.allowedOrigins"
       升级镜像至 `2026.2.23` 或更新版本后，若未更新配置文件会出现此错误。修复方式：编辑 `/home/node/.openclaw/openclaw.json`，在 `gateway.controlUi` 下加入 `"dangerouslyAllowHostHeaderOriginFallback": true`：
@@ -2457,10 +2483,11 @@ localization:
       **復元：**
       1. **ファイル**タブでバックアップファイルを `/home/node` フォルダにアップロード
       2. **コマンド**を開いて実行：
-         - Zeabur バックアップサービスのファイル：`restore <バックアップファイル名> --strip 2`
-         - 手動バックアップのファイル：`restore <バックアップファイル名>`
+         - Zeabur バックアップサービスのファイル：`restore <バックアップファイル名> --strip 2`（例：`restore data-2026-02-27.zip --strip 2`）
+         - 手動バックアップのファイル：`restore <バックアップファイル名>`（例：`restore backup-1430.tar.gz`）
          - 旧バージョン（コマンドなし）：`cd /home/node && tar -xzvf <バックアップファイル名>`
-      3. サービスを再起動
+      3. **ファイル**タブで `/home/node` にアップロードしたバックアップファイルを削除し、ディスク容量を解放
+      4. サービスを再起動
 
       ⚠️ 復元すると、新サービス上の既存の設定とデータが上書きされます。関連する環境変数（例：`TELEGRAM_BOT_TOKEN`）も忘れずに設定してください。チャンネルのバックアップ復元は現在 Telegram と WhatsApp でのみテスト済みです。
 
@@ -2500,6 +2527,13 @@ localization:
       - **方法 2：** Web UI の **Overview** ページを開き、Gateway Token を入力
 
       Gateway Token は Zeabur Dashboard の**手順**タブまたは**環境変数**（`OPENCLAW_GATEWAY_TOKEN`）で確認できます。
+
+      ### "disconnected (1008): pairing required"
+      お使いのデバイス（ブラウザ/アプリ）がまだ Gateway とペアリングされていないことを意味します。ペアリング方法：
+      1. Web UI を開き、Gateway Token 認証を完了します（上記を参照）
+      2. Zeabur ダッシュボードの**コマンド**を開いてターミナルにアクセスし、以下を実行：
+         - `openclaw devices list` — ペアリング待ちのリクエストを確認し、`requestId` を取得
+         - `openclaw devices approve <requestId>` — デバイスを承認
 
       ### "non-loopback Control UI requires gateway.controlUi.allowedOrigins"
       イメージを `2026.2.23` 以降にアップグレードした際、設定ファイルを更新しないとこのエラーが発生します。修正方法：`/home/node/.openclaw/openclaw.json` を編集し、`gateway.controlUi` に `"dangerouslyAllowHostHeaderOriginFallback": true` を追加：
@@ -2873,10 +2907,11 @@ localization:
       **Restauración:**
       1. Suba el archivo de respaldo a la carpeta `/home/node` en **Archivos**
       2. Abra **Comando** y ejecute:
-         - Archivos del servicio de Zeabur: `restore <nombre-archivo> --strip 2`
-         - Archivos de respaldo manual: `restore <nombre-archivo>`
+         - Archivos del servicio de Zeabur: `restore <nombre-archivo> --strip 2` (ej. `restore data-2026-02-27.zip --strip 2`)
+         - Archivos de respaldo manual: `restore <nombre-archivo>` (ej. `restore backup-1430.tar.gz`)
          - Versiones anteriores (sin comandos): `cd /home/node && tar -xzvf <nombre-archivo>`
-      3. Reinicie el servicio
+      3. Elimine el archivo de respaldo subido de `/home/node` en **Archivos** para liberar espacio en disco
+      4. Reinicie el servicio
 
       ⚠️ La restauración sobrescribirá la configuración y los datos existentes en el nuevo servicio. Recuerde también restaurar las variables de entorno relacionadas (ej. `TELEGRAM_BOT_TOKEN`). La copia de seguridad/restauración de canales solo se ha probado con Telegram y WhatsApp.
 
@@ -2916,6 +2951,13 @@ localization:
       - **Opción 2:** Abra la página **Overview** de la Web UI e ingrese el Gateway Token
 
       Puede encontrar el Gateway Token en la pestaña **Instrucciones** del Dashboard de Zeabur o en **Variables de entorno** (`OPENCLAW_GATEWAY_TOKEN`).
+
+      ### "disconnected (1008): pairing required"
+      Esto significa que su dispositivo (navegador/aplicación) aún no ha sido emparejado con el Gateway. Para emparejar:
+      1. Abra la Web UI y complete la autenticación con Gateway Token (ver arriba)
+      2. Abra **Comando** en el dashboard de Zeabur para acceder a la terminal, luego ejecute:
+         - `openclaw devices list` — ver solicitudes de emparejamiento pendientes y encontrar el `requestId`
+         - `openclaw devices approve <requestId>` — aprobar el dispositivo
 
       ### "non-loopback Control UI requires gateway.controlUi.allowedOrigins"
       Este error ocurre al actualizar a la imagen `2026.2.23` o posterior sin actualizar la configuración. Solución: edite `/home/node/.openclaw/openclaw.json` y agregue `"dangerouslyAllowHostHeaderOriginFallback": true` bajo `gateway.controlUi`:
@@ -3291,8 +3333,11 @@ localization:
       2. Buka **Perintah** dan jalankan:
          - File dari layanan Zeabur: `restore <nama-file> --strip 2`
          - File cadangan manual: `restore <nama-file>`
+         - File dari layanan Zeabur: `restore <nama-file> --strip 2` (contoh: `restore data-2026-02-27.zip --strip 2`)
+         - File cadangan manual: `restore <nama-file>` (contoh: `restore backup-1430.tar.gz`)
          - Versi lama (tanpa perintah): `cd /home/node && tar -xzvf <nama-file>`
-      3. Restart layanan
+      3. Hapus file cadangan yang diupload dari `/home/node` di **Files** untuk mengosongkan ruang disk
+      4. Restart layanan
 
       ⚠️ Pemulihan akan menimpa konfigurasi dan data yang ada di layanan baru. Jangan lupa untuk juga mengatur kembali variabel lingkungan terkait (contoh: `TELEGRAM_BOT_TOKEN`). Cadangan/pemulihan channel hanya diuji dengan Telegram dan WhatsApp.
 
@@ -3332,6 +3377,13 @@ localization:
       - **Opsi 2:** Buka halaman **Overview** di Web UI dan masukkan Gateway Token
 
       Gateway Token dapat ditemukan di tab **Instructions** Dashboard Zeabur atau di **Environment Variables** (`OPENCLAW_GATEWAY_TOKEN`).
+
+      ### "disconnected (1008): pairing required"
+      Ini berarti perangkat Anda (browser/aplikasi) belum dipasangkan dengan Gateway. Cara memasangkan:
+      1. Buka Web UI dan selesaikan autentikasi Gateway Token (lihat di atas)
+      2. Buka **Perintah** di dashboard Zeabur untuk mengakses terminal, lalu jalankan:
+         - `openclaw devices list` — lihat permintaan pairing yang menunggu dan temukan `requestId`
+         - `openclaw devices approve <requestId>` — setujui perangkat
 
       ### "non-loopback Control UI requires gateway.controlUi.allowedOrigins"
       Error ini terjadi setelah upgrade ke image `2026.2.23` atau lebih baru tanpa memperbarui konfigurasi. Solusi: edit `/home/node/.openclaw/openclaw.json` dan tambahkan `"dangerouslyAllowHostHeaderOriginFallback": true` di bawah `gateway.controlUi`:
