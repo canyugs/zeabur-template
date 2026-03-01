@@ -249,6 +249,11 @@ spec:
       { "id": "kimi-k2.5", "name": "Kimi K2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
       ```
 
+      ## Security Note
+      The Web UI is a management tool for configuration, monitoring, and chat — messaging platforms (Telegram, WhatsApp, Discord, etc.) work independently without it. If you only use platforms that don't need inbound webhooks (Telegram, WhatsApp, Discord, Signal, iMessage), you can remove the domain binding in the Zeabur dashboard (**Networking** tab) to avoid exposing the gateway to the public internet. All management tasks can also be done via CLI in the Zeabur **Command** terminal (`openclaw config set`, `openclaw models set`, etc.). For private Web UI access without a public domain, see [Tailscale Private Network Access](#tailscale-private-network-access-optional). You can also set `OPENCLAW_GATEWAY_BIND` to `loopback` in the **Variables** tab (restart the service after) to restrict the gateway to local connections only.
+
+      Platforms that **require** a public domain (inbound webhook): LINE, Slack, Google Chat.
+
       ## Data Persistence
       All data is stored under `/home/node`:
       - `/home/node/.openclaw` - Configuration, sessions, devices, and credentials
@@ -1619,6 +1624,11 @@ localization:
       { "id": "kimi-k2.5", "name": "Kimi K2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
       ```
 
+      ## 安全提示
+      Web UI 是用於設定、監控與聊天的管理工具 — 訊息平台（Telegram、WhatsApp、Discord 等）不需要 Web UI 也能獨立運作。如果你只使用不需要 inbound webhook 的平台（Telegram、WhatsApp、Discord、Signal、iMessage），可以在 Zeabur 控制台的**網路**頁籤移除網域綁定，避免將 Gateway 暴露在公網上。所有管理操作也可以在 Zeabur 的**指令**終端透過 CLI 完成（`openclaw config set`、`openclaw models set` 等）。若需在不綁定公網網域的情況下存取 Web UI，請參考 [Tailscale 私有網路存取](#tailscale-私有網路存取選用)。也可以在**變數**頁籤將 `OPENCLAW_GATEWAY_BIND` 設為 `loopback`（設定後重新啟動服務），進一步限制 Gateway 只接受本地連線。
+
+      **需要**公網網域（inbound webhook）的平台：LINE、Slack、Google Chat。
+
       ## 資料持久化
       所有資料儲存在 `/home/node`：
       - `/home/node/.openclaw` - 設定、會話、裝置和憑證
@@ -2042,6 +2052,11 @@ localization:
       { "id": "glm-4.7-flash", "name": "GLM-4.7 Flash", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 1, "cacheRead": 0.06, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
       { "id": "kimi-k2.5", "name": "Kimi K2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
       ```
+
+      ## 安全提示
+      Web UI 是用于配置、监控与聊天的管理工具 — 消息平台（Telegram、WhatsApp、Discord 等）不需要 Web UI 也能独立运作。如果你只使用不需要 inbound webhook 的平台（Telegram、WhatsApp、Discord、Signal、iMessage），可以在 Zeabur 控制台的**网络**页签移除域名绑定，避免将 Gateway 暴露在公网上。所有管理操作也可以在 Zeabur 的**命令**终端通过 CLI 完成（`openclaw config set`、`openclaw models set` 等）。若需在不绑定公网域名的情况下访问 Web UI，请参考 [Tailscale 私有网络访问](#tailscale-私有网络访问可选)。也可以在**变量**页签将 `OPENCLAW_GATEWAY_BIND` 设为 `loopback`（设置后重新启动服务），进一步限制 Gateway 只接受本地连接。
+
+      **需要**公网域名（inbound webhook）的平台：LINE、Slack、Google Chat。
 
       ## 数据持久化
       所有数据存储在 `/home/node`：
@@ -2467,6 +2482,11 @@ localization:
       { "id": "kimi-k2.5", "name": "Kimi K2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
       ```
 
+      ## セキュリティに関する注意
+      Web UI は設定、監視、チャットのための管理ツールです — メッセージングプラットフォーム（Telegram、WhatsApp、Discord など）は Web UI なしで独立して動作します。インバウンド Webhook が不要なプラットフォーム（Telegram、WhatsApp、Discord、Signal、iMessage）のみを使用する場合は、Zeabur ダッシュボードの**ネットワーク**タブでドメインバインディングを削除し、Gateway をパブリックインターネットに公開しないようにできます。すべての管理操作は Zeabur の**コマンド**ターミナルで CLI を使って実行できます（`openclaw config set`、`openclaw models set` など）。パブリックドメインなしで Web UI にアクセスするには、[Tailscale プライベートネットワークアクセス](#tailscale-プライベートネットワークアクセスオプション)を参照してください。さらに、**変数**タブで `OPENCLAW_GATEWAY_BIND` を `loopback` に設定し（設定後サービスを再起動）、Gateway をローカル接続のみに制限することもできます。
+
+      パブリックドメインが**必要**なプラットフォーム（インバウンド Webhook）：LINE、Slack、Google Chat。
+
       ## データ永続化
       すべてのデータは `/home/node` に保存：
       - `/home/node/.openclaw` - 設定、セッション、デバイス、認証情報
@@ -2891,6 +2911,11 @@ localization:
       { "id": "kimi-k2.5", "name": "Kimi K2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
       ```
 
+      ## Nota de Seguridad
+      La Web UI es una herramienta de gestión para configuración, monitoreo y chat — las plataformas de mensajería (Telegram, WhatsApp, Discord, etc.) funcionan independientemente sin ella. Si solo usa plataformas que no requieren webhooks entrantes (Telegram, WhatsApp, Discord, Signal, iMessage), puede eliminar el enlace de dominio en el panel de Zeabur (pestaña **Networking**) para evitar exponer el gateway a internet público. Todas las tareas de gestión también se pueden realizar mediante CLI en la terminal **Comando** de Zeabur (`openclaw config set`, `openclaw models set`, etc.). Para acceder a la Web UI de forma privada sin un dominio público, consulte [Acceso por Red Privada con Tailscale](#acceso-por-red-privada-con-tailscale-opcional). También puede configurar `OPENCLAW_GATEWAY_BIND` como `loopback` en la pestaña **Variables** (reinicie el servicio después) para restringir el gateway solo a conexiones locales.
+
+      Plataformas que **requieren** un dominio público (webhook entrante): LINE, Slack, Google Chat.
+
       ## Persistencia de Datos
       Todos los datos se almacenan en `/home/node`:
       - `/home/node/.openclaw` - Configuración, sesiones, dispositivos y credenciales
@@ -3314,6 +3339,11 @@ localization:
       { "id": "glm-4.7-flash", "name": "GLM-4.7 Flash", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 1, "cacheRead": 0.06, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
       { "id": "kimi-k2.5", "name": "Kimi K2.5", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
       ```
+
+      ## Catatan Keamanan
+      Web UI adalah alat manajemen untuk konfigurasi, pemantauan, dan chat — platform pesan (Telegram, WhatsApp, Discord, dll.) bekerja secara independen tanpa Web UI. Jika Anda hanya menggunakan platform yang tidak memerlukan inbound webhook (Telegram, WhatsApp, Discord, Signal, iMessage), Anda dapat menghapus pengikatan domain di dashboard Zeabur (tab **Networking**) untuk menghindari mengekspos gateway ke internet publik. Semua tugas manajemen juga dapat dilakukan melalui CLI di terminal **Perintah** Zeabur (`openclaw config set`, `openclaw models set`, dll.). Untuk akses Web UI privat tanpa domain publik, lihat [Akses Jaringan Pribadi Tailscale](#akses-jaringan-pribadi-tailscale-opsional). Anda juga dapat mengatur `OPENCLAW_GATEWAY_BIND` ke `loopback` di tab **Variables** (restart layanan setelahnya) untuk membatasi gateway hanya menerima koneksi lokal.
+
+      Platform yang **memerlukan** domain publik (inbound webhook): LINE, Slack, Google Chat.
 
       ## Persistensi Data
       Semua data disimpan di `/home/node`:
