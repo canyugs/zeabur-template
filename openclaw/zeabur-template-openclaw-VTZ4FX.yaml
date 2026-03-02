@@ -72,7 +72,7 @@ spec:
       For AI model configuration, see the [official documentation](https://docs.openclaw.ai/providers).
 
       ### Model Switching & Failover
-      This template includes failover models that automatically switch when the primary model is unavailable. Default chain: `glm-4.7-flash` → `grok-4-fast-non-reasoning` → `minimax-m2.5` → `kimi-k2.5` → `qwen-3-32` → `gpt-5-mini`.
+      This template includes failover models that automatically switch when the primary model is unavailable. Default chain: `glm-4.7-flash` → `grok-4-fast-non-reasoning` → `minimax-m2.5` → `kimi-k2.5` → `qwen-3-235b` → `gpt-5-mini`.
 
       You can manage models from **Web UI Chat** or **Command** in the Zeabur dashboard.
 
@@ -238,7 +238,7 @@ spec:
       - See: https://docs.openclaw.ai/providers
 
       **Modify Zeabur AI Hub models** (via Zeabur dashboard):
-      - Go to **Settings** → **Configs** → Edit `/opt/openclaw/providers/zeabur-ai-hub.json5`
+      - Go to **Settings** → **Configs** → Edit `/opt/openclaw/providers/zeabur-ai-hub.json5`, then restart the service (changes are synced on startup)
       - Older versions (without commands): Edit `/home/node/.openclaw/openclaw.json` via **Files** tab or Web UI Settings. Add the following to `models.providers.zeabur-ai.models` array:
       ```json
       { "id": "gpt-5.2", "name": "GPT-5.2", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.5, "output": 12, "cacheRead": 0.15, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
@@ -398,9 +398,16 @@ spec:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Changelog
+      **2026/3/2**
+      - Add models: `claude-opus-4-6`, `minimax-m2.5`, `step-3.5-flash`
+      - Replace models: `llama-3.3-70b` → `llama-3.1-8b`, `qwen-3-32` → `qwen-3-235b`
+      - Fix API key rotation: changing `ZEABUR_AI_HUB_API_KEY` and restarting now takes effect (removed `envsubst`, runtime resolves `${VAR}` on startup)
+      - Provider config synced from `/opt` on every startup — template model updates and Configs edits apply after restart
+      - Add Security Note with `OPENCLAW_GATEWAY_BIND=loopback` guidance
+
       **2026/2/27**
       - Add `dangerouslyDisableDeviceAuth` — replace device pairing with Gateway Token authentication for cloud deployment
-      - Default model: `zeabur-ai/glm-4.7-flash` with failover chain (grok-4-fast-non-reasoning → minimax-m2.5 → kimi-k2.5 → qwen-3-32 → gpt-5-mini)
+      - Default model: `zeabur-ai/glm-4.7-flash` with failover chain (grok-4-fast-non-reasoning → minimax-m2.5 → kimi-k2.5 → qwen-3-235b → gpt-5-mini)
       - Add model switching, failover, and external provider documentation
       - Clean up environment variables (move defaults to startup script)
       - Auto-migrate existing configs (trustedProxies, auth settings)
@@ -508,12 +515,11 @@ spec:
                 HAS_AI_HUB_KEY=false
                 case "${ZEABUR_AI_HUB_API_KEY}" in '${'*'}') ;; '') ;; *) HAS_AI_HUB_KEY=true ;; esac
 
-                # Copy provider config from /opt (injected by Zeabur configs) if API key is set
-                if [ "$HAS_AI_HUB_KEY" = true ] && [ ! -f "$PROVIDERS_DIR/zeabur-ai-hub.json5" ]; then
-                  if [ -f /opt/openclaw/providers/zeabur-ai-hub.json5 ]; then
-                    cp /opt/openclaw/providers/zeabur-ai-hub.json5 "$PROVIDERS_DIR/"
-                    echo "Copied Zeabur AI Hub provider config"
-                  fi
+                # Copy provider config from /opt (injected by Zeabur configs) on every start
+                # so template model-list updates and user Configs edits take effect
+                if [ "$HAS_AI_HUB_KEY" = true ] && [ -f /opt/openclaw/providers/zeabur-ai-hub.json5 ]; then
+                  cp /opt/openclaw/providers/zeabur-ai-hub.json5 "$PROVIDERS_DIR/"
+                  echo "Synced Zeabur AI Hub provider config from /opt"
                 fi
 
                 # Create initial config (only if not exists)
@@ -523,7 +529,7 @@ spec:
                     cat > "$CONFIG_FILE" << 'EOF'
                 {
                   "gateway": { "trustedProxies": ["10.0.0.0/8", "172.16.0.0/12"], "controlUi": { "allowInsecureAuth": true, "dangerouslyAllowHostHeaderOriginFallback": true, "dangerouslyDisableDeviceAuth": true } },
-                  "agents": { "defaults": { "model": { "primary": "zeabur-ai/glm-4.7-flash", "fallbacks": ["zeabur-ai/grok-4-fast-non-reasoning", "zeabur-ai/minimax-m2.5", "zeabur-ai/kimi-k2.5", "zeabur-ai/qwen-3-32", "zeabur-ai/gpt-5-mini"] } } },
+                  "agents": { "defaults": { "model": { "primary": "zeabur-ai/glm-4.7-flash", "fallbacks": ["zeabur-ai/grok-4-fast-non-reasoning", "zeabur-ai/minimax-m2.5", "zeabur-ai/kimi-k2.5", "zeabur-ai/qwen-3-235b", "zeabur-ai/gpt-5-mini"] } } },
                   "models": {
                     "providers": { "$include": "./providers/zeabur-ai-hub.json5" }
                   }
@@ -567,7 +573,7 @@ spec:
                           if (!config.agents?.defaults?.model?.primary) {
                             if (!config.agents) config.agents = {};
                             if (!config.agents.defaults) config.agents.defaults = {};
-                            config.agents.defaults.model = { primary: 'zeabur-ai/glm-4.7-flash', fallbacks: ['zeabur-ai/grok-4-fast-non-reasoning', 'zeabur-ai/minimax-m2.5', 'zeabur-ai/kimi-k2.5', 'zeabur-ai/qwen-3-32', 'zeabur-ai/gpt-5-mini'] };
+                            config.agents.defaults.model = { primary: 'zeabur-ai/glm-4.7-flash', fallbacks: ['zeabur-ai/grok-4-fast-non-reasoning', 'zeabur-ai/minimax-m2.5', 'zeabur-ai/kimi-k2.5', 'zeabur-ai/qwen-3-235b', 'zeabur-ai/gpt-5-mini'] };
                             console.log('Default model set to zeabur-ai/glm-4.7-flash with fallbacks.');
                           } else {
                             console.log('Keeping existing default model: ' + config.agents.defaults.model.primary);
@@ -1193,6 +1199,7 @@ spec:
                       { "id": "gemini-3-pro-image-preview", "name": "Gemini 3 Pro Image Preview (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 2, "output": 120, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 1000000, "maxTokens": 8192 },
                       { "id": "gemini-3-pro-preview", "name": "Gemini 3 Pro Preview (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 2, "output": 12, "cacheRead": 0.2, "cacheWrite": 0 }, "contextWindow": 1000000, "maxTokens": 8192 },
                       { "id": "gpt-5", "name": "GPT-5 (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.25, "output": 10, "cacheRead": 0.13, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
+                      { "id": "claude-opus-4-6", "name": "Claude Opus 4.6 (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 5, "output": 25, "cacheRead": 0.5, "cacheWrite": 0 }, "contextWindow": 1000000, "maxTokens": 8192, "compat": { "supportsStore": false } },
                       { "id": "claude-sonnet-4-5", "name": "Claude Sonnet 4.5 (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 3.3, "output": 16.5, "cacheRead": 0.33, "cacheWrite": 0 }, "contextWindow": 1000000, "maxTokens": 8192, "compat": { "supportsStore": false } },
                       { "id": "gemini-3-flash-preview", "name": "Gemini 3 Flash Preview (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.5, "output": 3, "cacheRead": 0.05, "cacheWrite": 0 }, "contextWindow": 1000000, "maxTokens": 8192 },
                       { "id": "gpt-5-mini", "name": "GPT-5 Mini (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 2, "cacheRead": 0.03, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
@@ -1209,8 +1216,8 @@ spec:
                       { "id": "gpt-oss-120b", "name": "GPT OSS 120B (Zeabur AI Hub)", "reasoning": true, "input": ["text"], "cost": { "input": 0.35, "output": 0.75, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192, "compat": { "supportsStore": false } },
                       { "id": "grok-4-fast-non-reasoning", "name": "Grok 4 Fast (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.2, "output": 0.5, "cacheRead": 0.05, "cacheWrite": 0 }, "contextWindow": 2000000, "maxTokens": 8192 },
                       { "id": "glm-4.6", "name": "GLM-4.6 (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.45, "output": 1.9, "cacheRead": 0.11, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
-                      { "id": "llama-3.3-70b", "name": "Llama 3.3 70B (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.85, "output": 1.2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 65536, "maxTokens": 8192, "compat": { "supportsStore": false } },
-                      { "id": "qwen-3-32", "name": "Qwen 3 32B (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.4, "output": 0.8, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 32768, "maxTokens": 8192, "compat": { "supportsStore": false } },
+                      { "id": "llama-3.1-8b", "name": "Llama 3.1 8B (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.02, "output": 0.05, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 },
+                      { "id": "qwen-3-235b", "name": "Qwen 3 235B (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.18, "output": 0.54, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 32768, "maxTokens": 8192 },
                       { "id": "qwen3-next", "name": "Qwen 3 Next 80B (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.14, "output": 1.1, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 32768, "maxTokens": 8192 },
                       { "id": "kimi-k2-thinking", "name": "Kimi K2 Thinking (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.55, "output": 2.5, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 },
                       { "id": "gpt-5.2", "name": "GPT-5.2 (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.5, "output": 12, "cacheRead": 0.15, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
@@ -1218,7 +1225,9 @@ spec:
                       { "id": "gpt-5-nano", "name": "GPT-5 Nano (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.1, "output": 0.8, "cacheRead": 0.01, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
                       { "id": "glm-4.7", "name": "GLM-4.7 (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.5, "output": 2, "cacheRead": 0.12, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
                       { "id": "glm-4.7-flash", "name": "GLM-4.7 Flash (Zeabur AI Hub)", "reasoning": false, "input": ["text", "image"], "cost": { "input": 0.25, "output": 1, "cacheRead": 0.06, "cacheWrite": 0 }, "contextWindow": 204800, "maxTokens": 8192 },
-                      { "id": "kimi-k2.5", "name": "Kimi K2.5 (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 }
+                      { "id": "kimi-k2.5", "name": "Kimi K2.5 (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.45, "output": 2, "cacheRead": 0, "cacheWrite": 0 }, "contextWindow": 131072, "maxTokens": 8192 },
+                      { "id": "minimax-m2.5", "name": "MiniMax M2.5 (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.27, "output": 0.95, "cacheRead": 0.03, "cacheWrite": 0 }, "contextWindow": 196608, "maxTokens": 8192 },
+                      { "id": "step-3.5-flash", "name": "Step 3.5 Flash (Zeabur AI Hub)", "reasoning": false, "input": ["text"], "cost": { "input": 0.1, "output": 0.3, "cacheRead": 0.02, "cacheWrite": 0 }, "contextWindow": 256000, "maxTokens": 8192 }
                     ]
                   }
                 }
@@ -1446,7 +1455,7 @@ localization:
       AI 模型設定請參閱[官方文件](https://docs.openclaw.ai/providers)。
 
       ### 模型切換與 Failover
-      此模板內建 failover 模型，當主模型不可用時會自動切換。預設鏈：`glm-4.7-flash` → `grok-4-fast-non-reasoning` → `minimax-m2.5` → `kimi-k2.5` → `qwen-3-32` → `gpt-5-mini`。
+      此模板內建 failover 模型，當主模型不可用時會自動切換。預設鏈：`glm-4.7-flash` → `grok-4-fast-non-reasoning` → `minimax-m2.5` → `kimi-k2.5` → `qwen-3-235b` → `gpt-5-mini`。
 
       可透過 **Web UI Chat** 或 Zeabur 控制台的**指令**管理模型。
 
@@ -1612,7 +1621,7 @@ localization:
       - 請見：https://docs.openclaw.ai/providers
 
       **修改 Zeabur AI Hub 模型**（透過 Zeabur 控制台）：
-      - 前往**設定** → **設定檔** → 編輯 `/opt/openclaw/providers/zeabur-ai-hub.json5`
+      - 前往**設定** → **設定檔** → 編輯 `/opt/openclaw/providers/zeabur-ai-hub.json5`，然後重新啟動服務（變更會在啟動時同步）
       - 舊版（沒有這些指令）：透過**檔案**頁籤或 Web UI Settings 編輯 `/home/node/.openclaw/openclaw.json`，將以下內容加入 `models.providers.zeabur-ai.models` 陣列：
       ```json
       { "id": "gpt-5.2", "name": "GPT-5.2", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.5, "output": 12, "cacheRead": 0.15, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
@@ -1772,9 +1781,16 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 更新日誌
+      **2026/3/2**
+      - 新增模型：`claude-opus-4-6`、`minimax-m2.5`、`step-3.5-flash`
+      - 替換模型：`llama-3.3-70b` → `llama-3.1-8b`、`qwen-3-32` → `qwen-3-235b`
+      - 修復 API key 更換：變更 `ZEABUR_AI_HUB_API_KEY` 後重啟即可生效（移除 `envsubst`，改為 runtime 解析 `${VAR}`）
+      - Provider 設定檔每次啟動從 `/opt` 同步 — 模板模型更新和 Configs 編輯重啟後即生效
+      - 安全提示新增 `OPENCLAW_GATEWAY_BIND=loopback` 指引
+
       **2026/2/27**
       - 新增 `dangerouslyDisableDeviceAuth` — 雲端部署改用 Gateway Token 驗證，取代裝置配對
-      - 預設模型：`zeabur-ai/glm-4.7-flash`，備援鏈（grok-4-fast-non-reasoning → minimax-m2.5 → kimi-k2.5 → qwen-3-32 → gpt-5-mini）
+      - 預設模型：`zeabur-ai/glm-4.7-flash`，備援鏈（grok-4-fast-non-reasoning → minimax-m2.5 → kimi-k2.5 → qwen-3-235b → gpt-5-mini）
       - 新增模型切換、備援及外部 provider 說明文件
       - 清理環境變數（預設值移至啟動腳本）
       - 自動遷移既有設定（trustedProxies、驗證設定）
@@ -1875,7 +1891,7 @@ localization:
       AI 模型设置请参阅[官方文档](https://docs.openclaw.ai/providers)。
 
       ### 模型切换与 Failover
-      此模板内建 failover 模型，当主模型不可用时会自动切换。默认链：`glm-4.7-flash` → `grok-4-fast-non-reasoning` → `minimax-m2.5` → `kimi-k2.5` → `qwen-3-32` → `gpt-5-mini`。
+      此模板内建 failover 模型，当主模型不可用时会自动切换。默认链：`glm-4.7-flash` → `grok-4-fast-non-reasoning` → `minimax-m2.5` → `kimi-k2.5` → `qwen-3-235b` → `gpt-5-mini`。
 
       可通过 **Web UI Chat** 或 Zeabur 控制台的**命令**管理模型。
 
@@ -2041,7 +2057,7 @@ localization:
       - 请见：https://docs.openclaw.ai/providers
 
       **修改 Zeabur AI Hub 模型**（通过 Zeabur 控制台）：
-      - 前往**设置** → **配置文件** → 编辑 `/opt/openclaw/providers/zeabur-ai-hub.json5`
+      - 前往**设置** → **配置文件** → 编辑 `/opt/openclaw/providers/zeabur-ai-hub.json5`，然后重新启动服务（变更会在启动时同步）
       - 旧版（没有这些命令）：通过**文件**页签或 Web UI Settings 编辑 `/home/node/.openclaw/openclaw.json`，将以下内容加入 `models.providers.zeabur-ai.models` 数组：
       ```json
       { "id": "gpt-5.2", "name": "GPT-5.2", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.5, "output": 12, "cacheRead": 0.15, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
@@ -2201,9 +2217,16 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 更新日志
+      **2026/3/2**
+      - 新增模型：`claude-opus-4-6`、`minimax-m2.5`、`step-3.5-flash`
+      - 替换模型：`llama-3.3-70b` → `llama-3.1-8b`、`qwen-3-32` → `qwen-3-235b`
+      - 修复 API key 更换：变更 `ZEABUR_AI_HUB_API_KEY` 后重启即可生效（移除 `envsubst`，改为 runtime 解析 `${VAR}`）
+      - Provider 配置文件每次启动从 `/opt` 同步 — 模板模型更新和 Configs 编辑重启后即生效
+      - 安全提示新增 `OPENCLAW_GATEWAY_BIND=loopback` 指引
+
       **2026/2/27**
       - 新增 `dangerouslyDisableDeviceAuth` — 云端部署改用 Gateway Token 验证，取代设备配对
-      - 默认模型：`zeabur-ai/glm-4.7-flash`，备援链（grok-4-fast-non-reasoning → minimax-m2.5 → kimi-k2.5 → qwen-3-32 → gpt-5-mini）
+      - 默认模型：`zeabur-ai/glm-4.7-flash`，备援链（grok-4-fast-non-reasoning → minimax-m2.5 → kimi-k2.5 → qwen-3-235b → gpt-5-mini）
       - 新增模型切换、备援及外部 provider 说明文档
       - 清理环境变量（默认值移至启动脚本）
       - 自动迁移既有配置（trustedProxies、认证设置）
@@ -2304,7 +2327,7 @@ localization:
       AI モデル設定については[公式ドキュメント](https://docs.openclaw.ai/providers)をご覧ください。
 
       ### モデル切り替えと Failover
-      このテンプレートにはフェイルオーバーモデルが含まれており、プライマリモデルが利用できない場合に自動的に切り替わります。デフォルトチェーン：`glm-4.7-flash` → `grok-4-fast-non-reasoning` → `minimax-m2.5` → `kimi-k2.5` → `qwen-3-32` → `gpt-5-mini`。
+      このテンプレートにはフェイルオーバーモデルが含まれており、プライマリモデルが利用できない場合に自動的に切り替わります。デフォルトチェーン：`glm-4.7-flash` → `grok-4-fast-non-reasoning` → `minimax-m2.5` → `kimi-k2.5` → `qwen-3-235b` → `gpt-5-mini`。
 
       **Web UI Chat** または Zeabur ダッシュボードの**コマンド**からモデルを管理できます。
 
@@ -2470,7 +2493,7 @@ localization:
       - 詳細：https://docs.openclaw.ai/providers
 
       **Zeabur AI Hub モデルを変更**（Zeabur ダッシュボードで）：
-      - **設定** → **設定ファイル** → `/opt/openclaw/providers/zeabur-ai-hub.json5` を編集
+      - **設定** → **設定ファイル** → `/opt/openclaw/providers/zeabur-ai-hub.json5` を編集し、サービスを再起動（変更は起動時に同期されます）
       - 旧バージョン（コマンドなし）：**ファイル** タブまたは Web UI Settings で `/home/node/.openclaw/openclaw.json` を編集。以下を `models.providers.zeabur-ai.models` 配列に追加：
       ```json
       { "id": "gpt-5.2", "name": "GPT-5.2", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.5, "output": 12, "cacheRead": 0.15, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
@@ -2630,9 +2653,16 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 変更履歴
+      **2026/3/2**
+      - モデル追加：`claude-opus-4-6`、`minimax-m2.5`、`step-3.5-flash`
+      - モデル入替：`llama-3.3-70b` → `llama-3.1-8b`、`qwen-3-32` → `qwen-3-235b`
+      - API キーローテーション修正：`ZEABUR_AI_HUB_API_KEY` 変更後、再起動で反映（`envsubst` を削除、ランタイムで `${VAR}` を解決）
+      - Provider 設定ファイルを起動ごとに `/opt` から同期 — テンプレートのモデル更新や Configs 編集が再起動後に反映
+      - セキュリティノートに `OPENCLAW_GATEWAY_BIND=loopback` のガイダンスを追加
+
       **2026/2/27**
       - `dangerouslyDisableDeviceAuth` を追加 — クラウドデプロイでデバイスペアリングの代わりに Gateway Token 認証を使用
-      - デフォルトモデル：`zeabur-ai/glm-4.7-flash`、フェイルオーバーチェーン（grok-4-fast-non-reasoning → minimax-m2.5 → kimi-k2.5 → qwen-3-32 → gpt-5-mini）
+      - デフォルトモデル：`zeabur-ai/glm-4.7-flash`、フェイルオーバーチェーン（grok-4-fast-non-reasoning → minimax-m2.5 → kimi-k2.5 → qwen-3-235b → gpt-5-mini）
       - モデル切替、フェイルオーバー、外部プロバイダーのドキュメントを追加
       - 環境変数の整理（デフォルト値をスタートアップスクリプトに移動）
       - 既存設定の自動移行（trustedProxies、認証設定）
@@ -2733,7 +2763,7 @@ localization:
       Para configuración de modelos de AI, consulte la [documentación oficial](https://docs.openclaw.ai/providers).
 
       ### Cambio de Modelo y Failover
-      Esta plantilla incluye modelos de failover que cambian automáticamente cuando el modelo principal no está disponible. Cadena predeterminada: `glm-4.7-flash` → `grok-4-fast-non-reasoning` → `minimax-m2.5` → `kimi-k2.5` → `qwen-3-32` → `gpt-5-mini`.
+      Esta plantilla incluye modelos de failover que cambian automáticamente cuando el modelo principal no está disponible. Cadena predeterminada: `glm-4.7-flash` → `grok-4-fast-non-reasoning` → `minimax-m2.5` → `kimi-k2.5` → `qwen-3-235b` → `gpt-5-mini`.
 
       Puede gestionar modelos desde **Web UI Chat** o **Comando** en el panel de Zeabur.
 
@@ -2899,7 +2929,7 @@ localization:
       - Más info: https://docs.openclaw.ai/providers
 
       **Modificar modelos de Zeabur AI Hub** (vía panel de Zeabur):
-      - Ir a **Configuración** → **Archivos de configuración** → Editar `/opt/openclaw/providers/zeabur-ai-hub.json5`
+      - Ir a **Configuración** → **Archivos de configuración** → Editar `/opt/openclaw/providers/zeabur-ai-hub.json5`, luego reiniciar el servicio (los cambios se sincronizan al iniciar)
       - Versiones anteriores (sin comandos): Edite `/home/node/.openclaw/openclaw.json` vía pestaña **Archivos** o Web UI Settings. Agregue lo siguiente al array `models.providers.zeabur-ai.models`:
       ```json
       { "id": "gpt-5.2", "name": "GPT-5.2", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.5, "output": 12, "cacheRead": 0.15, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
@@ -3059,9 +3089,16 @@ localization:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Registro de Cambios
+      **2026/3/2**
+      - Agregar modelos: `claude-opus-4-6`, `minimax-m2.5`, `step-3.5-flash`
+      - Reemplazar modelos: `llama-3.3-70b` → `llama-3.1-8b`, `qwen-3-32` → `qwen-3-235b`
+      - Corregir rotación de API key: cambiar `ZEABUR_AI_HUB_API_KEY` y reiniciar ahora surte efecto (eliminado `envsubst`, resolución de `${VAR}` en runtime)
+      - Config del proveedor sincronizado desde `/opt` en cada inicio — actualizaciones de modelo y ediciones en Configs se aplican tras reiniciar
+      - Agregar nota de seguridad con guía de `OPENCLAW_GATEWAY_BIND=loopback`
+
       **2026/2/27**
       - Agregar `dangerouslyDisableDeviceAuth` — usar autenticación por Gateway Token en lugar de emparejamiento de dispositivo para despliegues en la nube
-      - Modelo predeterminado: `zeabur-ai/glm-4.7-flash` con cadena de respaldo (grok-4-fast-non-reasoning → minimax-m2.5 → kimi-k2.5 → qwen-3-32 → gpt-5-mini)
+      - Modelo predeterminado: `zeabur-ai/glm-4.7-flash` con cadena de respaldo (grok-4-fast-non-reasoning → minimax-m2.5 → kimi-k2.5 → qwen-3-235b → gpt-5-mini)
       - Agregar documentación de cambio de modelo, respaldo y proveedores externos
       - Limpiar variables de entorno (mover valores predeterminados al script de inicio)
       - Migración automática de configuraciones existentes (trustedProxies, configuración de autenticación)
@@ -3162,7 +3199,7 @@ localization:
       Untuk konfigurasi model AI, lihat [dokumentasi resmi](https://docs.openclaw.ai/providers).
 
       ### Pergantian Model dan Failover
-      Template ini menyertakan model failover yang otomatis beralih saat model utama tidak tersedia. Rantai default: `glm-4.7-flash` → `grok-4-fast-non-reasoning` → `minimax-m2.5` → `kimi-k2.5` → `qwen-3-32` → `gpt-5-mini`.
+      Template ini menyertakan model failover yang otomatis beralih saat model utama tidak tersedia. Rantai default: `glm-4.7-flash` → `grok-4-fast-non-reasoning` → `minimax-m2.5` → `kimi-k2.5` → `qwen-3-235b` → `gpt-5-mini`.
 
       Anda dapat mengelola model dari **Web UI Chat** atau **Perintah** di dashboard Zeabur.
 
@@ -3328,7 +3365,7 @@ localization:
       - Info: https://docs.openclaw.ai/providers
 
       **Modifikasi model Zeabur AI Hub** (via dashboard Zeabur):
-      - Buka **Settings** → **Configs** → Edit `/opt/openclaw/providers/zeabur-ai-hub.json5`
+      - Buka **Settings** → **Configs** → Edit `/opt/openclaw/providers/zeabur-ai-hub.json5`, lalu restart layanan (perubahan disinkronkan saat startup)
       - Versi lama (tanpa perintah): Edit `/home/node/.openclaw/openclaw.json` via tab **Files** atau Web UI Settings. Tambahkan berikut ke array `models.providers.zeabur-ai.models`:
       ```json
       { "id": "gpt-5.2", "name": "GPT-5.2", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.5, "output": 12, "cacheRead": 0.15, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
@@ -3490,9 +3527,16 @@ localization:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Catatan Perubahan
+      **2026/3/2**
+      - Tambah model: `claude-opus-4-6`, `minimax-m2.5`, `step-3.5-flash`
+      - Ganti model: `llama-3.3-70b` → `llama-3.1-8b`, `qwen-3-32` → `qwen-3-235b`
+      - Perbaiki rotasi API key: mengubah `ZEABUR_AI_HUB_API_KEY` dan restart sekarang berlaku (hapus `envsubst`, resolusi `${VAR}` saat runtime)
+      - Config provider disinkronkan dari `/opt` setiap startup — pembaruan model template dan edit Configs berlaku setelah restart
+      - Tambah catatan keamanan dengan panduan `OPENCLAW_GATEWAY_BIND=loopback`
+
       **2026/2/27**
       - Tambah `dangerouslyDisableDeviceAuth` — gunakan autentikasi Gateway Token menggantikan pemasangan perangkat untuk deployment cloud
-      - Model default: `zeabur-ai/glm-4.7-flash` dengan rantai failover (grok-4-fast-non-reasoning → minimax-m2.5 → kimi-k2.5 → qwen-3-32 → gpt-5-mini)
+      - Model default: `zeabur-ai/glm-4.7-flash` dengan rantai failover (grok-4-fast-non-reasoning → minimax-m2.5 → kimi-k2.5 → qwen-3-235b → gpt-5-mini)
       - Tambah dokumentasi pergantian model, failover, dan provider eksternal
       - Bersihkan variabel lingkungan (pindahkan nilai default ke skrip startup)
       - Migrasi otomatis konfigurasi yang ada (trustedProxies, pengaturan autentikasi)
