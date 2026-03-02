@@ -1183,7 +1183,6 @@ spec:
                   wait $FALLBACK_PID 2>/dev/null
                 done
             - path: /opt/openclaw/providers/zeabur-ai-hub.json5
-              envsubst: true
               template: |
                 {
                   "zeabur-ai": {
