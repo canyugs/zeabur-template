@@ -401,7 +401,7 @@ spec:
       **2026/3/8**
       - Upgrade image to `2026.3.7` — context engine plugin interface, ACP persistent channel bindings, Telegram topic agent routing, Docker multi-stage build, gateway SecretRef support, 30+ new features and 40+ fixes across 5 releases (2026.3.3–2026.3.7)
       - ⚠️ Breaking: `gateway.auth.mode` now required when both `gateway.auth.token` and `gateway.auth.password` are configured — template pre-sets `mode: "token"` (existing deployments auto-migrated on startup)
-      - Add models: `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite-preview`, `gemini-3.1-flash-image-preview`, `kimi-2.5`
+      - Add Zeabur AI Hub model support: `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite-preview`, `gemini-3.1-flash-image-preview`, `kimi-2.5`
       - Set explicit `gateway.auth.mode: "token"` in config (defensive for future gateway auth changes)
       - Remove redundant `--port` flag from gateway startup script (port resolved automatically via env/config/default)
 
@@ -410,7 +410,7 @@ spec:
       - ⚠️ Breaking: plugins using `api.registerHttpHandler(...)` must migrate to `api.registerHttpRoute(...)`, Zalouser channel requires re-login (`openclaw channels login --channel zalouser`)
 
       **2026/3/2**
-      - Add models: `claude-opus-4-6`, `minimax-m2.5`, `step-3.5-flash`
+      - Add Zeabur AI Hub model support: `claude-opus-4-6`, `minimax-m2.5`, `step-3.5-flash`
       - Replace models: `llama-3.3-70b` → `llama-3.1-8b`, `qwen-3-32` → `qwen-3-235b`
       - Fix API key rotation: changing `ZEABUR_AI_HUB_API_KEY` and restarting now takes effect (removed `envsubst`, runtime resolves `${VAR}` on startup)
       - Provider config synced from `/opt` on every startup — template model updates and Configs edits apply after restart
@@ -1808,7 +1808,7 @@ localization:
       **2026/3/8**
       - 升級映像檔至 `2026.3.7` — context engine plugin 介面、ACP 持久頻道綁定、Telegram 主題 agent 路由、Docker 多階段建置、gateway SecretRef 支援，橫跨 5 個版本（2026.3.3–2026.3.7）共 30+ 新功能及 40+ 修復
       - ⚠️ 破壞性變更：同時設定 `gateway.auth.token` 和 `gateway.auth.password` 時，須明確設定 `gateway.auth.mode` — 模板已預設 `mode: "token"`（既有部署啟動時自動遷移）
-      - 新增模型：`gemini-3.1-pro-preview`、`gemini-3.1-flash-lite-preview`、`gemini-3.1-flash-image-preview`、`kimi-2.5`
+      - 新增 Zeabur AI Hub 模型支援：`gemini-3.1-pro-preview`、`gemini-3.1-flash-lite-preview`、`gemini-3.1-flash-image-preview`、`kimi-2.5`
       - 設定明確的 `gateway.auth.mode: "token"`（防禦未來 gateway 驗證變更）
       - 移除 gateway 啟動腳本中多餘的 `--port` 參數（port 自動透過環境變數/設定檔/預設值解析）
 
@@ -1817,7 +1817,7 @@ localization:
       - ⚠️ 破壞性變更：使用 `api.registerHttpHandler(...)` 的 plugin 須遷移至 `api.registerHttpRoute(...)`，Zalouser 頻道須重新登入（`openclaw channels login --channel zalouser`）
 
       **2026/3/2**
-      - 新增模型：`claude-opus-4-6`、`minimax-m2.5`、`step-3.5-flash`
+      - 新增 Zeabur AI Hub 模型支援：`claude-opus-4-6`、`minimax-m2.5`、`step-3.5-flash`
       - 替換模型：`llama-3.3-70b` → `llama-3.1-8b`、`qwen-3-32` → `qwen-3-235b`
       - 修復 API key 更換：變更 `ZEABUR_AI_HUB_API_KEY` 後重啟即可生效（移除 `envsubst`，改為 runtime 解析 `${VAR}`）
       - Provider 設定檔每次啟動從 `/opt` 同步 — 模板模型更新和 Configs 編輯重啟後即生效
@@ -2255,7 +2255,7 @@ localization:
       **2026/3/8**
       - 升级镜像至 `2026.3.7` — context engine plugin 接口、ACP 持久频道绑定、Telegram 主题 agent 路由、Docker 多阶段构建、gateway SecretRef 支持，横跨 5 个版本（2026.3.3–2026.3.7）共 30+ 新功能及 40+ 修复
       - ⚠️ 破坏性变更：同时设定 `gateway.auth.token` 和 `gateway.auth.password` 时，须明确设定 `gateway.auth.mode` — 模板已预设 `mode: "token"`（既有部署启动时自动迁移）
-      - 新增模型：`gemini-3.1-pro-preview`、`gemini-3.1-flash-lite-preview`、`gemini-3.1-flash-image-preview`、`kimi-2.5`
+      - 新增 Zeabur AI Hub 模型支援：`gemini-3.1-pro-preview`、`gemini-3.1-flash-lite-preview`、`gemini-3.1-flash-image-preview`、`kimi-2.5`
       - 设定明确的 `gateway.auth.mode: "token"`（防御未来 gateway 验证变更）
       - 移除 gateway 启动脚本中多余的 `--port` 参数（port 自动通过环境变量/配置文件/默认值解析）
 
@@ -2264,7 +2264,7 @@ localization:
       - ⚠️ 破坏性变更：使用 `api.registerHttpHandler(...)` 的 plugin 须迁移至 `api.registerHttpRoute(...)`，Zalouser 频道须重新登录（`openclaw channels login --channel zalouser`）
 
       **2026/3/2**
-      - 新增模型：`claude-opus-4-6`、`minimax-m2.5`、`step-3.5-flash`
+      - 新增 Zeabur AI Hub 模型支援：`claude-opus-4-6`、`minimax-m2.5`、`step-3.5-flash`
       - 替换模型：`llama-3.3-70b` → `llama-3.1-8b`、`qwen-3-32` → `qwen-3-235b`
       - 修复 API key 更换：变更 `ZEABUR_AI_HUB_API_KEY` 后重启即可生效（移除 `envsubst`，改为 runtime 解析 `${VAR}`）
       - Provider 配置文件每次启动从 `/opt` 同步 — 模板模型更新和 Configs 编辑重启后即生效
@@ -2702,7 +2702,7 @@ localization:
       **2026/3/8**
       - イメージを `2026.3.7` にアップグレード — context engine プラグインインターフェース、ACP 永続チャネルバインディング、Telegram トピックエージェントルーティング、Docker マルチステージビルド、gateway SecretRef サポート、5 リリース（2026.3.3–2026.3.7）にわたる 30 以上の新機能と 40 以上の修正
       - ⚠️ 破壊的変更：`gateway.auth.token` と `gateway.auth.password` の両方が設定されている場合、`gateway.auth.mode` の明示的な設定が必要 — テンプレートは `mode: "token"` をプリセット（既存デプロイは起動時に自動移行）
-      - モデル追加：`gemini-3.1-pro-preview`、`gemini-3.1-flash-lite-preview`、`gemini-3.1-flash-image-preview`、`kimi-2.5`
+      - Zeabur AI Hub モデル追加：`gemini-3.1-pro-preview`、`gemini-3.1-flash-lite-preview`、`gemini-3.1-flash-image-preview`、`kimi-2.5`
       - 明示的な `gateway.auth.mode: "token"` を設定（将来の gateway 認証変更への防御）
       - gateway 起動スクリプトから冗長な `--port` フラグを削除（ポートは環境変数/設定/デフォルトから自動解決）
 
@@ -2711,7 +2711,7 @@ localization:
       - ⚠️ 破壊的変更：`api.registerHttpHandler(...)` を使用するプラグインは `api.registerHttpRoute(...)` に移行が必要、Zalouser チャネルは再ログインが必要（`openclaw channels login --channel zalouser`）
 
       **2026/3/2**
-      - モデル追加：`claude-opus-4-6`、`minimax-m2.5`、`step-3.5-flash`
+      - Zeabur AI Hub モデルサポート追加：`claude-opus-4-6`、`minimax-m2.5`、`step-3.5-flash`
       - モデル入替：`llama-3.3-70b` → `llama-3.1-8b`、`qwen-3-32` → `qwen-3-235b`
       - API キーローテーション修正：`ZEABUR_AI_HUB_API_KEY` 変更後、再起動で反映（`envsubst` を削除、ランタイムで `${VAR}` を解決）
       - Provider 設定ファイルを起動ごとに `/opt` から同期 — テンプレートのモデル更新や Configs 編集が再起動後に反映
@@ -3149,7 +3149,7 @@ localization:
       **2026/3/8**
       - Actualizar imagen a `2026.3.7` — interfaz de plugin context engine, bindings persistentes de canal ACP, enrutamiento de agentes por tema en Telegram, build Docker multi-stage, soporte SecretRef de gateway, 30+ nuevas funciones y 40+ correcciones en 5 versiones (2026.3.3–2026.3.7)
       - ⚠️ Cambio incompatible: `gateway.auth.mode` ahora requerido cuando `gateway.auth.token` y `gateway.auth.password` están configurados — la plantilla predefine `mode: "token"` (despliegues existentes migran automáticamente al iniciar)
-      - Agregar modelos: `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite-preview`, `gemini-3.1-flash-image-preview`, `kimi-2.5`
+      - Agregar modelos de Zeabur AI Hub: `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite-preview`, `gemini-3.1-flash-image-preview`, `kimi-2.5`
       - Establecer `gateway.auth.mode: "token"` explícito (defensivo para futuros cambios de autenticación de gateway)
       - Eliminar flag `--port` redundante del script de inicio de gateway (puerto resuelto automáticamente vía env/config/default)
 
@@ -3158,7 +3158,7 @@ localization:
       - ⚠️ Cambios incompatibles: plugins que usen `api.registerHttpHandler(...)` deben migrar a `api.registerHttpRoute(...)`, canal Zalouser requiere re-login (`openclaw channels login --channel zalouser`)
 
       **2026/3/2**
-      - Agregar modelos: `claude-opus-4-6`, `minimax-m2.5`, `step-3.5-flash`
+      - Agregar soporte de modelos de Zeabur AI Hub: `claude-opus-4-6`, `minimax-m2.5`, `step-3.5-flash`
       - Reemplazar modelos: `llama-3.3-70b` → `llama-3.1-8b`, `qwen-3-32` → `qwen-3-235b`
       - Corregir rotación de API key: cambiar `ZEABUR_AI_HUB_API_KEY` y reiniciar ahora surte efecto (eliminado `envsubst`, resolución de `${VAR}` en runtime)
       - Config del proveedor sincronizado desde `/opt` en cada inicio — actualizaciones de modelo y ediciones en Configs se aplican tras reiniciar
@@ -3598,7 +3598,7 @@ localization:
       **2026/3/8**
       - Upgrade image ke `2026.3.7` — antarmuka plugin context engine, binding channel ACP persisten, routing agen topik Telegram, build Docker multi-stage, dukungan SecretRef gateway, 30+ fitur baru dan 40+ perbaikan di 5 rilis (2026.3.3–2026.3.7)
       - ⚠️ Perubahan tidak kompatibel: `gateway.auth.mode` sekarang diperlukan ketika `gateway.auth.token` dan `gateway.auth.password` keduanya dikonfigurasi — template menetapkan `mode: "token"` (deployment yang ada migrasi otomatis saat startup)
-      - Tambah model: `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite-preview`, `gemini-3.1-flash-image-preview`, `kimi-2.5`
+      - Tambah dukungan model Zeabur AI Hub: `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite-preview`, `gemini-3.1-flash-image-preview`, `kimi-2.5`
       - Tetapkan `gateway.auth.mode: "token"` eksplisit (defensif untuk perubahan autentikasi gateway di masa depan)
       - Hapus flag `--port` yang redundan dari skrip startup gateway (port diselesaikan otomatis via env/config/default)
 
@@ -3607,7 +3607,7 @@ localization:
       - ⚠️ Perubahan tidak kompatibel: plugin yang menggunakan `api.registerHttpHandler(...)` harus migrasi ke `api.registerHttpRoute(...)`, channel Zalouser memerlukan login ulang (`openclaw channels login --channel zalouser`)
 
       **2026/3/2**
-      - Tambah model: `claude-opus-4-6`, `minimax-m2.5`, `step-3.5-flash`
+      - Tambah dukungan model Zeabur AI Hub: `claude-opus-4-6`, `minimax-m2.5`, `step-3.5-flash`
       - Ganti model: `llama-3.3-70b` → `llama-3.1-8b`, `qwen-3-32` → `qwen-3-235b`
       - Perbaiki rotasi API key: mengubah `ZEABUR_AI_HUB_API_KEY` dan restart sekarang berlaku (hapus `envsubst`, resolusi `${VAR}` saat runtime)
       - Config provider disinkronkan dari `/opt` setiap startup — pembaruan model template dan edit Configs berlaku setelah restart
