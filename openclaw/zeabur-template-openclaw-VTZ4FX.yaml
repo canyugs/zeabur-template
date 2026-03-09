@@ -37,7 +37,7 @@ spec:
       # OpenClaw 🦞
       OpenClaw 🦞 (formerly Clawdbot, Moltbot) is a personal AI assistant that runs locally and connects to multiple messaging platforms via a WebSocket-based Gateway architecture.
 
-      ⚠️ This template uses `ghcr.io/openclaw/openclaw:2026.3.7`. OpenClaw 🦞 is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues.
+      ⚠️ This template uses `ghcr.io/openclaw/openclaw:2026.3.8`. OpenClaw 🦞 is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues.
 
       ⚠️ If you encounter any issues, feel free to check the [GitHub issues](https://github.com/openclaw/openclaw/issues) for solutions or to report new ones. For Zeabur platform-related issues, please contact Zeabur support.
 
@@ -264,13 +264,28 @@ spec:
 
       **Backup:**
       - **Method 1: Zeabur Backup Service (Recommended)** - Use Zeabur's built-in backup feature. See [Zeabur Backup Documentation](https://zeabur.com/docs/data-management/backup).
-      - **Method 2: Manual Backup** - Open **Command** → Run `backup` → Download from `/home/node` in **Files** tab (e.g. `backup-1430.tar.gz`)
+      - **Method 2: CLI Backup (v2026.3.8+)** - Open **Command** → Run `openclaw backup create` → Download from `/home/node` in **Files** tab
+        - Config only: `openclaw backup create --only-config`
+        - Exclude workspace: `openclaw backup create --no-include-workspace`
+        - Verify archive: `openclaw backup verify <backup-file>`
+        - Example:
+        ```
+        $ openclaw backup create
+        Backup archive: /home/node/2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz
+        Included 1 path:
+        - state: ~/.openclaw
+        Skipped 1 path:
+        - workspace: ~/.openclaw/workspace (covered by ~/.openclaw)
+        Created /home/node/2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz
+        ```
+      - **Method 3: Manual Backup** - Open **Command** → Run `backup` → Download from `/home/node` in **Files** tab (e.g. `backup-1430.tar.gz`)
         - Older versions (without commands): `cd /home/node && tar -czvf backup.tar.gz .openclaw`
 
       **Restore:**
       1. Upload backup file to `/home/node` folder in **Files** tab
       2. Open **Command** and run:
-         - From Zeabur Backup Service: `restore <backup-file> --strip 2` (e.g. `restore data-2026-02-27.zip --strip 2`)
+         - From CLI Backup (v2026.3.8+): `restore <backup-file>` (auto-detected, e.g. `restore 2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz`)
+         - From Zeabur Backup Service: `restore <backup-file>` (auto-detected, e.g. `restore data-2026-02-27.zip`)
          - From Manual Backup: `restore <backup-file>` (e.g. `restore backup-1430.tar.gz`)
          - Older versions (without commands): `cd /home/node && tar -xzvf <backup-file>`
       3. Delete the uploaded backup file from `/home/node` in **Files** tab to free up disk space
@@ -398,6 +413,10 @@ spec:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Changelog
+      **2026/3/9**
+      - Upgrade image to `2026.3.8` — CLI backup (`openclaw backup create` / `openclaw backup verify`), Talk mode silence timeout config, Brave LLM-context web search, ACP provenance metadata, Telegram DM dedup, browser CDP fixes, gateway restart/config guards, 30+ new features and 40+ fixes
+      - Add `openclaw backup create` and `openclaw backup verify` to backup documentation (built-in CLI backup with config-only mode and archive validation)
+
       **2026/3/8**
       - Upgrade image to `2026.3.7` — context engine plugin interface, ACP persistent channel bindings, Telegram topic agent routing, Docker multi-stage build, gateway SecretRef support, 30+ new features and 40+ fixes across 5 releases (2026.3.3–2026.3.7)
       - ⚠️ Breaking: `gateway.auth.mode` now required when both `gateway.auth.token` and `gateway.auth.password` are configured — template pre-sets `mode: "token"` (existing deployments auto-migrated on startup)
@@ -477,7 +496,7 @@ spec:
         domainKey: PUBLIC_DOMAIN
         spec:
           source:
-            image: ghcr.io/openclaw/openclaw:2026.3.7
+            image: ghcr.io/openclaw/openclaw:2026.3.8
             command:
               - /bin/sh
               - -c
@@ -979,11 +998,13 @@ spec:
                   echo "Usage: restore <backup-file> [--strip N]"
                   echo ""
                   echo "Supports .tar.gz and .zip formats."
+                  echo "CLI backups (*-openclaw-backup.tar.gz) and Zeabur backups (data-*) are auto-detected."
                   echo ""
                   echo "Examples:"
-                  echo "  restore backup-1430.tar.gz"
-                  echo "  restore backup-xxxxx.zip"
-                  echo "  restore backup-xxxxx.tar.gz --strip 2  # For Zeabur backup service files"
+                  echo "  restore 2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz  # CLI backup (auto-detected)"
+                  echo "  restore data-2026-02-27.zip                               # Zeabur backup (auto-detected)"
+                  echo "  restore data-2026-02-27.tar.gz                            # Zeabur backup (auto-detected)"
+                  echo "  restore backup-1430.tar.gz                                # Manual backup"
                   exit 1
                 fi
                 cd /home/node
@@ -1010,6 +1031,12 @@ spec:
                     if [ "$2" = "--strip" ] && [ -n "$3" ]; then
                       echo "Restoring from $BACKUP_FILE (strip-components=$3)..."
                       tar -xzvf "$BACKUP_FILE" --strip-components="$3" -C /home/node
+                    elif echo "$BACKUP_FILE" | grep -q 'openclaw-backup\.tar\.gz$'; then
+                      echo "Detected CLI backup format, restoring with --strip-components=3..."
+                      tar -xzvf "$BACKUP_FILE" --strip-components=3 -C /home/node
+                    elif echo "$BACKUP_FILE" | grep -q '^data-'; then
+                      echo "Detected Zeabur backup service format, restoring with --strip-components=2..."
+                      tar -xzvf "$BACKUP_FILE" --strip-components=2 -C /home/node
                     else
                       echo "Restoring from $BACKUP_FILE..."
                       tar -xzvf "$BACKUP_FILE"
@@ -1671,13 +1698,28 @@ localization:
 
       **備份：**
       - **方法一：Zeabur 備份服務（推薦）** - 使用 Zeabur 內建的備份功能。請參閱 [Zeabur 備份文件](https://zeabur.com/docs/zh-TW/data-management/backup)。
-      - **方法二：手動備份** - 開啟**指令** → 執行 `backup` → 從**檔案**頁籤的 `/home/node` 下載（例如 `backup-1430.tar.gz`）
+      - **方法二：CLI 備份（v2026.3.8+）** - 開啟**指令** → 執行 `openclaw backup create` → 從**檔案**頁籤的 `/home/node` 下載
+        - 僅備份設定：`openclaw backup create --only-config`
+        - 排除工作區：`openclaw backup create --no-include-workspace`
+        - 驗證備份檔：`openclaw backup verify <備份檔名>`
+        - 範例：
+        ```
+        $ openclaw backup create
+        Backup archive: /home/node/2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz
+        Included 1 path:
+        - state: ~/.openclaw
+        Skipped 1 path:
+        - workspace: ~/.openclaw/workspace (covered by ~/.openclaw)
+        Created /home/node/2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz
+        ```
+      - **方法三：手動備份** - 開啟**指令** → 執行 `backup` → 從**檔案**頁籤的 `/home/node` 下載（例如 `backup-1430.tar.gz`）
         - 舊版（沒有這些指令）：`cd /home/node && tar -czvf backup.tar.gz .openclaw`
 
       **還原：**
       1. 在**檔案**頁籤將備份檔上傳到 `/home/node` 資料夾
       2. 開啟**指令**執行：
-         - Zeabur 備份服務的檔案：`restore <備份檔名> --strip 2`（例如 `restore data-2026-02-27.zip --strip 2`）
+         - CLI 備份（v2026.3.8+）：`restore <備份檔名>`（自動偵測，例如 `restore 2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz`）
+         - Zeabur 備份服務：`restore <備份檔名>`（自動偵測，例如 `restore data-2026-02-27.zip`）
          - 手動備份的檔案：`restore <備份檔名>`（例如 `restore backup-1430.tar.gz`）
          - 舊版（沒有這些指令）：`cd /home/node && tar -xzvf <備份檔名>`
       3. 在**檔案**頁籤刪除 `/home/node` 中已上傳的備份檔，釋放磁碟空間
@@ -1805,6 +1847,10 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 更新日誌
+      **2026/3/9**
+      - 升級映像檔至 `2026.3.8` — CLI 備份（`openclaw backup create` / `openclaw backup verify`）、Talk 模式靜音超時設定、Brave LLM-context 網頁搜尋、ACP 來源中繼資料、Telegram DM 去重、瀏覽器 CDP 修復、gateway 重啟/設定保護，共 30+ 新功能及 40+ 修復
+      - 備份文件新增 `openclaw backup create` 和 `openclaw backup verify` 說明（內建 CLI 備份，支援僅設定模式和備份檔驗證）
+
       **2026/3/8**
       - 升級映像檔至 `2026.3.7` — context engine plugin 介面、ACP 持久頻道綁定、Telegram 主題 agent 路由、Docker 多階段建置、gateway SecretRef 支援，橫跨 5 個版本（2026.3.3–2026.3.7）共 30+ 新功能及 40+ 修復
       - ⚠️ 破壞性變更：同時設定 `gateway.auth.token` 和 `gateway.auth.password` 時，須明確設定 `gateway.auth.mode` — 模板已預設 `mode: "token"`（既有部署啟動時自動遷移）
@@ -2118,13 +2164,28 @@ localization:
 
       **备份：**
       - **方法一：Zeabur 备份服务（推荐）** - 使用 Zeabur 内置的备份功能。请参阅 [Zeabur 备份文档](https://zeabur.com/docs/zh-CN/data-management/backup)。
-      - **方法二：手动备份** - 打开**命令** → 执行 `backup` → 从**文件**页签的 `/home/node` 下载（例如 `backup-1430.tar.gz`）
+      - **方法二：CLI 备份（v2026.3.8+）** - 打开**命令** → 执行 `openclaw backup create` → 从**文件**页签的 `/home/node` 下载
+        - 仅备份配置：`openclaw backup create --only-config`
+        - 排除工作区：`openclaw backup create --no-include-workspace`
+        - 验证备份档：`openclaw backup verify <备份文件名>`
+        - 示例：
+        ```
+        $ openclaw backup create
+        Backup archive: /home/node/2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz
+        Included 1 path:
+        - state: ~/.openclaw
+        Skipped 1 path:
+        - workspace: ~/.openclaw/workspace (covered by ~/.openclaw)
+        Created /home/node/2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz
+        ```
+      - **方法三：手动备份** - 打开**命令** → 执行 `backup` → 从**文件**页签的 `/home/node` 下载（例如 `backup-1430.tar.gz`）
         - 旧版（没有这些命令）：`cd /home/node && tar -czvf backup.tar.gz .openclaw`
 
       **还原：**
       1. 在**文件**页签将备份文件上传到 `/home/node` 文件夹
       2. 打开**命令**执行：
-         - Zeabur 备份服务的文件：`restore <备份文件名> --strip 2`（例如 `restore data-2026-02-27.zip --strip 2`）
+         - CLI 备份（v2026.3.8+）：`restore <备份文件名>`（自动检测，例如 `restore 2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz`）
+         - Zeabur 备份服务：`restore <备份文件名>`（自动检测，例如 `restore data-2026-02-27.zip`）
          - 手动备份的文件：`restore <备份文件名>`（例如 `restore backup-1430.tar.gz`）
          - 旧版（没有这些命令）：`cd /home/node && tar -xzvf <备份文件名>`
       3. 在**文件**页签删除 `/home/node` 中已上传的备份文件，释放磁盘空间
@@ -2252,6 +2313,10 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 更新日志
+      **2026/3/9**
+      - 升级镜像至 `2026.3.8` — CLI 备份（`openclaw backup create` / `openclaw backup verify`）、Talk 模式静音超时配置、Brave LLM-context 网页搜索、ACP 来源元数据、Telegram DM 去重、浏览器 CDP 修复、gateway 重启/配置保护，共 30+ 新功能及 40+ 修复
+      - 备份文档新增 `openclaw backup create` 和 `openclaw backup verify` 说明（内建 CLI 备份，支持仅配置模式和备份档验证）
+
       **2026/3/8**
       - 升级镜像至 `2026.3.7` — context engine plugin 接口、ACP 持久频道绑定、Telegram 主题 agent 路由、Docker 多阶段构建、gateway SecretRef 支持，横跨 5 个版本（2026.3.3–2026.3.7）共 30+ 新功能及 40+ 修复
       - ⚠️ 破坏性变更：同时设定 `gateway.auth.token` 和 `gateway.auth.password` 时，须明确设定 `gateway.auth.mode` — 模板已预设 `mode: "token"`（既有部署启动时自动迁移）
@@ -2565,13 +2630,28 @@ localization:
 
       **バックアップ：**
       - **方法1：Zeabur バックアップサービス（推奨）** - Zeabur の組み込みバックアップ機能を使用。[Zeabur バックアップドキュメント](https://zeabur.com/docs/ja-JP/data-management/backup)を参照。
-      - **方法2：手動バックアップ** - **コマンド**を開く → `backup` を実行 → **ファイル**タブの `/home/node` からダウンロード（例：`backup-1430.tar.gz`）
+      - **方法2：CLI バックアップ（v2026.3.8+）** - **コマンド**を開く → `openclaw backup create` を実行 → **ファイル**タブの `/home/node` からダウンロード
+        - 設定のみ：`openclaw backup create --only-config`
+        - ワークスペース除外：`openclaw backup create --no-include-workspace`
+        - アーカイブ検証：`openclaw backup verify <バックアップファイル名>`
+        - 例：
+        ```
+        $ openclaw backup create
+        Backup archive: /home/node/2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz
+        Included 1 path:
+        - state: ~/.openclaw
+        Skipped 1 path:
+        - workspace: ~/.openclaw/workspace (covered by ~/.openclaw)
+        Created /home/node/2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz
+        ```
+      - **方法3：手動バックアップ** - **コマンド**を開く → `backup` を実行 → **ファイル**タブの `/home/node` からダウンロード（例：`backup-1430.tar.gz`）
         - 旧バージョン（コマンドなし）：`cd /home/node && tar -czvf backup.tar.gz .openclaw`
 
       **復元：**
       1. **ファイル**タブでバックアップファイルを `/home/node` フォルダにアップロード
       2. **コマンド**を開いて実行：
-         - Zeabur バックアップサービスのファイル：`restore <バックアップファイル名> --strip 2`（例：`restore data-2026-02-27.zip --strip 2`）
+         - CLI バックアップ（v2026.3.8+）：`restore <バックアップファイル名>`（自動検出、例：`restore 2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz`）
+         - Zeabur バックアップサービス：`restore <バックアップファイル名>`（自動検出、例：`restore data-2026-02-27.zip`）
          - 手動バックアップのファイル：`restore <バックアップファイル名>`（例：`restore backup-1430.tar.gz`）
          - 旧バージョン（コマンドなし）：`cd /home/node && tar -xzvf <バックアップファイル名>`
       3. **ファイル**タブで `/home/node` にアップロードしたバックアップファイルを削除し、ディスク容量を解放
@@ -2699,6 +2779,10 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 変更履歴
+      **2026/3/9**
+      - イメージを `2026.3.8` にアップグレード — CLI バックアップ（`openclaw backup create` / `openclaw backup verify`）、Talk モードサイレンスタイムアウト設定、Brave LLM-context ウェブ検索、ACP プロベナンスメタデータ、Telegram DM 重複排除、ブラウザ CDP 修正、gateway 再起動/設定ガード、30 以上の新機能と 40 以上の修正
+      - バックアップドキュメントに `openclaw backup create` と `openclaw backup verify` の説明を追加（組み込み CLI バックアップ、設定のみモードとアーカイブ検証対応）
+
       **2026/3/8**
       - イメージを `2026.3.7` にアップグレード — context engine プラグインインターフェース、ACP 永続チャネルバインディング、Telegram トピックエージェントルーティング、Docker マルチステージビルド、gateway SecretRef サポート、5 リリース（2026.3.3–2026.3.7）にわたる 30 以上の新機能と 40 以上の修正
       - ⚠️ 破壊的変更：`gateway.auth.token` と `gateway.auth.password` の両方が設定されている場合、`gateway.auth.mode` の明示的な設定が必要 — テンプレートは `mode: "token"` をプリセット（既存デプロイは起動時に自動移行）
@@ -3012,13 +3096,28 @@ localization:
 
       **Copia de Seguridad:**
       - **Método 1: Servicio de Zeabur (Recomendado)** - Use la función integrada de Zeabur. Consulte la [Documentación de Zeabur](https://zeabur.com/docs/es-ES/data-management/backup).
-      - **Método 2: Manual** - Abra **Comando** → Ejecute `backup` → Descargue desde **Archivos** en `/home/node` (ej. `backup-1430.tar.gz`)
+      - **Método 2: CLI Backup (v2026.3.8+)** - Abra **Comando** → Ejecute `openclaw backup create` → Descargue desde **Archivos** en `/home/node`
+        - Solo configuración: `openclaw backup create --only-config`
+        - Excluir workspace: `openclaw backup create --no-include-workspace`
+        - Verificar archivo: `openclaw backup verify <archivo-backup>`
+        - Ejemplo:
+        ```
+        $ openclaw backup create
+        Backup archive: /home/node/2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz
+        Included 1 path:
+        - state: ~/.openclaw
+        Skipped 1 path:
+        - workspace: ~/.openclaw/workspace (covered by ~/.openclaw)
+        Created /home/node/2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz
+        ```
+      - **Método 3: Manual** - Abra **Comando** → Ejecute `backup` → Descargue desde **Archivos** en `/home/node` (ej. `backup-1430.tar.gz`)
         - Versiones anteriores (sin comandos): `cd /home/node && tar -czvf backup.tar.gz .openclaw`
 
       **Restauración:**
       1. Suba el archivo de respaldo a la carpeta `/home/node` en **Archivos**
       2. Abra **Comando** y ejecute:
-         - Archivos del servicio de Zeabur: `restore <nombre-archivo> --strip 2` (ej. `restore data-2026-02-27.zip --strip 2`)
+         - CLI Backup (v2026.3.8+): `restore <nombre-archivo>` (auto-detectado, ej. `restore 2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz`)
+         - Servicio de Zeabur: `restore <nombre-archivo>` (auto-detectado, ej. `restore data-2026-02-27.zip`)
          - Archivos de respaldo manual: `restore <nombre-archivo>` (ej. `restore backup-1430.tar.gz`)
          - Versiones anteriores (sin comandos): `cd /home/node && tar -xzvf <nombre-archivo>`
       3. Elimine el archivo de respaldo subido de `/home/node` en **Archivos** para liberar espacio en disco
@@ -3146,6 +3245,10 @@ localization:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Registro de Cambios
+      **2026/3/9**
+      - Actualizar imagen a `2026.3.8` — CLI backup (`openclaw backup create` / `openclaw backup verify`), timeout de silencio en Talk mode, búsqueda web Brave LLM-context, metadatos de procedencia ACP, dedup DM Telegram, correcciones CDP del navegador, guardias de reinicio/config del gateway, 30+ nuevas funciones y 40+ correcciones
+      - Agregar documentación de `openclaw backup create` y `openclaw backup verify` (backup CLI integrado con modo solo-config y validación de archivos)
+
       **2026/3/8**
       - Actualizar imagen a `2026.3.7` — interfaz de plugin context engine, bindings persistentes de canal ACP, enrutamiento de agentes por tema en Telegram, build Docker multi-stage, soporte SecretRef de gateway, 30+ nuevas funciones y 40+ correcciones en 5 versiones (2026.3.3–2026.3.7)
       - ⚠️ Cambio incompatible: `gateway.auth.mode` ahora requerido cuando `gateway.auth.token` y `gateway.auth.password` están configurados — la plantilla predefine `mode: "token"` (despliegues existentes migran automáticamente al iniciar)
@@ -3459,15 +3562,28 @@ localization:
 
       **Cadangan:**
       - **Metode 1: Layanan Zeabur (Direkomendasikan)** - Gunakan fitur cadangan bawaan Zeabur. Lihat [Dokumentasi Zeabur](https://zeabur.com/docs/data-management/backup).
-      - **Metode 2: Manual** - Buka **Perintah** → Jalankan `backup` → Unduh dari **Files** di `/home/node` (contoh: `backup-1430.tar.gz`)
+      - **Metode 2: CLI Backup (v2026.3.8+)** - Buka **Perintah** → Jalankan `openclaw backup create` → Unduh dari **Files** di `/home/node`
+        - Konfigurasi saja: `openclaw backup create --only-config`
+        - Tanpa workspace: `openclaw backup create --no-include-workspace`
+        - Verifikasi arsip: `openclaw backup verify <file-cadangan>`
+        - Contoh:
+        ```
+        $ openclaw backup create
+        Backup archive: /home/node/2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz
+        Included 1 path:
+        - state: ~/.openclaw
+        Skipped 1 path:
+        - workspace: ~/.openclaw/workspace (covered by ~/.openclaw)
+        Created /home/node/2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz
+        ```
+      - **Metode 3: Manual** - Buka **Perintah** → Jalankan `backup` → Unduh dari **Files** di `/home/node` (contoh: `backup-1430.tar.gz`)
         - Versi lama (tanpa perintah): `cd /home/node && tar -czvf backup.tar.gz .openclaw`
 
       **Pemulihan:**
       1. Upload file cadangan ke folder `/home/node` di **Files**
       2. Buka **Perintah** dan jalankan:
-         - File dari layanan Zeabur: `restore <nama-file> --strip 2`
-         - File cadangan manual: `restore <nama-file>`
-         - File dari layanan Zeabur: `restore <nama-file> --strip 2` (contoh: `restore data-2026-02-27.zip --strip 2`)
+         - CLI Backup (v2026.3.8+): `restore <nama-file>` (auto-deteksi, contoh: `restore 2026-03-09T15-08-31.114Z-openclaw-backup.tar.gz`)
+         - Layanan Zeabur: `restore <nama-file>` (auto-deteksi, contoh: `restore data-2026-02-27.zip`)
          - File cadangan manual: `restore <nama-file>` (contoh: `restore backup-1430.tar.gz`)
          - Versi lama (tanpa perintah): `cd /home/node && tar -xzvf <nama-file>`
       3. Hapus file cadangan yang diupload dari `/home/node` di **Files** untuk mengosongkan ruang disk
@@ -3595,6 +3711,10 @@ localization:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Catatan Perubahan
+      **2026/3/9**
+      - Upgrade image ke `2026.3.8` — CLI backup (`openclaw backup create` / `openclaw backup verify`), konfigurasi timeout diam Talk mode, pencarian web Brave LLM-context, metadata provenance ACP, dedup DM Telegram, perbaikan CDP browser, guard restart/config gateway, 30+ fitur baru dan 40+ perbaikan
+      - Tambah dokumentasi `openclaw backup create` dan `openclaw backup verify` (backup CLI bawaan dengan mode config-only dan validasi arsip)
+
       **2026/3/8**
       - Upgrade image ke `2026.3.7` — antarmuka plugin context engine, binding channel ACP persisten, routing agen topik Telegram, build Docker multi-stage, dukungan SecretRef gateway, 30+ fitur baru dan 40+ perbaikan di 5 rilis (2026.3.3–2026.3.7)
       - ⚠️ Perubahan tidak kompatibel: `gateway.auth.mode` sekarang diperlukan ketika `gateway.auth.token` dan `gateway.auth.password` keduanya dikonfigurasi — template menetapkan `mode: "token"` (deployment yang ada migrasi otomatis saat startup)
