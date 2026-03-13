@@ -37,7 +37,7 @@ spec:
       # OpenClaw 🦞
       OpenClaw 🦞 (formerly Clawdbot, Moltbot) is a personal AI assistant that runs locally and connects to multiple messaging platforms via a WebSocket-based Gateway architecture.
 
-      ⚠️ This template uses `ghcr.io/openclaw/openclaw:2026.3.8`. OpenClaw 🦞 is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues.
+      ⚠️ This template uses `ghcr.io/openclaw/openclaw:2026.3.12`. OpenClaw 🦞 is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues.
 
       ⚠️ If you encounter any issues, feel free to check the [GitHub issues](https://github.com/openclaw/openclaw/issues) for solutions or to report new ones. For Zeabur platform-related issues, please contact Zeabur support.
 
@@ -406,12 +406,18 @@ spec:
       - **`/usr/local/bin` symlinks**: The `openclaw`, `backup`, and `restore` commands are symlinked to `/usr/local/bin` so they work in Zeabur's **Command** terminal.
       - **`OPENCLAW_DISABLE_BONJOUR=1`**: Disables mDNS/Bonjour because Zeabur container hostnames can exceed the 63-byte DNS label limit. mDNS is only used for local network discovery and is not needed in cloud environments.
       - **`OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true`**: Fixes Telegram connection issues in containerized environments (required for image versions `2026.2.17` and later).
+      - **`TZ`** (optional): Set the container timezone using an IANA timezone string (e.g. `Asia/Taipei`, `America/New_York`, `Europe/London`). Add via **Variables** tab in Zeabur dashboard. Defaults to `UTC` if not set.
 
       ## Documentation
       - Documentation: https://docs.openclaw.ai
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Changelog
+      **2026/3/13**
+      - Upgrade image to `2026.3.12` — Control UI dashboard v2, GPT-5.4/Claude fast mode, Ollama/vLLM/SGLang provider plugins, K8s deployment docs, 20+ security fixes (WebSocket origin validation, exec approval hardening, plugin auto-load lockdown), cron delivery tightening with `openclaw doctor --fix` migration, 60+ new features and 100+ fixes across 4 releases (2026.3.9–2026.3.12)
+      - ⚠️ Breaking: cron delivery tightened — run `openclaw doctor --fix` in **Command** after upgrading to migrate legacy cron storage
+      - Add `TZ` environment variable documentation for container timezone configuration
+
       **2026/3/10**
       - Add Homebrew pre-installation: `touch /.dockerenv` and Homebrew install script now run on every container startup, enabling `brew` package management inside the container
       - Add Go 1.22.3 pre-installation (persisted under `/home/node/go`)
@@ -501,7 +507,7 @@ spec:
         domainKey: PUBLIC_DOMAIN
         spec:
           source:
-            image: ghcr.io/openclaw/openclaw:2026.3.8
+            image: ghcr.io/openclaw/openclaw:2026.3.12
             command:
               - /bin/sh
               - -c
@@ -1883,12 +1889,18 @@ localization:
       - **`/usr/local/bin` 符號連結**：`openclaw`、`backup`、`restore` 指令已建立符號連結至 `/usr/local/bin`，可直接在 Zeabur 的**命令**終端中使用。
       - **`OPENCLAW_DISABLE_BONJOUR=1`**：停用 mDNS/Bonjour，因為 Zeabur 容器主機名稱可能超過 63 bytes 的 DNS 標籤限制。mDNS 僅用於區域網路發現，雲端環境中不需要。
       - **`OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true`**：修復容器環境中的 Telegram 連線問題（`2026.2.17` 及之後的映像檔版本需要）。
+      - **`TZ`**（選填）：使用 IANA 時區字串設定容器時區（例如 `Asia/Taipei`、`America/New_York`、`Europe/London`）。透過 Zeabur 儀表板的**環境變數**頁籤新增。未設定時預設為 `UTC`。
 
       ## 文件
       - 文件：https://docs.openclaw.ai
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 更新日誌
+      **2026/3/13**
+      - 升級映像檔至 `2026.3.12` — Control UI 儀表板 v2、GPT-5.4/Claude 快速模式、Ollama/vLLM/SGLang provider 外掛、K8s 部署文件、20+ 安全修復（WebSocket origin 驗證、exec approval 強化、plugin 自動載入鎖定）、cron delivery 收緊並需要 `openclaw doctor --fix` 遷移，共 60+ 新功能及 100+ 修復，涵蓋 4 個版本（2026.3.9–2026.3.12）
+      - ⚠️ 重大變更：cron delivery 已收緊 — 升級後請在**指令**中執行 `openclaw doctor --fix` 以遷移舊版 cron 儲存格式
+      - 新增 `TZ` 環境變數文件，用於容器時區設定
+
       **2026/3/10**
       - Add Homebrew pre-installation: `touch /.dockerenv` and Homebrew install script now run on every container startup, enabling `brew` package management inside the container
       - Add Go 1.22.3 pre-installation (persisted under `/home/node/go`)
@@ -2354,12 +2366,18 @@ localization:
       - **`/usr/local/bin` 符号链接**：`openclaw`、`backup`、`restore` 命令已建立符号链接至 `/usr/local/bin`，可直接在 Zeabur 的**命令**终端中使用。
       - **`OPENCLAW_DISABLE_BONJOUR=1`**：停用 mDNS/Bonjour，因为 Zeabur 容器主机名称可能超过 63 bytes 的 DNS 标签限制。mDNS 仅用于局域网发现，云端环境中不需要。
       - **`OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true`**：修复容器环境中的 Telegram 连接问题（`2026.2.17` 及之后的镜像版本需要）。
+      - **`TZ`**（选填）：使用 IANA 时区字符串设置容器时区（例如 `Asia/Taipei`、`America/New_York`、`Europe/London`）。通过 Zeabur 仪表板的**环境变量**页签添加。未设置时默认为 `UTC`。
 
       ## 文档
       - 文档：https://docs.openclaw.ai
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 更新日志
+      **2026/3/13**
+      - 升级镜像至 `2026.3.12` — Control UI 仪表板 v2、GPT-5.4/Claude 快速模式、Ollama/vLLM/SGLang provider 插件、K8s 部署文档、20+ 安全修复（WebSocket origin 验证、exec approval 强化、plugin 自动加载锁定）、cron delivery 收紧并需要 `openclaw doctor --fix` 迁移，共 60+ 新功能及 100+ 修复，涵盖 4 个版本（2026.3.9–2026.3.12）
+      - ⚠️ 重大变更：cron delivery 已收紧 — 升级后请在**命令**中执行 `openclaw doctor --fix` 以迁移旧版 cron 存储格式
+      - 新增 `TZ` 环境变量文档，用于容器时区设置
+
       **2026/3/10**
       - Add Homebrew pre-installation: `touch /.dockerenv` and Homebrew install script now run on every container startup, enabling `brew` package management inside the container
       - Add Go 1.22.3 pre-installation (persisted under `/home/node/go`)
@@ -2825,12 +2843,18 @@ localization:
       - **`/usr/local/bin` シンボリックリンク**：`openclaw`、`backup`、`restore` コマンドが `/usr/local/bin` にシンボリックリンクされ、Zeabur の**コマンド**ターミナルで直接使用できます。
       - **`OPENCLAW_DISABLE_BONJOUR=1`**：mDNS/Bonjour を無効化。Zeabur コンテナのホスト名が 63 バイトの DNS ラベル制限を超える可能性があるため。mDNS はローカルネットワーク検出にのみ使用され、クラウド環境では不要です。
       - **`OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true`**：コンテナ環境での Telegram 接続問題を修正（イメージバージョン `2026.2.17` 以降で必要）。
+      - **`TZ`**（任意）：IANA タイムゾーン文字列でコンテナのタイムゾーンを設定（例：`Asia/Tokyo`、`America/New_York`、`Europe/London`）。Zeabur ダッシュボードの**環境変数**タブから追加。未設定の場合は `UTC` がデフォルト。
 
       ## ドキュメント
       - ドキュメント：https://docs.openclaw.ai
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 変更履歴
+      **2026/3/13**
+      - イメージを `2026.3.12` にアップグレード — Control UI ダッシュボード v2、GPT-5.4/Claude 高速モード、Ollama/vLLM/SGLang プロバイダープラグイン、K8s デプロイドキュメント、20 以上のセキュリティ修正（WebSocket origin 検証、exec approval 強化、plugin 自動ロードロックダウン）、cron delivery 引き締めと `openclaw doctor --fix` 移行、60 以上の新機能と 100 以上の修正、4 リリース分（2026.3.9–2026.3.12）
+      - ⚠️ 破壊的変更：cron delivery が厳格化 — アップグレード後に**コマンド**で `openclaw doctor --fix` を実行してレガシー cron ストレージを移行してください
+      - コンテナタイムゾーン設定用の `TZ` 環境変数ドキュメントを追加
+
       **2026/3/10**
       - Add Homebrew pre-installation: `touch /.dockerenv` and Homebrew install script now run on every container startup, enabling `brew` package management inside the container
       - Add Go 1.22.3 pre-installation (persisted under `/home/node/go`)
@@ -3296,12 +3320,18 @@ localization:
       - **Symlinks en `/usr/local/bin`**: Los comandos `openclaw`, `backup` y `restore` tienen enlaces simbólicos en `/usr/local/bin` para funcionar en la terminal de **Comando** de Zeabur.
       - **`OPENCLAW_DISABLE_BONJOUR=1`**: Deshabilita mDNS/Bonjour porque los nombres de host de los contenedores de Zeabur pueden exceder el límite de 63 bytes de las etiquetas DNS. mDNS solo se usa para descubrimiento de red local y no es necesario en entornos de nube.
       - **`OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true`**: Soluciona problemas de conexión con Telegram en entornos de contenedores (necesario para versiones de imagen `2026.2.17` en adelante).
+      - **`TZ`** (opcional): Establece la zona horaria del contenedor usando una cadena IANA (ej. `America/Mexico_City`, `America/New_York`, `Europe/Madrid`). Agregue vía la pestaña **Variables** del panel de Zeabur. Por defecto es `UTC` si no se configura.
 
       ## Documentación
       - Documentación: https://docs.openclaw.ai
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Registro de Cambios
+      **2026/3/13**
+      - Actualizar imagen a `2026.3.12` — Control UI dashboard v2, modo rápido GPT-5.4/Claude, plugins de proveedor Ollama/vLLM/SGLang, documentación de despliegue K8s, 20+ correcciones de seguridad (validación de origen WebSocket, endurecimiento de exec approval, bloqueo de auto-carga de plugins), restricción de cron delivery con migración `openclaw doctor --fix`, 60+ nuevas funciones y 100+ correcciones en 4 versiones (2026.3.9–2026.3.12)
+      - ⚠️ Cambio importante: cron delivery restringido — ejecute `openclaw doctor --fix` en **Comando** después de actualizar para migrar el almacenamiento cron heredado
+      - Agregar documentación de variable de entorno `TZ` para configuración de zona horaria del contenedor
+
       **2026/3/10**
       - Add Homebrew pre-installation: `touch /.dockerenv` and Homebrew install script now run on every container startup, enabling `brew` package management inside the container
       - Add Go 1.22.3 pre-installation (persisted under `/home/node/go`)
@@ -3767,12 +3797,18 @@ localization:
       - **Symlink `/usr/local/bin`**: Perintah `openclaw`, `backup`, dan `restore` di-symlink ke `/usr/local/bin` agar berfungsi di terminal **Perintah** Zeabur.
       - **`OPENCLAW_DISABLE_BONJOUR=1`**: Menonaktifkan mDNS/Bonjour karena nama host container Zeabur dapat melebihi batas label DNS 63 byte. mDNS hanya digunakan untuk penemuan jaringan lokal dan tidak diperlukan di lingkungan cloud.
       - **`OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true`**: Memperbaiki masalah koneksi Telegram di lingkungan container (diperlukan untuk versi image `2026.2.17` dan setelahnya).
+      - **`TZ`** (opsional): Atur zona waktu container menggunakan string zona waktu IANA (contoh: `Asia/Jakarta`, `America/New_York`, `Europe/London`). Tambahkan melalui tab **Variables** di dashboard Zeabur. Default `UTC` jika tidak diatur.
 
       ## Dokumentasi
       - Dokumentasi: https://docs.openclaw.ai
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Catatan Perubahan
+      **2026/3/13**
+      - Upgrade image ke `2026.3.12` — Control UI dashboard v2, mode cepat GPT-5.4/Claude, plugin provider Ollama/vLLM/SGLang, dokumentasi deployment K8s, 20+ perbaikan keamanan (validasi origin WebSocket, penguatan exec approval, penguncian auto-load plugin), pengetatan cron delivery dengan migrasi `openclaw doctor --fix`, 60+ fitur baru dan 100+ perbaikan di 4 rilis (2026.3.9–2026.3.12)
+      - ⚠️ Perubahan penting: cron delivery diperketat — jalankan `openclaw doctor --fix` di **Perintah** setelah upgrade untuk migrasi penyimpanan cron lama
+      - Menambahkan dokumentasi variabel lingkungan `TZ` untuk konfigurasi zona waktu container
+
       **2026/3/10**
       - Add Homebrew pre-installation: `touch /.dockerenv` and Homebrew install script now run on every container startup, enabling `brew` package management inside the container
       - Add Go 1.22.3 pre-installation (persisted under `/home/node/go`)
