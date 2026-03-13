@@ -61,10 +61,10 @@ spec:
       - **Devbox**: If you need multi-language code execution (Python, Go, Rust, C/C++), deploy the [Devbox Template](https://zeabur.com/templates/ZBVZNH) to the same project
 
       ## Usage
-      1. After deployment, copy "Web UI (with token)" URL from the **Instructions** tab and paste it into your browser
+      1. After deployment, open the service URL from the **Networking** tab. On the login page, paste the **Gateway Token** (found in the **Instructions** tab or **Environment Variables** → `OPENCLAW_GATEWAY_TOKEN`) and click **Connect**
       2. **Configure AI model** (choose one):
          - **Zeabur AI Hub** (default model: `glm-4.7-flash`): If you entered the API Key during deployment, go directly to step 3. You can also add `ZEABUR_AI_HUB_API_KEY` later via **Variables** tab in Zeabur dashboard (restart service after adding).
-         - **Other providers** (Anthropic, OpenAI, etc.): If you did not enter a Zeabur AI Hub API Key, the default model is `anthropic/claude-opus-4-6`. Go to Web UI Settings or add API key via environment variables. See: https://docs.openclaw.ai/providers/anthropic
+         - **Other providers** (Anthropic, OpenAI, etc.): If you did not enter a Zeabur AI Hub API Key, the default model is `anthropic/claude-opus-4-6`. Go to Control UI Settings or add API key via environment variables. See: https://docs.openclaw.ai/providers/anthropic
       3. Go to the **Chat** page to test if your AI model is working
       4. (Optional) Set up messaging platforms like Telegram, WhatsApp, etc.
 
@@ -73,9 +73,9 @@ spec:
       ### Model Switching & Failover
       This template includes failover models that automatically switch when the primary model is unavailable. Default chain: `glm-4.7-flash` → `grok-4-fast-non-reasoning` → `minimax-m2.5` → `kimi-k2.5` → `qwen-3-235b` → `gpt-5-mini`.
 
-      You can manage models from **Web UI Chat** or **Command** in the Zeabur dashboard.
+      You can manage models from **Control UI Chat** or **Command** in the Zeabur dashboard.
 
-      **Via Web UI Chat** — type slash commands directly in the chat box:
+      **Via Control UI Chat** — type slash commands directly in the chat box:
       - `/model zeabur-ai/glm-4.7-flash` — change primary model
       - `/model` — view current model
       - `/models` — list model providers
@@ -114,7 +114,7 @@ spec:
       - `GOOGLE_API_KEY` — for Gemini models
 
       After adding, restart the service, then switch model:
-      - Web UI Chat: `/model anthropic/claude-opus-4-6`
+      - Control UI Chat: `/model anthropic/claude-opus-4-6`
       - Command: `openclaw models set anthropic/claude-opus-4-6`
 
       **Method 2: Auth token** — open **Command** in Zeabur dashboard:
@@ -149,7 +149,7 @@ spec:
       1. Go to your service's **Environment Variables** tab in Zeabur dashboard
       2. Add `TELEGRAM_BOT_TOKEN` with your bot token
       3. Restart the service
-      4. The Telegram plugin will be auto-enabled on restart. If the bot does not start, go to **Settings → Config** and verify the plugin is enabled: `"plugins": { "entries": { "telegram": { "enabled": true } } }`. To disable, set `enabled` to `false`.
+      4. After restarting, go to **Settings → Config** and enable the Telegram plugin: `"plugins": { "entries": { "telegram": { "enabled": true } } }`. To disable, set `enabled` to `false`.
 
       **Pairing your Telegram account:**
       1. Send `/start` to your bot in Telegram
@@ -162,7 +162,7 @@ spec:
 
       ## WhatsApp Setup
       **Step 1: Configure WhatsApp channel**
-      Add the following configuration via OpenClaw Web UI (Settings → Config) or paste it to chat:
+      Add the following configuration via OpenClaw Control UI (Settings → Config) or paste it to chat:
       ```json
       "channels": {
         "whatsapp": {
@@ -194,7 +194,7 @@ spec:
       2. Add `LINE_CHANNEL_ACCESS_TOKEN` with your channel access token
       3. Add `LINE_CHANNEL_SECRET` with your channel secret
       4. Restart the service
-      5. The LINE plugin will be auto-enabled on restart. If the bot does not start, go to **Settings → Config** and verify the plugin is enabled: `"plugins": { "entries": { "line": { "enabled": true } } }`
+      5. After restarting, go to **Settings → Config** and enable the LINE plugin: `"plugins": { "entries": { "line": { "enabled": true } } }`
 
       **Setting up the webhook:**
       1. After restarting, your webhook URL is: `https://<your-domain>/line/webhook`
@@ -228,17 +228,17 @@ spec:
       - `/models` - View available models
       - `/model <model-id>` - Switch model for this conversation only (does not affect other conversations)
 
-      **Change default model for all new conversations** (via Web UI Settings):
+      **Change default model for all new conversations** (via Control UI Settings):
       - Go to Settings → Agents → Default model
       - **Tip:** Set a low-cost model as default (e.g., `gemini-2.5-flash-lite`, `gpt-5-nano`). If a model becomes unavailable, use `/new` to start a new conversation with the default model.
 
-      **Add AI providers** (via Web UI Settings or environment variables):
+      **Add AI providers** (via Control UI Settings or environment variables):
       - Add API keys for other AI providers (e.g., Anthropic, OpenAI)
       - See: https://docs.openclaw.ai/providers
 
       **Modify Zeabur AI Hub models** (via Zeabur dashboard):
       - Go to **Settings** → **Configs** → Edit `/opt/openclaw/providers/zeabur-ai-hub.json5`, then restart the service (changes are synced on startup)
-      - Older versions (without commands): Edit `/home/node/.openclaw/openclaw.json` via **Files** tab or Web UI Settings. Add the following to `models.providers.zeabur-ai.models` array:
+      - Older versions (without commands): Edit `/home/node/.openclaw/openclaw.json` via **Files** tab or Control UI Settings. Add the following to `models.providers.zeabur-ai.models` array:
       ```json
       { "id": "gpt-5.2", "name": "GPT-5.2", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.75, "output": 14, "cacheRead": 0.18, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
       { "id": "gpt-5.1", "name": "GPT-5.1", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.25, "output": 10, "cacheRead": 0.13, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
@@ -249,7 +249,7 @@ spec:
       ```
 
       ## Security Note
-      The Web UI is a management tool for configuration, monitoring, and chat — messaging platforms (Telegram, WhatsApp, Discord, etc.) work independently without it. If you only use platforms that don't need inbound webhooks (Telegram, WhatsApp, Discord, Signal, iMessage), you can remove the domain binding in the Zeabur dashboard (**Networking** tab) to avoid exposing the gateway to the public internet. All management tasks can also be done via CLI in the Zeabur **Command** terminal (`openclaw config set`, `openclaw models set`, etc.). For private Web UI access without a public domain, see [Tailscale Private Network Access](#tailscale-private-network-access-optional). You can also set `OPENCLAW_GATEWAY_BIND` to `loopback` in the **Variables** tab (restart the service after) to restrict the gateway to local connections only.
+      The Control UI is a management tool for configuration, monitoring, and chat — messaging platforms (Telegram, WhatsApp, Discord, etc.) work independently without it. If you only use platforms that don't need inbound webhooks (Telegram, WhatsApp, Discord, Signal, iMessage), you can remove the domain binding in the Zeabur dashboard (**Networking** tab) to avoid exposing the gateway to the public internet. All management tasks can also be done via CLI in the Zeabur **Command** terminal (`openclaw config set`, `openclaw models set`, etc.). For private Control UI access without a public domain, see [Tailscale Private Network Access](#tailscale-private-network-access-optional). You can also set `OPENCLAW_GATEWAY_BIND` to `loopback` in the **Variables** tab (restart the service after) to restrict the gateway to local connections only.
 
       Platforms that **require** a public domain (inbound webhook): LINE, Slack, Google Chat.
 
@@ -323,15 +323,13 @@ spec:
       > 💡 The startup script automatically migrates your config on each boot — new settings (like `trustedProxies`, `dangerouslyDisableDeviceAuth`) are added if missing. Your existing settings are preserved.
 
       ### "device identity required"
-      This means the Web UI has not been paired with a Gateway Token yet. Fix:
-      - **Option 1:** In Zeabur Dashboard **Instructions** tab, copy the **Web UI (with Token)** URL and open it in your browser
-      - **Option 2:** Open the Web UI **Overview** page and enter the Gateway Token there
-
-      You can find the Gateway Token in the Zeabur Dashboard **Instructions** tab or **Environment Variables** (`OPENCLAW_GATEWAY_TOKEN`).
+      This means the Control UI has not been authenticated with a Gateway Token yet. Fix:
+      - Open the service URL — the login page will appear. Paste the **Gateway Token** and click **Connect**.
+      - You can find the Gateway Token in the Zeabur Dashboard **Instructions** tab or **Environment Variables** (`OPENCLAW_GATEWAY_TOKEN`).
 
       ### "disconnected (1008): pairing required"
       This means your device (browser/app) has not been paired with the gateway yet. To pair:
-      1. Open the Web UI and complete the Gateway Token authentication (see above)
+      1. Open the Control UI and complete the Gateway Token authentication (see above)
       2. Open **Command** in Zeabur dashboard to access the terminal, then run:
          - `openclaw devices list` — view pending pairing requests and find the `requestId`
          - `openclaw devices approve <requestId>` — approve the device
@@ -373,7 +371,7 @@ spec:
       **Step 3: Install Tailscale on your device**
       Install [Tailscale](https://tailscale.com/download) on the device you want to access OpenClaw from (macOS, Windows, iOS, Android, Linux), and log in with the same Tailscale account used to create the Auth Key.
 
-      **Step 4: First login to Web UI**
+      **Step 4: First login to Control UI**
       Once started, open in your browser (must be on the same tailnet):
       ```
       https://<TS_HOSTNAME>.<your-tailnet>.ts.net
@@ -382,7 +380,7 @@ spec:
 
       Log in using either method:
       - Append token to URL: `https://<TS_HOSTNAME>.<your-tailnet>.ts.net?token=<GATEWAY_TOKEN>`
-      - Or enter the Gateway Token on the Web UI **Overview** page
+      - Or enter the Gateway Token on the Control UI **Overview** page
 
       You can find the Gateway Token in the Zeabur dashboard **Instructions** tab or **Environment Variables** (`OPENCLAW_GATEWAY_TOKEN`).
 
@@ -391,7 +389,7 @@ spec:
       2. Open OpenClaw app → **Settings → General** → select **Remote** mode
       3. Set Transport to **Direct (ws/wss)**
       4. Set Gateway URL to `wss://<TS_HOSTNAME>.<your-tailnet>.ts.net`
-      5. First connection requires pairing approval — go to the Web UI **Nodes** page and click approve
+      5. First connection requires pairing approval — go to the Control UI **Nodes** page and click approve
 
       For iOS and Android setup, see the [official documentation](https://docs.openclaw.ai/platforms).
 
@@ -401,8 +399,8 @@ spec:
       ## Zeabur-Specific Configuration
       This template pre-configures the following settings for Zeabur's cloud environment:
 
-      - **`gateway.trustedProxies`**: Set to `["10.0.0.0/8", "172.16.0.0/12"]` so the gateway correctly identifies client IPs behind Zeabur's reverse proxy. Without this, the Web UI may show "device identity required" errors.
-      - **`dangerouslyDisableDeviceAuth`**: Disables Web UI device pairing (device pairing is designed for local networks; cloud deployments use Gateway Token authentication instead).
+      - **`gateway.trustedProxies`**: Set to `["10.0.0.0/8", "172.16.0.0/12"]` so the gateway correctly identifies client IPs behind Zeabur's reverse proxy. Without this, the Control UI may show "device identity required" errors.
+      - **`dangerouslyDisableDeviceAuth`**: Disables Control UI device pairing (device pairing is designed for local networks; cloud deployments use Gateway Token authentication instead).
       - **`/usr/local/bin` symlinks**: The `openclaw`, `backup`, and `restore` commands are symlinked to `/usr/local/bin` so they work in Zeabur's **Command** terminal.
       - **`OPENCLAW_DISABLE_BONJOUR=1`**: Disables mDNS/Bonjour because Zeabur container hostnames can exceed the 63-byte DNS label limit. mDNS is only used for local network discovery and is not needed in cloud environments.
       - **`OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true`**: Fixes Telegram connection issues in containerized environments (required for image versions `2026.2.17` and later).
@@ -417,6 +415,10 @@ spec:
       - Upgrade image to `2026.3.12` — Control UI dashboard v2, GPT-5.4/Claude fast mode, Ollama/vLLM/SGLang provider plugins, K8s deployment docs, 20+ security fixes (WebSocket origin validation, exec approval hardening, plugin auto-load lockdown), cron delivery tightening with `openclaw doctor --fix` migration, 60+ new features and 100+ fixes across 4 releases (2026.3.9–2026.3.12)
       - ⚠️ Breaking: cron delivery tightened — run `openclaw doctor --fix` in **Command** after upgrading to migrate legacy cron storage
       - Add `TZ` environment variable documentation for container timezone configuration
+      - Rename "Web UI" to "Control UI" across all documentation
+      - Remove channel env var auto-sync startup script (channel plugins now configured manually via Settings)
+      - Remove gateway config migration startup script (initial config already includes all required settings)
+      - Simplify login flow: remove "Web UI (with token)" URL, use Control UI login page with Gateway Token instead
 
       **2026/3/10**
       - Add Homebrew pre-installation: `touch /.dockerenv` and Homebrew install script now run on every container startup, enabling `brew` package management inside the container
@@ -480,7 +482,7 @@ spec:
       - Fix `gpt-oss-120b`, `llama-3.3-70b`, `qwen-3-32` HTTP 500: add `supportsStore: false` compat flag
       - Fix `gpt-oss-120b` reasoning flag (set to `true`)
       - Restore script now supports `.zip` format (Zeabur backup service)
-      - Sync channel env vars (`TELEGRAM_BOT_TOKEN`, `DISCORD_BOT_TOKEN`, `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`, `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_CHANNEL_SECRET`) into config at startup
+
 
       **2026/2/7**
       - Fix cron proactive notifications not delivered: auto-detect heartbeat target from configured channels at startup
@@ -498,7 +500,7 @@ spec:
       - Add backup & restore section with Zeabur backup service
       - Add tip to backup after initial setup
       - Remove Google Gemini CLI patch (fixed upstream)
-      - Remove ANTHROPIC_API_KEY and OPENAI_API_KEY from deployment variables to prevent OpenClaw from detecting empty API keys and failing (can be configured later via Web UI or environment variables)
+      - Remove ANTHROPIC_API_KEY and OPENAI_API_KEY from deployment variables to prevent OpenClaw from detecting empty API keys and failing (can be configured later via Control UI or environment variables)
 
     services:
       - name: OpenClaw
@@ -666,55 +668,11 @@ spec:
                         }
                       } catch (err) {
                         console.error('Warning: Failed to update config for Zeabur AI Hub:', err.message);
-                        console.error('You may need to configure the provider manually via Web UI.');
+                        console.error('You may need to configure the provider manually via Control UI.');
                       }
                     "
                   fi
 
-                  # Ensure gateway.trustedProxies is set for Zeabur reverse proxy
-                  node -e "
-                    const fs = require('fs');
-                    const JSON5 = require('json5');
-                    const configPath = '$CONFIG_FILE';
-                    try {
-                      const config = JSON5.parse(fs.readFileSync(configPath, 'utf8'));
-                      if (!config.gateway) config.gateway = {};
-                      let changed = false;
-                      if (!config.gateway.auth) config.gateway.auth = {};
-                      if (!config.gateway.auth.mode) {
-                        config.gateway.auth.mode = 'token';
-                        changed = true;
-                        console.log('Set gateway.auth.mode to token.');
-                      }
-                      if (!config.gateway.trustedProxies) {
-                        config.gateway.trustedProxies = ['10.0.0.0/8', '172.16.0.0/12'];
-                        changed = true;
-                        console.log('Added gateway.trustedProxies for Zeabur reverse proxy.');
-                      }
-                      if (!config.gateway.controlUi) config.gateway.controlUi = {};
-                      if (!config.gateway.controlUi.dangerouslyDisableDeviceAuth) {
-                        config.gateway.controlUi.dangerouslyDisableDeviceAuth = true;
-                        changed = true;
-                        console.log('Enabled dangerouslyDisableDeviceAuth for cloud deployment.');
-                      }
-                      if (!config.gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback) {
-                        config.gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback = true;
-                        changed = true;
-                      }
-                      if (!config.gateway.controlUi.allowInsecureAuth) {
-                        config.gateway.controlUi.allowInsecureAuth = true;
-                        changed = true;
-                      }
-                      if (changed) {
-                        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-                        console.log('Gateway config updated.');
-                      } else {
-                        console.log('Gateway config already up to date.');
-                      }
-                    } catch (err) {
-                      console.error('Warning: Failed to update gateway config:', err.message);
-                    }
-                  "
                   chmod 600 "$CONFIG_FILE" 2>/dev/null || true
                 fi
 
@@ -728,65 +686,6 @@ spec:
                     cp /opt/openclaw/skills/zeabur-image-gen/scripts/generate_image.mjs "$SKILL_DIR/scripts/"
                     echo "Installed zeabur-image-gen skill"
                   fi
-                fi
-
-                # Sync channel env vars into config file so they're visible to config-based patches
-                if [ -f "$CONFIG_FILE" ]; then
-                  node -e "
-                    const fs = require('fs');
-                    const JSON5 = require('json5');
-                    const configPath = '$CONFIG_FILE';
-                    const envMap = [
-                      { env: 'TELEGRAM_BOT_TOKEN',        channel: 'telegram', key: 'botToken' },
-                      { env: 'DISCORD_BOT_TOKEN',         channel: 'discord',  key: 'token' },
-                      { env: 'SLACK_BOT_TOKEN',           channel: 'slack',    key: 'botToken' },
-                      { env: 'SLACK_APP_TOKEN',           channel: 'slack',    key: 'appToken' },
-                      { env: 'LINE_CHANNEL_ACCESS_TOKEN', channel: 'line',     key: 'channelAccessToken' },
-                      { env: 'LINE_CHANNEL_SECRET',       channel: 'line',     key: 'channelSecret' },
-                    ];
-                    try {
-                      const config = JSON5.parse(fs.readFileSync(configPath, 'utf8'));
-                      let changed = false;
-                      const enabledPlugins = new Set();
-                      for (const { env, channel, key } of envMap) {
-                        const val = process.env[env];
-                        if (!val) continue;
-                        if (!config.channels) config.channels = {};
-                        if (!config.channels[channel]) config.channels[channel] = {};
-                        if (config.channels[channel][key]) {
-                          console.log(env + ': already set in config, skipping');
-                        } else {
-                          config.channels[channel][key] = val;
-                          changed = true;
-                          console.log(env + ' -> channels.' + channel + '.' + key);
-                        }
-                        enabledPlugins.add(channel);
-                      }
-                      // Auto-enable bundled channel plugins (they are disabled by default)
-                      // Respect explicit enabled:false (user intentionally disabled the plugin)
-                      for (const pluginId of enabledPlugins) {
-                        if (!config.plugins) config.plugins = {};
-                        if (!config.plugins.entries) config.plugins.entries = {};
-                        const entry = config.plugins.entries[pluginId];
-                        if (entry && entry.enabled === false) {
-                          console.log('Plugin ' + pluginId + ': explicitly disabled, skipping');
-                          continue;
-                        }
-                        if (!entry) config.plugins.entries[pluginId] = {};
-                        if (config.plugins.entries[pluginId].enabled !== true) {
-                          config.plugins.entries[pluginId].enabled = true;
-                          changed = true;
-                          console.log('Auto-enabled plugin: ' + pluginId);
-                        }
-                      }
-                      if (changed) {
-                        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-                        console.log('Channel config updated from env vars');
-                      }
-                    } catch (err) {
-                      console.error('Warning: Failed to sync env vars to config:', err.message);
-                    }
-                  "
                 fi
 
                 # Patch heartbeat config: auto-detect channel and set explicit delivery target
@@ -1497,9 +1396,6 @@ spec:
             OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY:
               default: "true"
           instructions:
-            - type: TEXT
-              title: Web UI (with token)
-              content: ${ZEABUR_WEB_URL}?token=${OPENCLAW_GATEWAY_TOKEN}
             - type: PASSWORD
               title: Gateway Token
               content: ${OPENCLAW_GATEWAY_TOKEN}
@@ -1544,10 +1440,10 @@ localization:
       - **Devbox**：如需多語言程式執行（Python、Go、Rust、C/C++），請將 [Devbox 模板](https://zeabur.com/templates/ZBVZNH) 部署到同一個專案
 
       ## 使用方式
-      1. 部署完成後，在**使用說明**頁籤複製「Web UI (with token)」網址，貼到瀏覽器開啟
+      1. 部署完成後，從**網路**頁籤開啟服務網址。在登入頁面貼上 **Gateway Token**（可在**使用說明**頁籤或**環境變數** → `OPENCLAW_GATEWAY_TOKEN` 中找到），點擊 **Connect**
       2. **設定 AI 模型**（二擇一）：
          - **Zeabur AI Hub**（預設模型：`glm-4.7-flash`）：若部署時已輸入 API Key，直接前往步驟 3。也可之後在 Zeabur 控制台的**變數**頁籤新增 `ZEABUR_AI_HUB_API_KEY`（新增後記得重新啟動服務）。
-         - **其他供應商**（Anthropic、OpenAI 等）：若未輸入 Zeabur AI Hub API Key，預設模型為 `anthropic/claude-opus-4-6`。前往 Web UI Settings 或環境變數新增 API 金鑰。詳情請見：https://docs.openclaw.ai/providers/anthropic
+         - **其他供應商**（Anthropic、OpenAI 等）：若未輸入 Zeabur AI Hub API Key，預設模型為 `anthropic/claude-opus-4-6`。前往 Control UI Settings 或環境變數新增 API 金鑰。詳情請見：https://docs.openclaw.ai/providers/anthropic
       3. 前往 **Chat** 頁面測試 AI 模型是否正常運作
       4. （選擇性）設定 Telegram、WhatsApp 等通訊平台
 
@@ -1556,9 +1452,9 @@ localization:
       ### 模型切換與 Failover
       此模板內建 failover 模型，當主模型不可用時會自動切換。預設鏈：`glm-4.7-flash` → `grok-4-fast-non-reasoning` → `minimax-m2.5` → `kimi-k2.5` → `qwen-3-235b` → `gpt-5-mini`。
 
-      可透過 **Web UI Chat** 或 Zeabur 控制台的**指令**管理模型。
+      可透過 **Control UI Chat** 或 Zeabur 控制台的**指令**管理模型。
 
-      **透過 Web UI Chat** — 在對話框直接輸入 slash command：
+      **透過 Control UI Chat** — 在對話框直接輸入 slash command：
       - `/model zeabur-ai/glm-4.7-flash` — 切換主模型
       - `/model` — 查看目前模型
       - `/models` — 列出模型供應商
@@ -1597,7 +1493,7 @@ localization:
       - `GOOGLE_API_KEY` — Gemini 模型
 
       新增後重新啟動服務，然後切換模型：
-      - Web UI Chat：`/model anthropic/claude-opus-4-6`
+      - Control UI Chat：`/model anthropic/claude-opus-4-6`
       - 指令：`openclaw models set anthropic/claude-opus-4-6`
 
       **方法二：Auth token** — 在 Zeabur 控制台開啟**指令**：
@@ -1632,7 +1528,7 @@ localization:
       1. 前往 Zeabur 控制台的服務**環境變數**頁籤
       2. 新增 `TELEGRAM_BOT_TOKEN` 並填入您的 Token
       3. 重新啟動服務
-      4. 重啟後 Telegram 外掛會自動啟用。若機器人未啟動，請前往 **Settings → Config** 確認外掛已啟用：`"plugins": { "entries": { "telegram": { "enabled": true } } }`。如需停用，將 `enabled` 設為 `false`。
+      4. 重啟後，請前往 **Settings → Config** 啟用 Telegram 外掛：`"plugins": { "entries": { "telegram": { "enabled": true } } }`。如需停用，將 `enabled` 設為 `false`。
 
       **配對您的 Telegram 帳號：**
       1. 在 Telegram 向您的機器人發送 `/start`
@@ -1645,7 +1541,7 @@ localization:
 
       ## WhatsApp 設定
       **步驟 1：設定 WhatsApp 頻道**
-      透過 OpenClaw Web UI（Settings → Config）或貼到對話框新增以下設定：
+      透過 OpenClaw Control UI（Settings → Config）或貼到對話框新增以下設定：
       ```json
       "channels": {
         "whatsapp": {
@@ -1677,7 +1573,7 @@ localization:
       2. 新增 `LINE_CHANNEL_ACCESS_TOKEN` 並填入您的 Channel access token
       3. 新增 `LINE_CHANNEL_SECRET` 並填入您的 Channel secret
       4. 重新啟動服務
-      5. 重啟後 LINE 外掛會自動啟用。若機器人未啟動，請前往 **Settings → Config** 確認外掛已啟用：`"plugins": { "entries": { "line": { "enabled": true } } }`
+      5. 重啟後，請前往 **Settings → Config** 啟用 LINE 外掛：`"plugins": { "entries": { "line": { "enabled": true } } }`
 
       **設定 Webhook：**
       1. 重啟後，您的 Webhook URL 為：`https://<your-domain>/line/webhook`
@@ -1711,17 +1607,17 @@ localization:
       - `/models` - 查看可用模型
       - `/model <model-id>` - 僅在本次對話中切換模型（不影響其他對話）
 
-      **修改所有新對話的預設模型**（透過 Web UI Settings）：
+      **修改所有新對話的預設模型**（透過 Control UI Settings）：
       - 前往 Settings → Agents → Default model
       - **建議：** 將低費用的模型設為預設（如 `gemini-2.5-flash-lite`、`gpt-5-nano`）。當模型無法使用時，可用 `/new` 開啟新對話，自動切回預設模型。
 
-      **新增 AI 供應商**（透過 Web UI Settings 或環境變數）：
+      **新增 AI 供應商**（透過 Control UI Settings 或環境變數）：
       - 新增其他 AI 供應商的 API 金鑰（如 Anthropic、OpenAI 等）
       - 請見：https://docs.openclaw.ai/providers
 
       **修改 Zeabur AI Hub 模型**（透過 Zeabur 控制台）：
       - 前往**設定** → **設定檔** → 編輯 `/opt/openclaw/providers/zeabur-ai-hub.json5`，然後重新啟動服務（變更會在啟動時同步）
-      - 舊版（沒有這些指令）：透過**檔案**頁籤或 Web UI Settings 編輯 `/home/node/.openclaw/openclaw.json`，將以下內容加入 `models.providers.zeabur-ai.models` 陣列：
+      - 舊版（沒有這些指令）：透過**檔案**頁籤或 Control UI Settings 編輯 `/home/node/.openclaw/openclaw.json`，將以下內容加入 `models.providers.zeabur-ai.models` 陣列：
       ```json
       { "id": "gpt-5.2", "name": "GPT-5.2", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.75, "output": 14, "cacheRead": 0.18, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
       { "id": "gpt-5.1", "name": "GPT-5.1", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.25, "output": 10, "cacheRead": 0.13, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
@@ -1732,7 +1628,7 @@ localization:
       ```
 
       ## 安全提示
-      Web UI 是用於設定、監控與聊天的管理工具 — 訊息平台（Telegram、WhatsApp、Discord 等）不需要 Web UI 也能獨立運作。如果你只使用不需要 inbound webhook 的平台（Telegram、WhatsApp、Discord、Signal、iMessage），可以在 Zeabur 控制台的**網路**頁籤移除網域綁定，避免將 Gateway 暴露在公網上。所有管理操作也可以在 Zeabur 的**指令**終端透過 CLI 完成（`openclaw config set`、`openclaw models set` 等）。若需在不綁定公網網域的情況下存取 Web UI，請參考 [Tailscale 私有網路存取](#tailscale-私有網路存取選用)。也可以在**變數**頁籤將 `OPENCLAW_GATEWAY_BIND` 設為 `loopback`（設定後重新啟動服務），進一步限制 Gateway 只接受本地連線。
+      Control UI 是用於設定、監控與聊天的管理工具 — 訊息平台（Telegram、WhatsApp、Discord 等）不需要 Control UI 也能獨立運作。如果你只使用不需要 inbound webhook 的平台（Telegram、WhatsApp、Discord、Signal、iMessage），可以在 Zeabur 控制台的**網路**頁籤移除網域綁定，避免將 Gateway 暴露在公網上。所有管理操作也可以在 Zeabur 的**指令**終端透過 CLI 完成（`openclaw config set`、`openclaw models set` 等）。若需在不綁定公網網域的情況下存取 Control UI，請參考 [Tailscale 私有網路存取](#tailscale-私有網路存取選用)。也可以在**變數**頁籤將 `OPENCLAW_GATEWAY_BIND` 設為 `loopback`（設定後重新啟動服務），進一步限制 Gateway 只接受本地連線。
 
       **需要**公網網域（inbound webhook）的平台：LINE、Slack、Google Chat。
 
@@ -1806,15 +1702,15 @@ localization:
       > 💡 啟動腳本會在每次開機時自動遷移設定 — 若缺少新設定（如 `trustedProxies`、`dangerouslyDisableDeviceAuth`）會自動補上。既有設定不會被覆蓋。
 
       ### "device identity required"
-      表示 Web UI 尚未與 Gateway Token 配對。修復方式：
-      - **方法 1：** 在 Zeabur Dashboard 的**說明**頁籤，複製 **Web UI (with Token)** 網址並在瀏覽器開啟
-      - **方法 2：** 開啟 Web UI 的 **Overview** 頁面，輸入 Gateway Token
+      表示 Control UI 尚未通過 Gateway Token 驗證。修復方式：
+      - 開啟服務網址 — 登入頁面會自動出現。貼上 **Gateway Token** 並點擊 **Connect**。
+      - Gateway Token 可在 Zeabur Dashboard 的**使用說明**頁籤或**環境變數**（`OPENCLAW_GATEWAY_TOKEN`）中找到。
 
       Gateway Token 可在 Zeabur Dashboard 的**說明**頁籤或**環境變數**（`OPENCLAW_GATEWAY_TOKEN`）中找到。
 
       ### "disconnected (1008): pairing required"
       表示您的裝置（瀏覽器/應用程式）尚未與 Gateway 完成配對。配對方式：
-      1. 開啟 Web UI 並完成 Gateway Token 認證（參見上方說明）
+      1. 開啟 Control UI 並完成 Gateway Token 認證（參見上方說明）
       2. 在 Zeabur 控制台開啟**指令**進入終端機，執行：
          - `openclaw devices list` — 查看待配對的請求，找到 `requestId`
          - `openclaw devices approve <requestId>` — 核准該裝置
@@ -1856,7 +1752,7 @@ localization:
       **步驟 3：在本機安裝 Tailscale**
       在您要存取 OpenClaw 的裝置上安裝 [Tailscale](https://tailscale.com/download)（macOS、Windows、iOS、Android、Linux），並使用建立 Auth Key 時的同一個 Tailscale 帳號登入。
 
-      **步驟 4：首次登入 Web UI**
+      **步驟 4：首次登入 Control UI**
       啟動完成後，在瀏覽器開啟（需在同一個 tailnet 的裝置上）：
       ```
       https://<TS_HOSTNAME>.<您的tailnet>.ts.net
@@ -1865,7 +1761,7 @@ localization:
 
       使用以下任一方式登入：
       - 在網址後加上 token：`https://<TS_HOSTNAME>.<您的tailnet>.ts.net?token=<GATEWAY_TOKEN>`
-      - 或在 Web UI 的 **Overview** 頁面輸入 Gateway Token
+      - 或在 Control UI 的 **Overview** 頁面輸入 Gateway Token
 
       Gateway Token 可在 Zeabur 控制台的**使用說明**頁籤或**環境變數**中找到（`OPENCLAW_GATEWAY_TOKEN`）。
 
@@ -1874,7 +1770,7 @@ localization:
       2. 開啟 OpenClaw app → **Settings → General** → 選擇 **Remote** 模式
       3. Transport 選擇 **Direct (ws/wss)**
       4. Gateway URL 填入 `wss://<TS_HOSTNAME>.<您的tailnet>.ts.net`
-      5. 裝置首次連線時需要配對核准 — 在 Web UI 的 **Nodes** 頁面點擊 approve
+      5. 裝置首次連線時需要配對核准 — 在 Control UI 的 **Nodes** 頁面點擊 approve
 
       iOS 和 Android 的設定請參閱[官方文件](https://docs.openclaw.ai/platforms)。
 
@@ -1884,8 +1780,8 @@ localization:
       ## Zeabur 專屬設定
       此模板針對 Zeabur 雲端環境預先配置了以下設定：
 
-      - **`gateway.trustedProxies`**：設為 `["10.0.0.0/8", "172.16.0.0/12"]`，讓 Gateway 能正確辨識 Zeabur 反向代理後的用戶端 IP。未設定時，Web UI 可能會出現「device identity required」錯誤。
-      - **`dangerouslyDisableDeviceAuth`**：停用 Web UI 裝置配對（裝置配對是為區域網路設計的功能，雲端部署改用 Gateway Token 驗證）。
+      - **`gateway.trustedProxies`**：設為 `["10.0.0.0/8", "172.16.0.0/12"]`，讓 Gateway 能正確辨識 Zeabur 反向代理後的用戶端 IP。未設定時，Control UI 可能會出現「device identity required」錯誤。
+      - **`dangerouslyDisableDeviceAuth`**：停用 Control UI 裝置配對（裝置配對是為區域網路設計的功能，雲端部署改用 Gateway Token 驗證）。
       - **`/usr/local/bin` 符號連結**：`openclaw`、`backup`、`restore` 指令已建立符號連結至 `/usr/local/bin`，可直接在 Zeabur 的**命令**終端中使用。
       - **`OPENCLAW_DISABLE_BONJOUR=1`**：停用 mDNS/Bonjour，因為 Zeabur 容器主機名稱可能超過 63 bytes 的 DNS 標籤限制。mDNS 僅用於區域網路發現，雲端環境中不需要。
       - **`OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true`**：修復容器環境中的 Telegram 連線問題（`2026.2.17` 及之後的映像檔版本需要）。
@@ -1900,6 +1796,10 @@ localization:
       - 升級映像檔至 `2026.3.12` — Control UI 儀表板 v2、GPT-5.4/Claude 快速模式、Ollama/vLLM/SGLang provider 外掛、K8s 部署文件、20+ 安全修復（WebSocket origin 驗證、exec approval 強化、plugin 自動載入鎖定）、cron delivery 收緊並需要 `openclaw doctor --fix` 遷移，共 60+ 新功能及 100+ 修復，涵蓋 4 個版本（2026.3.9–2026.3.12）
       - ⚠️ 重大變更：cron delivery 已收緊 — 升級後請在**指令**中執行 `openclaw doctor --fix` 以遷移舊版 cron 儲存格式
       - 新增 `TZ` 環境變數文件，用於容器時區設定
+      - 全部文件中「Web UI」正名為「Control UI」
+      - 移除啟動腳本中的頻道環境變數自動同步（頻道外掛改為透過 Settings 手動設定）
+      - 移除啟動腳本中的 gateway config 遷移（初始設定已包含所有必要欄位）
+      - 簡化登入流程：移除「Web UI (with token)」網址，改用 Control UI 登入頁面輸入 Gateway Token
 
       **2026/3/10**
       - Add Homebrew pre-installation: `touch /.dockerenv` and Homebrew install script now run on every container startup, enabling `brew` package management inside the container
@@ -1963,7 +1863,7 @@ localization:
       - 修復 `gpt-oss-120b`、`llama-3.3-70b`、`qwen-3-32` HTTP 500：加入 `supportsStore: false` 相容性設定
       - 修正 `gpt-oss-120b` reasoning 標記（設為 `true`）
       - 還原腳本支援 `.zip` 格式（Zeabur 備份服務）
-      - 啟動時將頻道環境變數（`TELEGRAM_BOT_TOKEN`、`DISCORD_BOT_TOKEN`、`SLACK_BOT_TOKEN`、`SLACK_APP_TOKEN`、`LINE_CHANNEL_ACCESS_TOKEN`、`LINE_CHANNEL_SECRET`）同步寫入設定檔
+
 
       **2026/2/7**
       - 修復 cron 排程無法主動送出通知：啟動時自動偵測已設定的頻道作為 heartbeat 投遞目標
@@ -1981,7 +1881,7 @@ localization:
       - 新增備份與還原區塊，支援 Zeabur 備份服務
       - 新增初始設定完成後備份提醒
       - 移除 Google Gemini CLI patch（上游已修復）
-      - 移除部署時的 ANTHROPIC_API_KEY 和 OPENAI_API_KEY 變數，避免 OpenClaw 偵測到空的 API Key 然後執行失敗（可之後透過 Web UI 或環境變數設定）
+      - 移除部署時的 ANTHROPIC_API_KEY 和 OPENAI_API_KEY 變數，避免 OpenClaw 偵測到空的 API Key 然後執行失敗（可之後透過 Control UI 或環境變數設定）
 
   zh-CN:
     name: OpenClaw 🦞
@@ -2021,10 +1921,10 @@ localization:
       - **Devbox**：如需多语言程序执行（Python、Go、Rust、C/C++），请将 [Devbox 模板](https://zeabur.com/templates/ZBVZNH) 部署到同一个项目
 
       ## 使用方式
-      1. 部署完成后，在**使用说明**页签复制「Web UI (with token)」网址，贴到浏览器打开
+      1. 部署完成后，从**网络**页签打开服务网址。在登录页面粘贴 **Gateway Token**（可在**使用说明**页签或**环境变量** → `OPENCLAW_GATEWAY_TOKEN` 中找到），点击 **Connect**
       2. **设置 AI 模型**（二选一）：
          - **Zeabur AI Hub**（默认模型：`glm-4.7-flash`）：若部署时已输入 API Key，直接前往步骤 3。也可之后在 Zeabur 控制台的**变量**页签添加 `ZEABUR_AI_HUB_API_KEY`（添加后记得重新启动服务）。
-         - **其他供应商**（Anthropic、OpenAI 等）：若未输入 Zeabur AI Hub API Key，默认模型为 `anthropic/claude-opus-4-6`。前往 Web UI Settings 或环境变量添加 API 密钥。详情请见：https://docs.openclaw.ai/providers/anthropic
+         - **其他供应商**（Anthropic、OpenAI 等）：若未输入 Zeabur AI Hub API Key，默认模型为 `anthropic/claude-opus-4-6`。前往 Control UI Settings 或环境变量添加 API 密钥。详情请见：https://docs.openclaw.ai/providers/anthropic
       3. 前往 **Chat** 页面测试 AI 模型是否正常运作
       4. （可选）设置 Telegram、WhatsApp 等通讯平台
 
@@ -2033,9 +1933,9 @@ localization:
       ### 模型切换与 Failover
       此模板内建 failover 模型，当主模型不可用时会自动切换。默认链：`glm-4.7-flash` → `grok-4-fast-non-reasoning` → `minimax-m2.5` → `kimi-k2.5` → `qwen-3-235b` → `gpt-5-mini`。
 
-      可通过 **Web UI Chat** 或 Zeabur 控制台的**命令**管理模型。
+      可通过 **Control UI Chat** 或 Zeabur 控制台的**命令**管理模型。
 
-      **通过 Web UI Chat** — 在对话框直接输入 slash command：
+      **通过 Control UI Chat** — 在对话框直接输入 slash command：
       - `/model zeabur-ai/glm-4.7-flash` — 切换主模型
       - `/model` — 查看当前模型
       - `/models` — 列出模型供应商
@@ -2074,7 +1974,7 @@ localization:
       - `GOOGLE_API_KEY` — Gemini 模型
 
       添加后重新启动服务，然后切换模型：
-      - Web UI Chat：`/model anthropic/claude-opus-4-6`
+      - Control UI Chat：`/model anthropic/claude-opus-4-6`
       - 命令：`openclaw models set anthropic/claude-opus-4-6`
 
       **方法二：Auth token** — 在 Zeabur 控制台打开**命令**：
@@ -2109,7 +2009,7 @@ localization:
       1. 前往 Zeabur 控制台的服务**环境变量**页签
       2. 添加 `TELEGRAM_BOT_TOKEN` 并填入您的 Token
       3. 重新启动服务
-      4. 重启后 Telegram 插件会自动启用。若机器人未启动，请前往 **Settings → Config** 确认插件已启用：`"plugins": { "entries": { "telegram": { "enabled": true } } }`。如需停用，将 `enabled` 设为 `false`。
+      4. 重启后，请前往 **Settings → Config** 启用 Telegram 插件：`"plugins": { "entries": { "telegram": { "enabled": true } } }`。如需停用，将 `enabled` 设为 `false`。
 
       **配对您的 Telegram 账号：**
       1. 在 Telegram 向您的机器人发送 `/start`
@@ -2122,7 +2022,7 @@ localization:
 
       ## WhatsApp 设置
       **步骤 1：配置 WhatsApp 频道**
-      通过 OpenClaw Web UI（Settings → Config）或贴到对话框添加以下配置：
+      通过 OpenClaw Control UI（Settings → Config）或贴到对话框添加以下配置：
       ```json
       "channels": {
         "whatsapp": {
@@ -2154,7 +2054,7 @@ localization:
       2. 添加 `LINE_CHANNEL_ACCESS_TOKEN` 并填入您的 Channel access token
       3. 添加 `LINE_CHANNEL_SECRET` 并填入您的 Channel secret
       4. 重新启动服务
-      5. 重启后 LINE 插件会自动启用。若机器人未启动，请前往 **Settings → Config** 确认插件已启用：`"plugins": { "entries": { "line": { "enabled": true } } }`
+      5. 重启后，请前往 **Settings → Config** 启用 LINE 插件：`"plugins": { "entries": { "line": { "enabled": true } } }`
 
       **设置 Webhook：**
       1. 重启后，您的 Webhook URL 为：`https://<your-domain>/line/webhook`
@@ -2188,17 +2088,17 @@ localization:
       - `/models` - 查看可用模型
       - `/model <model-id>` - 仅在本次对话中切换模型（不影响其他对话）
 
-      **修改所有新对话的默认模型**（通过 Web UI Settings）：
+      **修改所有新对话的默认模型**（通过 Control UI Settings）：
       - 前往 Settings → Agents → Default model
       - **建议：** 将低费用的模型设为默认（如 `gemini-2.5-flash-lite`、`gpt-5-nano`）。当模型无法使用时，可用 `/new` 开启新对话，自动切回默认模型。
 
-      **添加 AI 供应商**（通过 Web UI Settings 或环境变量）：
+      **添加 AI 供应商**（通过 Control UI Settings 或环境变量）：
       - 添加其他 AI 供应商的 API 密钥（如 Anthropic、OpenAI 等）
       - 请见：https://docs.openclaw.ai/providers
 
       **修改 Zeabur AI Hub 模型**（通过 Zeabur 控制台）：
       - 前往**设置** → **配置文件** → 编辑 `/opt/openclaw/providers/zeabur-ai-hub.json5`，然后重新启动服务（变更会在启动时同步）
-      - 旧版（没有这些命令）：通过**文件**页签或 Web UI Settings 编辑 `/home/node/.openclaw/openclaw.json`，将以下内容加入 `models.providers.zeabur-ai.models` 数组：
+      - 旧版（没有这些命令）：通过**文件**页签或 Control UI Settings 编辑 `/home/node/.openclaw/openclaw.json`，将以下内容加入 `models.providers.zeabur-ai.models` 数组：
       ```json
       { "id": "gpt-5.2", "name": "GPT-5.2", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.75, "output": 14, "cacheRead": 0.18, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
       { "id": "gpt-5.1", "name": "GPT-5.1", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.25, "output": 10, "cacheRead": 0.13, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
@@ -2209,7 +2109,7 @@ localization:
       ```
 
       ## 安全提示
-      Web UI 是用于配置、监控与聊天的管理工具 — 消息平台（Telegram、WhatsApp、Discord 等）不需要 Web UI 也能独立运作。如果你只使用不需要 inbound webhook 的平台（Telegram、WhatsApp、Discord、Signal、iMessage），可以在 Zeabur 控制台的**网络**页签移除域名绑定，避免将 Gateway 暴露在公网上。所有管理操作也可以在 Zeabur 的**命令**终端通过 CLI 完成（`openclaw config set`、`openclaw models set` 等）。若需在不绑定公网域名的情况下访问 Web UI，请参考 [Tailscale 私有网络访问](#tailscale-私有网络访问可选)。也可以在**变量**页签将 `OPENCLAW_GATEWAY_BIND` 设为 `loopback`（设置后重新启动服务），进一步限制 Gateway 只接受本地连接。
+      Control UI 是用于配置、监控与聊天的管理工具 — 消息平台（Telegram、WhatsApp、Discord 等）不需要 Control UI 也能独立运作。如果你只使用不需要 inbound webhook 的平台（Telegram、WhatsApp、Discord、Signal、iMessage），可以在 Zeabur 控制台的**网络**页签移除域名绑定，避免将 Gateway 暴露在公网上。所有管理操作也可以在 Zeabur 的**命令**终端通过 CLI 完成（`openclaw config set`、`openclaw models set` 等）。若需在不绑定公网域名的情况下访问 Control UI，请参考 [Tailscale 私有网络访问](#tailscale-私有网络访问可选)。也可以在**变量**页签将 `OPENCLAW_GATEWAY_BIND` 设为 `loopback`（设置后重新启动服务），进一步限制 Gateway 只接受本地连接。
 
       **需要**公网域名（inbound webhook）的平台：LINE、Slack、Google Chat。
 
@@ -2283,15 +2183,15 @@ localization:
       > 💡 启动脚本会在每次开机时自动迁移配置 — 若缺少新设置（如 `trustedProxies`、`dangerouslyDisableDeviceAuth`）会自动补上。既有设置不会被覆盖。
 
       ### "device identity required"
-      表示 Web UI 尚未与 Gateway Token 配对。修复方式：
-      - **方法 1：** 在 Zeabur Dashboard 的**说明**页签，复制 **Web UI (with Token)** 网址并在浏览器打开
-      - **方法 2：** 打开 Web UI 的 **Overview** 页面，输入 Gateway Token
+      表示 Control UI 尚未通过 Gateway Token 验证。修复方式：
+      - 打开服务网址 — 登录页面会自动出现。粘贴 **Gateway Token** 并点击 **Connect**。
+      - Gateway Token 可在 Zeabur Dashboard 的**使用说明**页签或**环境变量**（`OPENCLAW_GATEWAY_TOKEN`）中找到。
 
       Gateway Token 可在 Zeabur Dashboard 的**说明**页签或**环境变量**（`OPENCLAW_GATEWAY_TOKEN`）中找到。
 
       ### "disconnected (1008): pairing required"
       表示您的设备（浏览器/应用程序）尚未与 Gateway 完成配对。配对方式：
-      1. 打开 Web UI 并完成 Gateway Token 认证（参见上方说明）
+      1. 打开 Control UI 并完成 Gateway Token 认证（参见上方说明）
       2. 在 Zeabur 控制台打开**命令**进入终端，执行：
          - `openclaw devices list` — 查看待配对的请求，找到 `requestId`
          - `openclaw devices approve <requestId>` — 批准该设备
@@ -2333,7 +2233,7 @@ localization:
       **步骤 3：在本机安装 Tailscale**
       在您要访问 OpenClaw 的设备上安装 [Tailscale](https://tailscale.com/download)（macOS、Windows、iOS、Android、Linux），并使用创建 Auth Key 时的同一个 Tailscale 账号登录。
 
-      **步骤 4：首次登录 Web UI**
+      **步骤 4：首次登录 Control UI**
       启动完成后，在浏览器打开（需在同一个 tailnet 的设备上）：
       ```
       https://<TS_HOSTNAME>.<您的tailnet>.ts.net
@@ -2342,7 +2242,7 @@ localization:
 
       使用以下任一方式登录：
       - 在网址后加上 token：`https://<TS_HOSTNAME>.<您的tailnet>.ts.net?token=<GATEWAY_TOKEN>`
-      - 或在 Web UI 的 **Overview** 页面输入 Gateway Token
+      - 或在 Control UI 的 **Overview** 页面输入 Gateway Token
 
       Gateway Token 可在 Zeabur 控制台的**使用说明**标签页或**环境变量**中找到（`OPENCLAW_GATEWAY_TOKEN`）。
 
@@ -2351,7 +2251,7 @@ localization:
       2. 打开 OpenClaw app → **Settings → General** → 选择 **Remote** 模式
       3. Transport 选择 **Direct (ws/wss)**
       4. Gateway URL 填入 `wss://<TS_HOSTNAME>.<您的tailnet>.ts.net`
-      5. 设备首次连接时需要配对核准 — 在 Web UI 的 **Nodes** 页面点击 approve
+      5. 设备首次连接时需要配对核准 — 在 Control UI 的 **Nodes** 页面点击 approve
 
       iOS 和 Android 的设置请参阅[官方文档](https://docs.openclaw.ai/platforms)。
 
@@ -2361,8 +2261,8 @@ localization:
       ## Zeabur 专属配置
       此模板针对 Zeabur 云端环境预先配置了以下设置：
 
-      - **`gateway.trustedProxies`**：设为 `["10.0.0.0/8", "172.16.0.0/12"]`，让 Gateway 能正确辨识 Zeabur 反向代理后的用户端 IP。未设置时，Web UI 可能会出现「device identity required」错误。
-      - **`dangerouslyDisableDeviceAuth`**：停用 Web UI 设备配对（设备配对是为局域网设计的功能，云端部署改用 Gateway Token 验证）。
+      - **`gateway.trustedProxies`**：设为 `["10.0.0.0/8", "172.16.0.0/12"]`，让 Gateway 能正确辨识 Zeabur 反向代理后的用户端 IP。未设置时，Control UI 可能会出现「device identity required」错误。
+      - **`dangerouslyDisableDeviceAuth`**：停用 Control UI 设备配对（设备配对是为局域网设计的功能，云端部署改用 Gateway Token 验证）。
       - **`/usr/local/bin` 符号链接**：`openclaw`、`backup`、`restore` 命令已建立符号链接至 `/usr/local/bin`，可直接在 Zeabur 的**命令**终端中使用。
       - **`OPENCLAW_DISABLE_BONJOUR=1`**：停用 mDNS/Bonjour，因为 Zeabur 容器主机名称可能超过 63 bytes 的 DNS 标签限制。mDNS 仅用于局域网发现，云端环境中不需要。
       - **`OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true`**：修复容器环境中的 Telegram 连接问题（`2026.2.17` 及之后的镜像版本需要）。
@@ -2377,6 +2277,10 @@ localization:
       - 升级镜像至 `2026.3.12` — Control UI 仪表板 v2、GPT-5.4/Claude 快速模式、Ollama/vLLM/SGLang provider 插件、K8s 部署文档、20+ 安全修复（WebSocket origin 验证、exec approval 强化、plugin 自动加载锁定）、cron delivery 收紧并需要 `openclaw doctor --fix` 迁移，共 60+ 新功能及 100+ 修复，涵盖 4 个版本（2026.3.9–2026.3.12）
       - ⚠️ 重大变更：cron delivery 已收紧 — 升级后请在**命令**中执行 `openclaw doctor --fix` 以迁移旧版 cron 存储格式
       - 新增 `TZ` 环境变量文档，用于容器时区设置
+      - 全部文档中「Web UI」正名为「Control UI」
+      - 移除启动脚本中的频道环境变量自动同步（频道插件改为通过 Settings 手动配置）
+      - 移除启动脚本中的 gateway config 迁移（初始配置已包含所有必要字段）
+      - 简化登录流程：移除「Web UI (with token)」网址，改用 Control UI 登录页面输入 Gateway Token
 
       **2026/3/10**
       - Add Homebrew pre-installation: `touch /.dockerenv` and Homebrew install script now run on every container startup, enabling `brew` package management inside the container
@@ -2440,7 +2344,7 @@ localization:
       - 修复 `gpt-oss-120b`、`llama-3.3-70b`、`qwen-3-32` HTTP 500：加入 `supportsStore: false` 兼容性设置
       - 修正 `gpt-oss-120b` reasoning 标记（设为 `true`）
       - 还原脚本支持 `.zip` 格式（Zeabur 备份服务）
-      - 启动时将频道环境变量（`TELEGRAM_BOT_TOKEN`、`DISCORD_BOT_TOKEN`、`SLACK_BOT_TOKEN`、`SLACK_APP_TOKEN`、`LINE_CHANNEL_ACCESS_TOKEN`、`LINE_CHANNEL_SECRET`）同步写入配置文件
+
 
       **2026/2/7**
       - 修复 cron 排程无法主动发送通知：启动时自动检测已配置的频道作为 heartbeat 投递目标
@@ -2458,7 +2362,7 @@ localization:
       - 新增备份与还原区块，支持 Zeabur 备份服务
       - 新增初始设置完成后备份提醒
       - 移除 Google Gemini CLI patch（上游已修复）
-      - 移除部署时的 ANTHROPIC_API_KEY 和 OPENAI_API_KEY 变量，避免 OpenClaw 检测到空的 API Key 然后执行失败（可之后通过 Web UI 或环境变量设置）
+      - 移除部署时的 ANTHROPIC_API_KEY 和 OPENAI_API_KEY 变量，避免 OpenClaw 检测到空的 API Key 然后执行失败（可之后通过 Control UI 或环境变量设置）
 
   ja-JP:
     name: OpenClaw 🦞
@@ -2498,10 +2402,10 @@ localization:
       - **Devbox**：多言語コード実行（Python、Go、Rust、C/C++）が必要な場合は、[Devbox テンプレート](https://zeabur.com/templates/ZBVZNH)を同じプロジェクトにデプロイしてください
 
       ## 使用方法
-      1. デプロイ後、**指示**タブの「Web UI (with token)」URL をコピーしてブラウザに貼り付けて開く
+      1. デプロイ後、**ネットワーク**タブからサービス URL を開く。ログインページで **Gateway Token**（**手順**タブまたは**環境変数** → `OPENCLAW_GATEWAY_TOKEN` で確認）を貼り付け、**Connect** をクリック
       2. **AI モデルを設定**（いずれかを選択）：
          - **Zeabur AI Hub**（デフォルトモデル：`glm-4.7-flash`）：デプロイ時に API Key を入力済みの場合、ステップ 3 へ進む。後から Zeabur ダッシュボードの**変数**タブで `ZEABUR_AI_HUB_API_KEY` を追加も可能（追加後はサービスを再起動）。
-         - **他のプロバイダー**（Anthropic、OpenAI など）：Zeabur AI Hub API Key を入力しなかった場合、デフォルトモデルは `anthropic/claude-opus-4-6` です。Web UI Settings または環境変数で API キーを追加してください。詳細：https://docs.openclaw.ai/providers/anthropic
+         - **他のプロバイダー**（Anthropic、OpenAI など）：Zeabur AI Hub API Key を入力しなかった場合、デフォルトモデルは `anthropic/claude-opus-4-6` です。Control UI Settings または環境変数で API キーを追加してください。詳細：https://docs.openclaw.ai/providers/anthropic
       3. **Chat** ページで AI モデルが正常に動作しているかテスト
       4. （オプション）Telegram、WhatsApp などのメッセージングプラットフォームを設定
 
@@ -2510,9 +2414,9 @@ localization:
       ### モデル切り替えと Failover
       このテンプレートにはフェイルオーバーモデルが含まれており、プライマリモデルが利用できない場合に自動的に切り替わります。デフォルトチェーン：`glm-4.7-flash` → `grok-4-fast-non-reasoning` → `minimax-m2.5` → `kimi-k2.5` → `qwen-3-235b` → `gpt-5-mini`。
 
-      **Web UI Chat** または Zeabur ダッシュボードの**コマンド**からモデルを管理できます。
+      **Control UI Chat** または Zeabur ダッシュボードの**コマンド**からモデルを管理できます。
 
-      **Web UI Chat から** — チャットボックスに slash command を直接入力：
+      **Control UI Chat から** — チャットボックスに slash command を直接入力：
       - `/model zeabur-ai/glm-4.7-flash` — プライマリモデルを変更
       - `/model` — 現在のモデルを確認
       - `/models` — モデルプロバイダー一覧
@@ -2551,7 +2455,7 @@ localization:
       - `GOOGLE_API_KEY` — Gemini モデル
 
       追加後サービスを再起動し、モデルを切り替え：
-      - Web UI Chat：`/model anthropic/claude-opus-4-6`
+      - Control UI Chat：`/model anthropic/claude-opus-4-6`
       - コマンド：`openclaw models set anthropic/claude-opus-4-6`
 
       **方法 2：Auth token** — Zeabur ダッシュボードの**コマンド**を開く：
@@ -2586,7 +2490,7 @@ localization:
       1. Zeabur ダッシュボードのサービス**変数**タブに移動
       2. `TELEGRAM_BOT_TOKEN` を追加してトークンを入力
       3. サービスを再起動
-      4. 再起動後、Telegram プラグインが自動的に有効化されます。ボットが起動しない場合は、**Settings → Config** でプラグインが有効になっているか確認してください：`"plugins": { "entries": { "telegram": { "enabled": true } } }`。無効にするには `enabled` を `false` に設定します。
+      4. 再起動後、**Settings → Config** で Telegram プラグインを有効にしてください：`"plugins": { "entries": { "telegram": { "enabled": true } } }`。無効にするには `enabled` を `false` に設定します。
 
       **Telegram アカウントのペアリング：**
       1. Telegram でボットに `/start` を送信
@@ -2599,7 +2503,7 @@ localization:
 
       ## WhatsApp セットアップ
       **ステップ 1：WhatsApp チャンネルを設定**
-      OpenClaw Web UI（Settings → Config）またはチャットに貼り付けて以下の設定を追加：
+      OpenClaw Control UI（Settings → Config）またはチャットに貼り付けて以下の設定を追加：
       ```json
       "channels": {
         "whatsapp": {
@@ -2631,7 +2535,7 @@ localization:
       2. `LINE_CHANNEL_ACCESS_TOKEN` を追加して Channel access token を入力
       3. `LINE_CHANNEL_SECRET` を追加して Channel secret を入力
       4. サービスを再起動
-      5. 再起動後、LINE プラグインが自動的に有効化されます。ボットが起動しない場合は、**Settings → Config** でプラグインが有効になっているか確認してください：`"plugins": { "entries": { "line": { "enabled": true } } }`
+      5. 再起動後、**Settings → Config** で LINE プラグインを有効にしてください：`"plugins": { "entries": { "line": { "enabled": true } } }`
 
       **Webhook の設定：**
       1. 再起動後、Webhook URL は `https://<your-domain>/line/webhook` です
@@ -2665,17 +2569,17 @@ localization:
       - `/models` - 利用可能なモデルを表示
       - `/model <model-id>` - この会話のみモデルを切り替え（他の会話には影響しません）
 
-      **全ての新しい会話のデフォルトモデルを変更**（Web UI Settings で）：
+      **全ての新しい会話のデフォルトモデルを変更**（Control UI Settings で）：
       - Settings → Agents → Default model
       - **ヒント：** 低コストのモデルをデフォルトに設定しましょう（例：`gemini-2.5-flash-lite`、`gpt-5-nano`）。モデルが使用できなくなった場合、`/new` で新しい会話を開始すればデフォルトモデルに自動的に戻ります。
 
-      **AI プロバイダーを追加**（Web UI Settings または環境変数で）：
+      **AI プロバイダーを追加**（Control UI Settings または環境変数で）：
       - 他の AI プロバイダーの API キーを追加（例：Anthropic、OpenAI）
       - 詳細：https://docs.openclaw.ai/providers
 
       **Zeabur AI Hub モデルを変更**（Zeabur ダッシュボードで）：
       - **設定** → **設定ファイル** → `/opt/openclaw/providers/zeabur-ai-hub.json5` を編集し、サービスを再起動（変更は起動時に同期されます）
-      - 旧バージョン（コマンドなし）：**ファイル** タブまたは Web UI Settings で `/home/node/.openclaw/openclaw.json` を編集。以下を `models.providers.zeabur-ai.models` 配列に追加：
+      - 旧バージョン（コマンドなし）：**ファイル** タブまたは Control UI Settings で `/home/node/.openclaw/openclaw.json` を編集。以下を `models.providers.zeabur-ai.models` 配列に追加：
       ```json
       { "id": "gpt-5.2", "name": "GPT-5.2", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.75, "output": 14, "cacheRead": 0.18, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
       { "id": "gpt-5.1", "name": "GPT-5.1", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.25, "output": 10, "cacheRead": 0.13, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
@@ -2686,7 +2590,7 @@ localization:
       ```
 
       ## セキュリティに関する注意
-      Web UI は設定、監視、チャットのための管理ツールです — メッセージングプラットフォーム（Telegram、WhatsApp、Discord など）は Web UI なしで独立して動作します。インバウンド Webhook が不要なプラットフォーム（Telegram、WhatsApp、Discord、Signal、iMessage）のみを使用する場合は、Zeabur ダッシュボードの**ネットワーク**タブでドメインバインディングを削除し、Gateway をパブリックインターネットに公開しないようにできます。すべての管理操作は Zeabur の**コマンド**ターミナルで CLI を使って実行できます（`openclaw config set`、`openclaw models set` など）。パブリックドメインなしで Web UI にアクセスするには、[Tailscale プライベートネットワークアクセス](#tailscale-プライベートネットワークアクセスオプション)を参照してください。さらに、**変数**タブで `OPENCLAW_GATEWAY_BIND` を `loopback` に設定し（設定後サービスを再起動）、Gateway をローカル接続のみに制限することもできます。
+      Control UI は設定、監視、チャットのための管理ツールです — メッセージングプラットフォーム（Telegram、WhatsApp、Discord など）は Control UI なしで独立して動作します。インバウンド Webhook が不要なプラットフォーム（Telegram、WhatsApp、Discord、Signal、iMessage）のみを使用する場合は、Zeabur ダッシュボードの**ネットワーク**タブでドメインバインディングを削除し、Gateway をパブリックインターネットに公開しないようにできます。すべての管理操作は Zeabur の**コマンド**ターミナルで CLI を使って実行できます（`openclaw config set`、`openclaw models set` など）。パブリックドメインなしで Control UI にアクセスするには、[Tailscale プライベートネットワークアクセス](#tailscale-プライベートネットワークアクセスオプション)を参照してください。さらに、**変数**タブで `OPENCLAW_GATEWAY_BIND` を `loopback` に設定し（設定後サービスを再起動）、Gateway をローカル接続のみに制限することもできます。
 
       パブリックドメインが**必要**なプラットフォーム（インバウンド Webhook）：LINE、Slack、Google Chat。
 
@@ -2760,15 +2664,15 @@ localization:
       > 💡 スタートアップスクリプトは起動時に設定を自動移行します — 不足している設定（`trustedProxies`、`dangerouslyDisableDeviceAuth` など）は自動追加されます。既存の設定は上書きされません。
 
       ### "device identity required"
-      Web UI がまだ Gateway Token とペアリングされていないことを意味します。修正方法：
-      - **方法 1：** Zeabur Dashboard の**手順**タブで **Web UI (with Token)** URL をコピーしてブラウザで開く
-      - **方法 2：** Web UI の **Overview** ページを開き、Gateway Token を入力
+      Control UI がまだ Gateway Token で認証されていないことを意味します。修正方法：
+      - サービス URL を開く — ログインページが表示されます。**Gateway Token** を貼り付けて **Connect** をクリックしてください。
+      - Gateway Token は Zeabur Dashboard の**手順**タブまたは**環境変数**（`OPENCLAW_GATEWAY_TOKEN`）で確認できます。
 
       Gateway Token は Zeabur Dashboard の**手順**タブまたは**環境変数**（`OPENCLAW_GATEWAY_TOKEN`）で確認できます。
 
       ### "disconnected (1008): pairing required"
       お使いのデバイス（ブラウザ/アプリ）がまだ Gateway とペアリングされていないことを意味します。ペアリング方法：
-      1. Web UI を開き、Gateway Token 認証を完了します（上記を参照）
+      1. Control UI を開き、Gateway Token 認証を完了します（上記を参照）
       2. Zeabur ダッシュボードの**コマンド**を開いてターミナルにアクセスし、以下を実行：
          - `openclaw devices list` — ペアリング待ちのリクエストを確認し、`requestId` を取得
          - `openclaw devices approve <requestId>` — デバイスを承認
@@ -2810,7 +2714,7 @@ localization:
       **ステップ 3：デバイスに Tailscale をインストール**
       OpenClaw にアクセスするデバイスに [Tailscale](https://tailscale.com/download) をインストールし（macOS、Windows、iOS、Android、Linux）、Auth Key を作成した同じ Tailscale アカウントでログインしてください。
 
-      **ステップ 4：Web UI に初回ログイン**
+      **ステップ 4：Control UI に初回ログイン**
       起動後、ブラウザで開きます（同じ tailnet のデバイスで）：
       ```
       https://<TS_HOSTNAME>.<your-tailnet>.ts.net
@@ -2819,7 +2723,7 @@ localization:
 
       以下のいずれかの方法でログインしてください：
       - URL にトークンを追加：`https://<TS_HOSTNAME>.<your-tailnet>.ts.net?token=<GATEWAY_TOKEN>`
-      - Web UI の **Overview** ページで Gateway Token を入力
+      - Control UI の **Overview** ページで Gateway Token を入力
 
       Gateway Token は Zeabur ダッシュボードの**手順**タブまたは**環境変数**（`OPENCLAW_GATEWAY_TOKEN`）で確認できます。
 
@@ -2828,7 +2732,7 @@ localization:
       2. OpenClaw アプリ → **Settings → General** → **Remote** モードを選択
       3. Transport を **Direct (ws/wss)** に設定
       4. Gateway URL に `wss://<TS_HOSTNAME>.<your-tailnet>.ts.net` を入力
-      5. 初回接続時はペアリング承認が必要です — Web UI の **Nodes** ページで approve をクリック
+      5. 初回接続時はペアリング承認が必要です — Control UI の **Nodes** ページで approve をクリック
 
       iOS と Android のセットアップについては、[公式ドキュメント](https://docs.openclaw.ai/platforms)を参照してください。
 
@@ -2838,8 +2742,8 @@ localization:
       ## Zeabur 固有の設定
       このテンプレートは Zeabur クラウド環境向けに以下の設定を事前構成しています：
 
-      - **`gateway.trustedProxies`**：`["10.0.0.0/8", "172.16.0.0/12"]` に設定。Gateway が Zeabur リバースプロキシ背後のクライアント IP を正しく識別できるようにします。未設定の場合、Web UI に「device identity required」エラーが表示される可能性があります。
-      - **`dangerouslyDisableDeviceAuth`**：Web UI デバイスペアリングを無効化（デバイスペアリングはローカルネットワーク向けの機能で、クラウドデプロイでは代わりに Gateway Token 認証を使用）。
+      - **`gateway.trustedProxies`**：`["10.0.0.0/8", "172.16.0.0/12"]` に設定。Gateway が Zeabur リバースプロキシ背後のクライアント IP を正しく識別できるようにします。未設定の場合、Control UI に「device identity required」エラーが表示される可能性があります。
+      - **`dangerouslyDisableDeviceAuth`**：Control UI デバイスペアリングを無効化（デバイスペアリングはローカルネットワーク向けの機能で、クラウドデプロイでは代わりに Gateway Token 認証を使用）。
       - **`/usr/local/bin` シンボリックリンク**：`openclaw`、`backup`、`restore` コマンドが `/usr/local/bin` にシンボリックリンクされ、Zeabur の**コマンド**ターミナルで直接使用できます。
       - **`OPENCLAW_DISABLE_BONJOUR=1`**：mDNS/Bonjour を無効化。Zeabur コンテナのホスト名が 63 バイトの DNS ラベル制限を超える可能性があるため。mDNS はローカルネットワーク検出にのみ使用され、クラウド環境では不要です。
       - **`OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true`**：コンテナ環境での Telegram 接続問題を修正（イメージバージョン `2026.2.17` 以降で必要）。
@@ -2854,6 +2758,10 @@ localization:
       - イメージを `2026.3.12` にアップグレード — Control UI ダッシュボード v2、GPT-5.4/Claude 高速モード、Ollama/vLLM/SGLang プロバイダープラグイン、K8s デプロイドキュメント、20 以上のセキュリティ修正（WebSocket origin 検証、exec approval 強化、plugin 自動ロードロックダウン）、cron delivery 引き締めと `openclaw doctor --fix` 移行、60 以上の新機能と 100 以上の修正、4 リリース分（2026.3.9–2026.3.12）
       - ⚠️ 破壊的変更：cron delivery が厳格化 — アップグレード後に**コマンド**で `openclaw doctor --fix` を実行してレガシー cron ストレージを移行してください
       - コンテナタイムゾーン設定用の `TZ` 環境変数ドキュメントを追加
+      - 全ドキュメントで「Web UI」を「Control UI」に改名
+      - 起動スクリプトからチャンネル環境変数の自動同期を削除（チャンネルプラグインは Settings から手動設定に変更）
+      - 起動スクリプトから gateway config マイグレーションを削除（初期設定に必要な項目がすべて含まれているため）
+      - ログインフローを簡素化：「Web UI (with token)」URL を削除し、Control UI ログインページで Gateway Token を入力する方式に変更
 
       **2026/3/10**
       - Add Homebrew pre-installation: `touch /.dockerenv` and Homebrew install script now run on every container startup, enabling `brew` package management inside the container
@@ -2917,7 +2825,7 @@ localization:
       - `gpt-oss-120b`、`llama-3.3-70b`、`qwen-3-32` の HTTP 500 を修正：`supportsStore: false` 互換性設定を追加
       - `gpt-oss-120b` の reasoning フラグを修正（`true` に設定）
       - リストアスクリプトが `.zip` 形式に対応（Zeabur バックアップサービス）
-      - 起動時にチャンネル環境変数（`TELEGRAM_BOT_TOKEN`、`DISCORD_BOT_TOKEN`、`SLACK_BOT_TOKEN`、`SLACK_APP_TOKEN`、`LINE_CHANNEL_ACCESS_TOKEN`、`LINE_CHANNEL_SECRET`）を設定ファイルに同期
+
 
       **2026/2/7**
       - cron スケジュールの通知が送信されない問題を修正：起動時に設定済みチャンネルを heartbeat 配信先として自動検出
@@ -2935,7 +2843,7 @@ localization:
       - バックアップと復元セクションを追加、Zeabur バックアップサービス対応
       - 初期設定完了後のバックアップ推奨を追加
       - Google Gemini CLI パッチを削除（上流で修正済み）
-      - デプロイ時の ANTHROPIC_API_KEY と OPENAI_API_KEY 変数を削除、OpenClaw が空の API Key を検出して実行に失敗するのを防止（後で Web UI または環境変数から設定可能）
+      - デプロイ時の ANTHROPIC_API_KEY と OPENAI_API_KEY 変数を削除、OpenClaw が空の API Key を検出して実行に失敗するのを防止（後で Control UI または環境変数から設定可能）
 
   es-ES:
     name: OpenClaw 🦞
@@ -2975,10 +2883,10 @@ localization:
       - **Devbox**: Si necesita ejecución de código multilenguaje (Python, Go, Rust, C/C++), despliegue la [Plantilla Devbox](https://zeabur.com/templates/ZBVZNH) en el mismo proyecto
 
       ## Uso
-      1. Después del despliegue, copie la URL "Web UI (with token)" de la pestaña **Instrucciones** y péguela en su navegador
+      1. Después del despliegue, abra la URL del servicio desde la pestaña **Red**. En la página de inicio de sesión, pegue el **Gateway Token** (disponible en la pestaña **Instrucciones** o **Variables de entorno** → `OPENCLAW_GATEWAY_TOKEN`) y haga clic en **Connect**
       2. **Configure el modelo de AI** (elija uno):
          - **Zeabur AI Hub** (modelo predeterminado: `glm-4.7-flash`): Si ingresó la API Key durante el despliegue, vaya directamente al paso 3. También puede agregar `ZEABUR_AI_HUB_API_KEY` después en la pestaña **Variables** del panel de Zeabur (reinicie el servicio después de agregar).
-         - **Otros proveedores** (Anthropic, OpenAI, etc.): Si no ingresó una API Key de Zeabur AI Hub, el modelo predeterminado es `anthropic/claude-opus-4-6`. Vaya a Web UI Settings o agregue la clave API mediante variables de entorno. Más info: https://docs.openclaw.ai/providers/anthropic
+         - **Otros proveedores** (Anthropic, OpenAI, etc.): Si no ingresó una API Key de Zeabur AI Hub, el modelo predeterminado es `anthropic/claude-opus-4-6`. Vaya a Control UI Settings o agregue la clave API mediante variables de entorno. Más info: https://docs.openclaw.ai/providers/anthropic
       3. Vaya a la página **Chat** para probar si su modelo de AI funciona
       4. (Opcional) Configure plataformas de mensajería como Telegram, WhatsApp, etc.
 
@@ -2987,9 +2895,9 @@ localization:
       ### Cambio de Modelo y Failover
       Esta plantilla incluye modelos de failover que cambian automáticamente cuando el modelo principal no está disponible. Cadena predeterminada: `glm-4.7-flash` → `grok-4-fast-non-reasoning` → `minimax-m2.5` → `kimi-k2.5` → `qwen-3-235b` → `gpt-5-mini`.
 
-      Puede gestionar modelos desde **Web UI Chat** o **Comando** en el panel de Zeabur.
+      Puede gestionar modelos desde **Control UI Chat** o **Comando** en el panel de Zeabur.
 
-      **Desde Web UI Chat** — escriba slash commands directamente en el chat:
+      **Desde Control UI Chat** — escriba slash commands directamente en el chat:
       - `/model zeabur-ai/glm-4.7-flash` — cambiar modelo principal
       - `/model` — ver modelo actual
       - `/models` — listar proveedores de modelos
@@ -3028,7 +2936,7 @@ localization:
       - `GOOGLE_API_KEY` — modelos Gemini
 
       Después de agregar, reinicie el servicio y cambie el modelo:
-      - Web UI Chat: `/model anthropic/claude-opus-4-6`
+      - Control UI Chat: `/model anthropic/claude-opus-4-6`
       - Comando: `openclaw models set anthropic/claude-opus-4-6`
 
       **Método 2: Auth token** — abra **Comando** en el panel de Zeabur:
@@ -3063,7 +2971,7 @@ localization:
       1. Vaya a la pestaña **Variable** de su servicio en el panel de Zeabur
       2. Agregue `TELEGRAM_BOT_TOKEN` con su token de bot
       3. Reinicie el servicio
-      4. El plugin de Telegram se habilitará automáticamente al reiniciar. Si el bot no se inicia, vaya a **Settings → Config** y verifique que el plugin esté habilitado: `"plugins": { "entries": { "telegram": { "enabled": true } } }`. Para deshabilitar, establezca `enabled` en `false`.
+      4. Después de reiniciar, vaya a **Settings → Config** y habilite el plugin de Telegram: `"plugins": { "entries": { "telegram": { "enabled": true } } }`. Para deshabilitar, establezca `enabled` en `false`.
 
       **Vincular su cuenta de Telegram:**
       1. Envíe `/start` a su bot en Telegram
@@ -3076,7 +2984,7 @@ localization:
 
       ## Configuración de WhatsApp
       **Paso 1: Configurar canal de WhatsApp**
-      Agregue la siguiente configuración a través de OpenClaw Web UI (Settings → Config) o péguela en el chat:
+      Agregue la siguiente configuración a través de OpenClaw Control UI (Settings → Config) o péguela en el chat:
       ```json
       "channels": {
         "whatsapp": {
@@ -3108,7 +3016,7 @@ localization:
       2. Agregue `LINE_CHANNEL_ACCESS_TOKEN` con su Channel access token
       3. Agregue `LINE_CHANNEL_SECRET` con su Channel secret
       4. Reinicie el servicio
-      5. El plugin de LINE se habilitará automáticamente al reiniciar. Si el bot no se inicia, vaya a **Settings → Config** y verifique que el plugin esté habilitado: `"plugins": { "entries": { "line": { "enabled": true } } }`
+      5. Después de reiniciar, vaya a **Settings → Config** y habilite el plugin de LINE: `"plugins": { "entries": { "line": { "enabled": true } } }`
 
       **Configurar el Webhook:**
       1. Después de reiniciar, su URL de webhook es: `https://<your-domain>/line/webhook`
@@ -3142,17 +3050,17 @@ localization:
       - `/models` - Ver modelos disponibles
       - `/model <model-id>` - Cambiar modelo solo para esta conversación (no afecta otras conversaciones)
 
-      **Cambiar modelo predeterminado para todas las conversaciones nuevas** (vía Web UI Settings):
+      **Cambiar modelo predeterminado para todas las conversaciones nuevas** (vía Control UI Settings):
       - Ir a Settings → Agents → Default model
       - **Consejo:** Establezca un modelo de bajo costo como predeterminado (ej. `gemini-2.5-flash-lite`, `gpt-5-nano`). Si un modelo deja de estar disponible, use `/new` para iniciar una nueva conversación con el modelo predeterminado.
 
-      **Agregar proveedores de AI** (vía Web UI Settings o variables de entorno):
+      **Agregar proveedores de AI** (vía Control UI Settings o variables de entorno):
       - Agregar claves API de otros proveedores (ej. Anthropic, OpenAI)
       - Más info: https://docs.openclaw.ai/providers
 
       **Modificar modelos de Zeabur AI Hub** (vía panel de Zeabur):
       - Ir a **Configuración** → **Archivos de configuración** → Editar `/opt/openclaw/providers/zeabur-ai-hub.json5`, luego reiniciar el servicio (los cambios se sincronizan al iniciar)
-      - Versiones anteriores (sin comandos): Edite `/home/node/.openclaw/openclaw.json` vía pestaña **Archivos** o Web UI Settings. Agregue lo siguiente al array `models.providers.zeabur-ai.models`:
+      - Versiones anteriores (sin comandos): Edite `/home/node/.openclaw/openclaw.json` vía pestaña **Archivos** o Control UI Settings. Agregue lo siguiente al array `models.providers.zeabur-ai.models`:
       ```json
       { "id": "gpt-5.2", "name": "GPT-5.2", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.75, "output": 14, "cacheRead": 0.18, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
       { "id": "gpt-5.1", "name": "GPT-5.1", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.25, "output": 10, "cacheRead": 0.13, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
@@ -3163,7 +3071,7 @@ localization:
       ```
 
       ## Nota de Seguridad
-      La Web UI es una herramienta de gestión para configuración, monitoreo y chat — las plataformas de mensajería (Telegram, WhatsApp, Discord, etc.) funcionan independientemente sin ella. Si solo usa plataformas que no requieren webhooks entrantes (Telegram, WhatsApp, Discord, Signal, iMessage), puede eliminar el enlace de dominio en el panel de Zeabur (pestaña **Networking**) para evitar exponer el gateway a internet público. Todas las tareas de gestión también se pueden realizar mediante CLI en la terminal **Comando** de Zeabur (`openclaw config set`, `openclaw models set`, etc.). Para acceder a la Web UI de forma privada sin un dominio público, consulte [Acceso por Red Privada con Tailscale](#acceso-por-red-privada-con-tailscale-opcional). También puede configurar `OPENCLAW_GATEWAY_BIND` como `loopback` en la pestaña **Variables** (reinicie el servicio después) para restringir el gateway solo a conexiones locales.
+      La Control UI es una herramienta de gestión para configuración, monitoreo y chat — las plataformas de mensajería (Telegram, WhatsApp, Discord, etc.) funcionan independientemente sin ella. Si solo usa plataformas que no requieren webhooks entrantes (Telegram, WhatsApp, Discord, Signal, iMessage), puede eliminar el enlace de dominio en el panel de Zeabur (pestaña **Networking**) para evitar exponer el gateway a internet público. Todas las tareas de gestión también se pueden realizar mediante CLI en la terminal **Comando** de Zeabur (`openclaw config set`, `openclaw models set`, etc.). Para acceder a la Control UI de forma privada sin un dominio público, consulte [Acceso por Red Privada con Tailscale](#acceso-por-red-privada-con-tailscale-opcional). También puede configurar `OPENCLAW_GATEWAY_BIND` como `loopback` en la pestaña **Variables** (reinicie el servicio después) para restringir el gateway solo a conexiones locales.
 
       Plataformas que **requieren** un dominio público (webhook entrante): LINE, Slack, Google Chat.
 
@@ -3237,15 +3145,15 @@ localization:
       > 💡 El script de inicio migra automáticamente su configuración en cada arranque — los ajustes faltantes (como `trustedProxies`, `dangerouslyDisableDeviceAuth`) se agregan automáticamente. Sus configuraciones existentes se conservan.
 
       ### "device identity required"
-      Esto significa que la Web UI aún no ha sido emparejada con un Gateway Token. Solución:
-      - **Opción 1:** En la pestaña **Instrucciones** del Dashboard de Zeabur, copie la URL **Web UI (with Token)** y ábrala en su navegador
-      - **Opción 2:** Abra la página **Overview** de la Web UI e ingrese el Gateway Token
+      Esto significa que la Control UI aún no ha sido autenticada con un Gateway Token. Solución:
+      - Abra la URL del servicio — aparecerá la página de inicio de sesión. Pegue el **Gateway Token** y haga clic en **Connect**.
+      - Puede encontrar el Gateway Token en la pestaña **Instrucciones** del Dashboard de Zeabur o en **Variables de entorno** (`OPENCLAW_GATEWAY_TOKEN`).
 
       Puede encontrar el Gateway Token en la pestaña **Instrucciones** del Dashboard de Zeabur o en **Variables de entorno** (`OPENCLAW_GATEWAY_TOKEN`).
 
       ### "disconnected (1008): pairing required"
       Esto significa que su dispositivo (navegador/aplicación) aún no ha sido emparejado con el Gateway. Para emparejar:
-      1. Abra la Web UI y complete la autenticación con Gateway Token (ver arriba)
+      1. Abra la Control UI y complete la autenticación con Gateway Token (ver arriba)
       2. Abra **Comando** en el dashboard de Zeabur para acceder a la terminal, luego ejecute:
          - `openclaw devices list` — ver solicitudes de emparejamiento pendientes y encontrar el `requestId`
          - `openclaw devices approve <requestId>` — aprobar el dispositivo
@@ -3287,7 +3195,7 @@ localization:
       **Paso 3: Instalar Tailscale en su dispositivo**
       Instale [Tailscale](https://tailscale.com/download) en el dispositivo desde el que quiere acceder a OpenClaw (macOS, Windows, iOS, Android, Linux), e inicie sesión con la misma cuenta de Tailscale usada para crear la Auth Key.
 
-      **Paso 4: Primer inicio de sesión en Web UI**
+      **Paso 4: Primer inicio de sesión en Control UI**
       Una vez iniciado, abra en su navegador (debe estar en la misma tailnet):
       ```
       https://<TS_HOSTNAME>.<su-tailnet>.ts.net
@@ -3296,7 +3204,7 @@ localization:
 
       Inicie sesión usando cualquiera de estos métodos:
       - Agregue el token a la URL: `https://<TS_HOSTNAME>.<su-tailnet>.ts.net?token=<GATEWAY_TOKEN>`
-      - O ingrese el Gateway Token en la página **Overview** de la Web UI
+      - O ingrese el Gateway Token en la página **Overview** de la Control UI
 
       Puede encontrar el Gateway Token en la pestaña **Instrucciones** o **Variables de Entorno** del dashboard de Zeabur (`OPENCLAW_GATEWAY_TOKEN`).
 
@@ -3305,7 +3213,7 @@ localization:
       2. Abra OpenClaw app → **Settings → General** → seleccione modo **Remote**
       3. Configure Transport en **Direct (ws/wss)**
       4. Configure Gateway URL en `wss://<TS_HOSTNAME>.<su-tailnet>.ts.net`
-      5. La primera conexión requiere aprobación de emparejamiento — vaya a la página **Nodes** de la Web UI y haga clic en approve
+      5. La primera conexión requiere aprobación de emparejamiento — vaya a la página **Nodes** de la Control UI y haga clic en approve
 
       Para configuración de iOS y Android, consulte la [documentación oficial](https://docs.openclaw.ai/platforms).
 
@@ -3315,8 +3223,8 @@ localization:
       ## Configuración Específica de Zeabur
       Esta plantilla preconfigura los siguientes ajustes para el entorno de nube de Zeabur:
 
-      - **`gateway.trustedProxies`**: Configurado como `["10.0.0.0/8", "172.16.0.0/12"]` para que el gateway identifique correctamente las IPs de los clientes detrás del proxy inverso de Zeabur. Sin esto, la Web UI puede mostrar errores de "device identity required".
-      - **`dangerouslyDisableDeviceAuth`**: Deshabilita el emparejamiento de dispositivos de la Web UI (el emparejamiento está diseñado para redes locales; los despliegues en la nube usan autenticación por Gateway Token).
+      - **`gateway.trustedProxies`**: Configurado como `["10.0.0.0/8", "172.16.0.0/12"]` para que el gateway identifique correctamente las IPs de los clientes detrás del proxy inverso de Zeabur. Sin esto, la Control UI puede mostrar errores de "device identity required".
+      - **`dangerouslyDisableDeviceAuth`**: Deshabilita el emparejamiento de dispositivos de la Control UI (el emparejamiento está diseñado para redes locales; los despliegues en la nube usan autenticación por Gateway Token).
       - **Symlinks en `/usr/local/bin`**: Los comandos `openclaw`, `backup` y `restore` tienen enlaces simbólicos en `/usr/local/bin` para funcionar en la terminal de **Comando** de Zeabur.
       - **`OPENCLAW_DISABLE_BONJOUR=1`**: Deshabilita mDNS/Bonjour porque los nombres de host de los contenedores de Zeabur pueden exceder el límite de 63 bytes de las etiquetas DNS. mDNS solo se usa para descubrimiento de red local y no es necesario en entornos de nube.
       - **`OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true`**: Soluciona problemas de conexión con Telegram en entornos de contenedores (necesario para versiones de imagen `2026.2.17` en adelante).
@@ -3331,6 +3239,10 @@ localization:
       - Actualizar imagen a `2026.3.12` — Control UI dashboard v2, modo rápido GPT-5.4/Claude, plugins de proveedor Ollama/vLLM/SGLang, documentación de despliegue K8s, 20+ correcciones de seguridad (validación de origen WebSocket, endurecimiento de exec approval, bloqueo de auto-carga de plugins), restricción de cron delivery con migración `openclaw doctor --fix`, 60+ nuevas funciones y 100+ correcciones en 4 versiones (2026.3.9–2026.3.12)
       - ⚠️ Cambio importante: cron delivery restringido — ejecute `openclaw doctor --fix` en **Comando** después de actualizar para migrar el almacenamiento cron heredado
       - Agregar documentación de variable de entorno `TZ` para configuración de zona horaria del contenedor
+      - Renombrar "Web UI" a "Control UI" en toda la documentación
+      - Eliminar sincronización automática de variables de entorno de canales del script de inicio (plugins de canales ahora se configuran manualmente vía Settings)
+      - Eliminar migración de gateway config del script de inicio (la configuración inicial ya incluye todos los campos necesarios)
+      - Simplificar flujo de inicio de sesión: eliminar URL "Web UI (with token)", usar página de login de Control UI con Gateway Token
 
       **2026/3/10**
       - Add Homebrew pre-installation: `touch /.dockerenv` and Homebrew install script now run on every container startup, enabling `brew` package management inside the container
@@ -3394,7 +3306,7 @@ localization:
       - Corregir HTTP 500 en `gpt-oss-120b`, `llama-3.3-70b`, `qwen-3-32`: agregar configuración de compatibilidad `supportsStore: false`
       - Corregir flag de reasoning de `gpt-oss-120b` (establecido en `true`)
       - Script de restauración ahora soporta formato `.zip` (servicio de backup de Zeabur)
-      - Sincronizar variables de entorno de canales (`TELEGRAM_BOT_TOKEN`, `DISCORD_BOT_TOKEN`, `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`, `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_CHANNEL_SECRET`) al archivo de configuración al iniciar
+
 
       **2026/2/7**
       - Corregir notificaciones proactivas de cron: detectar automáticamente el canal configurado como destino de heartbeat al iniciar
@@ -3412,7 +3324,7 @@ localization:
       - Añadir sección de copia de seguridad y restauración con servicio de Zeabur
       - Añadir consejo de hacer copia de seguridad después de la configuración inicial
       - Eliminar parche de Google Gemini CLI (corregido en upstream)
-      - Eliminar variables ANTHROPIC_API_KEY y OPENAI_API_KEY del despliegue para evitar que OpenClaw detecte claves API vacías y falle (configurable después via Web UI o variables de entorno)
+      - Eliminar variables ANTHROPIC_API_KEY y OPENAI_API_KEY del despliegue para evitar que OpenClaw detecte claves API vacías y falle (configurable después via Control UI o variables de entorno)
 
   id-ID:
     name: OpenClaw 🦞
@@ -3452,10 +3364,10 @@ localization:
       - **Devbox**: Jika Anda memerlukan eksekusi kode multi-bahasa (Python, Go, Rust, C/C++), deploy [Template Devbox](https://zeabur.com/templates/ZBVZNH) ke proyek yang sama
 
       ## Penggunaan
-      1. Setelah deploy, salin URL "Web UI (with token)" dari tab **Instruksi** dan tempelkan di browser Anda
+      1. Setelah deploy, buka URL layanan dari tab **Networking**. Di halaman login, tempelkan **Gateway Token** (tersedia di tab **Instruksi** atau **Variables** → `OPENCLAW_GATEWAY_TOKEN`) dan klik **Connect**
       2. **Konfigurasi model AI** (pilih salah satu):
          - **Zeabur AI Hub** (model default: `glm-4.7-flash`): Jika sudah memasukkan API Key saat deploy, langsung ke langkah 3. Bisa juga menambahkan `ZEABUR_AI_HUB_API_KEY` nanti di tab **Variables** dashboard Zeabur (restart layanan setelah menambahkan).
-         - **Penyedia lain** (Anthropic, OpenAI, dll.): Jika tidak memasukkan API Key Zeabur AI Hub, model default adalah `anthropic/claude-opus-4-6`. Buka Web UI Settings atau tambahkan kunci API melalui variabel lingkungan. Info: https://docs.openclaw.ai/providers/anthropic
+         - **Penyedia lain** (Anthropic, OpenAI, dll.): Jika tidak memasukkan API Key Zeabur AI Hub, model default adalah `anthropic/claude-opus-4-6`. Buka Control UI Settings atau tambahkan kunci API melalui variabel lingkungan. Info: https://docs.openclaw.ai/providers/anthropic
       3. Buka halaman **Chat** untuk menguji apakah model AI Anda berfungsi
       4. (Opsional) Atur platform pesan seperti Telegram, WhatsApp, dll.
 
@@ -3464,9 +3376,9 @@ localization:
       ### Pergantian Model dan Failover
       Template ini menyertakan model failover yang otomatis beralih saat model utama tidak tersedia. Rantai default: `glm-4.7-flash` → `grok-4-fast-non-reasoning` → `minimax-m2.5` → `kimi-k2.5` → `qwen-3-235b` → `gpt-5-mini`.
 
-      Anda dapat mengelola model dari **Web UI Chat** atau **Perintah** di dashboard Zeabur.
+      Anda dapat mengelola model dari **Control UI Chat** atau **Perintah** di dashboard Zeabur.
 
-      **Dari Web UI Chat** — ketik slash command langsung di kotak chat:
+      **Dari Control UI Chat** — ketik slash command langsung di kotak chat:
       - `/model zeabur-ai/glm-4.7-flash` — ganti model utama
       - `/model` — lihat model saat ini
       - `/models` — daftar penyedia model
@@ -3505,7 +3417,7 @@ localization:
       - `GOOGLE_API_KEY` — model Gemini
 
       Setelah menambahkan, restart layanan, lalu ganti model:
-      - Web UI Chat: `/model anthropic/claude-opus-4-6`
+      - Control UI Chat: `/model anthropic/claude-opus-4-6`
       - Perintah: `openclaw models set anthropic/claude-opus-4-6`
 
       **Metode 2: Auth token** — buka **Perintah** di dashboard Zeabur:
@@ -3540,7 +3452,7 @@ localization:
       1. Buka tab **Variabel** layanan Anda di dashboard Zeabur
       2. Tambahkan `TELEGRAM_BOT_TOKEN` dengan token bot Anda
       3. Restart layanan
-      4. Plugin Telegram akan diaktifkan secara otomatis saat restart. Jika bot tidak berjalan, buka **Settings → Config** dan pastikan plugin sudah diaktifkan: `"plugins": { "entries": { "telegram": { "enabled": true } } }`. Untuk menonaktifkan, atur `enabled` ke `false`.
+      4. Setelah restart, buka **Settings → Config** dan aktifkan plugin Telegram: `"plugins": { "entries": { "telegram": { "enabled": true } } }`. Untuk menonaktifkan, atur `enabled` ke `false`.
 
       **Menghubungkan akun Telegram Anda:**
       1. Kirim `/start` ke bot Anda di Telegram
@@ -3553,7 +3465,7 @@ localization:
 
       ## Pengaturan WhatsApp
       **Langkah 1: Konfigurasi kanal WhatsApp**
-      Tambahkan konfigurasi berikut melalui OpenClaw Web UI (Settings → Config) atau tempelkan ke chat:
+      Tambahkan konfigurasi berikut melalui OpenClaw Control UI (Settings → Config) atau tempelkan ke chat:
       ```json
       "channels": {
         "whatsapp": {
@@ -3585,7 +3497,7 @@ localization:
       2. Tambahkan `LINE_CHANNEL_ACCESS_TOKEN` dengan Channel access token Anda
       3. Tambahkan `LINE_CHANNEL_SECRET` dengan Channel secret Anda
       4. Restart layanan
-      5. Plugin LINE akan diaktifkan secara otomatis saat restart. Jika bot tidak berjalan, buka **Settings → Config** dan pastikan plugin sudah diaktifkan: `"plugins": { "entries": { "line": { "enabled": true } } }`
+      5. Setelah restart, buka **Settings → Config** dan aktifkan plugin LINE: `"plugins": { "entries": { "line": { "enabled": true } } }`
 
       **Mengatur Webhook:**
       1. Setelah restart, URL webhook Anda adalah: `https://<your-domain>/line/webhook`
@@ -3619,17 +3531,17 @@ localization:
       - `/models` - Lihat model yang tersedia
       - `/model <model-id>` - Ganti model hanya untuk percakapan ini (tidak mempengaruhi percakapan lain)
 
-      **Ganti model default untuk semua percakapan baru** (via Web UI Settings):
+      **Ganti model default untuk semua percakapan baru** (via Control UI Settings):
       - Buka Settings → Agents → Default model
       - **Tips:** Tetapkan model berbiaya rendah sebagai default (misal: `gemini-2.5-flash-lite`, `gpt-5-nano`). Jika model tidak tersedia, gunakan `/new` untuk memulai percakapan baru dengan model default.
 
-      **Tambah penyedia AI** (via Web UI Settings atau variabel lingkungan):
+      **Tambah penyedia AI** (via Control UI Settings atau variabel lingkungan):
       - Tambahkan kunci API penyedia lain (misal: Anthropic, OpenAI)
       - Info: https://docs.openclaw.ai/providers
 
       **Modifikasi model Zeabur AI Hub** (via dashboard Zeabur):
       - Buka **Settings** → **Configs** → Edit `/opt/openclaw/providers/zeabur-ai-hub.json5`, lalu restart layanan (perubahan disinkronkan saat startup)
-      - Versi lama (tanpa perintah): Edit `/home/node/.openclaw/openclaw.json` via tab **Files** atau Web UI Settings. Tambahkan berikut ke array `models.providers.zeabur-ai.models`:
+      - Versi lama (tanpa perintah): Edit `/home/node/.openclaw/openclaw.json` via tab **Files** atau Control UI Settings. Tambahkan berikut ke array `models.providers.zeabur-ai.models`:
       ```json
       { "id": "gpt-5.2", "name": "GPT-5.2", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.75, "output": 14, "cacheRead": 0.18, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
       { "id": "gpt-5.1", "name": "GPT-5.1", "reasoning": false, "input": ["text", "image"], "cost": { "input": 1.25, "output": 10, "cacheRead": 0.13, "cacheWrite": 0 }, "contextWindow": 400000, "maxTokens": 8192 },
@@ -3640,7 +3552,7 @@ localization:
       ```
 
       ## Catatan Keamanan
-      Web UI adalah alat manajemen untuk konfigurasi, pemantauan, dan chat — platform pesan (Telegram, WhatsApp, Discord, dll.) bekerja secara independen tanpa Web UI. Jika Anda hanya menggunakan platform yang tidak memerlukan inbound webhook (Telegram, WhatsApp, Discord, Signal, iMessage), Anda dapat menghapus pengikatan domain di dashboard Zeabur (tab **Networking**) untuk menghindari mengekspos gateway ke internet publik. Semua tugas manajemen juga dapat dilakukan melalui CLI di terminal **Perintah** Zeabur (`openclaw config set`, `openclaw models set`, dll.). Untuk akses Web UI privat tanpa domain publik, lihat [Akses Jaringan Pribadi Tailscale](#akses-jaringan-pribadi-tailscale-opsional). Anda juga dapat mengatur `OPENCLAW_GATEWAY_BIND` ke `loopback` di tab **Variables** (restart layanan setelahnya) untuk membatasi gateway hanya menerima koneksi lokal.
+      Control UI adalah alat manajemen untuk konfigurasi, pemantauan, dan chat — platform pesan (Telegram, WhatsApp, Discord, dll.) bekerja secara independen tanpa Control UI. Jika Anda hanya menggunakan platform yang tidak memerlukan inbound webhook (Telegram, WhatsApp, Discord, Signal, iMessage), Anda dapat menghapus pengikatan domain di dashboard Zeabur (tab **Networking**) untuk menghindari mengekspos gateway ke internet publik. Semua tugas manajemen juga dapat dilakukan melalui CLI di terminal **Perintah** Zeabur (`openclaw config set`, `openclaw models set`, dll.). Untuk akses Control UI privat tanpa domain publik, lihat [Akses Jaringan Pribadi Tailscale](#akses-jaringan-pribadi-tailscale-opsional). Anda juga dapat mengatur `OPENCLAW_GATEWAY_BIND` ke `loopback` di tab **Variables** (restart layanan setelahnya) untuk membatasi gateway hanya menerima koneksi lokal.
 
       Platform yang **memerlukan** domain publik (inbound webhook): LINE, Slack, Google Chat.
 
@@ -3714,15 +3626,15 @@ localization:
       > 💡 Skrip startup secara otomatis memigrasi konfigurasi Anda setiap kali boot — pengaturan yang hilang (seperti `trustedProxies`, `dangerouslyDisableDeviceAuth`) akan ditambahkan otomatis. Pengaturan yang sudah ada tidak akan ditimpa.
 
       ### "device identity required"
-      Ini berarti Web UI belum dipasangkan dengan Gateway Token. Solusi:
-      - **Opsi 1:** Di tab **Instructions** Dashboard Zeabur, salin URL **Web UI (with Token)** dan buka di browser
-      - **Opsi 2:** Buka halaman **Overview** di Web UI dan masukkan Gateway Token
+      Ini berarti Control UI belum diautentikasi dengan Gateway Token. Solusi:
+      - Buka URL layanan — halaman login akan muncul. Tempelkan **Gateway Token** dan klik **Connect**.
+      - Gateway Token dapat ditemukan di tab **Instruksi** Dashboard Zeabur atau **Variables** (`OPENCLAW_GATEWAY_TOKEN`).
 
       Gateway Token dapat ditemukan di tab **Instructions** Dashboard Zeabur atau di **Environment Variables** (`OPENCLAW_GATEWAY_TOKEN`).
 
       ### "disconnected (1008): pairing required"
       Ini berarti perangkat Anda (browser/aplikasi) belum dipasangkan dengan Gateway. Cara memasangkan:
-      1. Buka Web UI dan selesaikan autentikasi Gateway Token (lihat di atas)
+      1. Buka Control UI dan selesaikan autentikasi Gateway Token (lihat di atas)
       2. Buka **Perintah** di dashboard Zeabur untuk mengakses terminal, lalu jalankan:
          - `openclaw devices list` — lihat permintaan pairing yang menunggu dan temukan `requestId`
          - `openclaw devices approve <requestId>` — setujui perangkat
@@ -3764,7 +3676,7 @@ localization:
       **Langkah 3: Instal Tailscale di perangkat Anda**
       Instal [Tailscale](https://tailscale.com/download) di perangkat yang ingin Anda gunakan untuk mengakses OpenClaw (macOS, Windows, iOS, Android, Linux), dan login dengan akun Tailscale yang sama yang digunakan untuk membuat Auth Key.
 
-      **Langkah 4: Login pertama ke Web UI**
+      **Langkah 4: Login pertama ke Control UI**
       Setelah dimulai, buka di browser (harus di perangkat tailnet yang sama):
       ```
       https://<TS_HOSTNAME>.<tailnet-anda>.ts.net
@@ -3773,7 +3685,7 @@ localization:
 
       Login menggunakan salah satu cara:
       - Tambahkan token ke URL: `https://<TS_HOSTNAME>.<tailnet-anda>.ts.net?token=<GATEWAY_TOKEN>`
-      - Atau masukkan Gateway Token di halaman **Overview** Web UI
+      - Atau masukkan Gateway Token di halaman **Overview** Control UI
 
       Gateway Token dapat ditemukan di tab **Instructions** atau **Environment Variables** dashboard Zeabur (`OPENCLAW_GATEWAY_TOKEN`).
 
@@ -3782,7 +3694,7 @@ localization:
       2. Buka OpenClaw app → **Settings → General** → pilih mode **Remote**
       3. Atur Transport ke **Direct (ws/wss)**
       4. Atur Gateway URL ke `wss://<TS_HOSTNAME>.<tailnet-anda>.ts.net`
-      5. Koneksi pertama memerlukan persetujuan pairing — buka halaman **Nodes** di Web UI dan klik approve
+      5. Koneksi pertama memerlukan persetujuan pairing — buka halaman **Nodes** di Control UI dan klik approve
 
       Untuk pengaturan iOS dan Android, lihat [dokumentasi resmi](https://docs.openclaw.ai/platforms).
 
@@ -3792,8 +3704,8 @@ localization:
       ## Konfigurasi Khusus Zeabur
       Template ini mengonfigurasi pengaturan berikut untuk lingkungan cloud Zeabur:
 
-      - **`gateway.trustedProxies`**: Diatur ke `["10.0.0.0/8", "172.16.0.0/12"]` agar gateway dapat mengidentifikasi IP klien dengan benar di belakang reverse proxy Zeabur. Tanpa ini, Web UI mungkin menampilkan error "device identity required".
-      - **`dangerouslyDisableDeviceAuth`**: Menonaktifkan pemasangan perangkat Web UI (pemasangan perangkat dirancang untuk jaringan lokal; deployment cloud menggunakan autentikasi Gateway Token).
+      - **`gateway.trustedProxies`**: Diatur ke `["10.0.0.0/8", "172.16.0.0/12"]` agar gateway dapat mengidentifikasi IP klien dengan benar di belakang reverse proxy Zeabur. Tanpa ini, Control UI mungkin menampilkan error "device identity required".
+      - **`dangerouslyDisableDeviceAuth`**: Menonaktifkan pemasangan perangkat Control UI (pemasangan perangkat dirancang untuk jaringan lokal; deployment cloud menggunakan autentikasi Gateway Token).
       - **Symlink `/usr/local/bin`**: Perintah `openclaw`, `backup`, dan `restore` di-symlink ke `/usr/local/bin` agar berfungsi di terminal **Perintah** Zeabur.
       - **`OPENCLAW_DISABLE_BONJOUR=1`**: Menonaktifkan mDNS/Bonjour karena nama host container Zeabur dapat melebihi batas label DNS 63 byte. mDNS hanya digunakan untuk penemuan jaringan lokal dan tidak diperlukan di lingkungan cloud.
       - **`OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY=true`**: Memperbaiki masalah koneksi Telegram di lingkungan container (diperlukan untuk versi image `2026.2.17` dan setelahnya).
@@ -3808,6 +3720,10 @@ localization:
       - Upgrade image ke `2026.3.12` — Control UI dashboard v2, mode cepat GPT-5.4/Claude, plugin provider Ollama/vLLM/SGLang, dokumentasi deployment K8s, 20+ perbaikan keamanan (validasi origin WebSocket, penguatan exec approval, penguncian auto-load plugin), pengetatan cron delivery dengan migrasi `openclaw doctor --fix`, 60+ fitur baru dan 100+ perbaikan di 4 rilis (2026.3.9–2026.3.12)
       - ⚠️ Perubahan penting: cron delivery diperketat — jalankan `openclaw doctor --fix` di **Perintah** setelah upgrade untuk migrasi penyimpanan cron lama
       - Menambahkan dokumentasi variabel lingkungan `TZ` untuk konfigurasi zona waktu container
+      - Mengganti nama "Web UI" menjadi "Control UI" di seluruh dokumentasi
+      - Menghapus sinkronisasi otomatis variabel lingkungan saluran dari skrip startup (plugin saluran sekarang dikonfigurasi secara manual melalui Settings)
+      - Menghapus migrasi gateway config dari skrip startup (konfigurasi awal sudah mencakup semua field yang diperlukan)
+      - Menyederhanakan alur login: menghapus URL "Web UI (with token)", menggunakan halaman login Control UI dengan Gateway Token
 
       **2026/3/10**
       - Add Homebrew pre-installation: `touch /.dockerenv` and Homebrew install script now run on every container startup, enabling `brew` package management inside the container
@@ -3871,7 +3787,7 @@ localization:
       - Memperbaiki HTTP 500 pada `gpt-oss-120b`, `llama-3.3-70b`, `qwen-3-32`: menambahkan pengaturan kompatibilitas `supportsStore: false`
       - Memperbaiki flag reasoning `gpt-oss-120b` (diatur ke `true`)
       - Script restore mendukung format `.zip` (layanan backup Zeabur)
-      - Sinkronisasi variabel lingkungan saluran (`TELEGRAM_BOT_TOKEN`, `DISCORD_BOT_TOKEN`, `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`, `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_CHANNEL_SECRET`) ke file konfigurasi saat startup
+
 
       **2026/2/7**
       - Memperbaiki notifikasi proaktif cron: mendeteksi otomatis saluran yang dikonfigurasi sebagai target pengiriman heartbeat saat startup
@@ -3889,4 +3805,4 @@ localization:
       - Tambah bagian cadangan & pemulihan dengan layanan Zeabur
       - Tambah tips untuk membuat cadangan setelah pengaturan awal
       - Hapus patch Google Gemini CLI (sudah diperbaiki di upstream)
-      - Hapus variabel ANTHROPIC_API_KEY dan OPENAI_API_KEY dari deployment untuk mencegah OpenClaw mendeteksi API Key kosong dan gagal (dapat dikonfigurasi nanti via Web UI atau variabel lingkungan)
+      - Hapus variabel ANTHROPIC_API_KEY dan OPENAI_API_KEY dari deployment untuk mencegah OpenClaw mendeteksi API Key kosong dan gagal (dapat dikonfigurasi nanti via Control UI atau variabel lingkungan)
