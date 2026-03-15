@@ -12,11 +12,15 @@ spec:
       - key: PUBLIC_DOMAIN
         type: DOMAIN
         name: Domain
-        description: What domain do you want to bind openclaw to?
+        description: The domain for accessing OpenClaw Control UI (e.g. my-openclaw)
+      - key: ENABLE_CONTROL_UI
+        type: STRING
+        name: Enable Control UI
+        description: "Set to 'true' to enable the web Control UI via public domain (default). Set to 'false' for loopback only (more secure)."
       - key: ZEABUR_AI_HUB_API_KEY
         type: AI_HUB_KEY
-        name: Zeabur AI Hub API Key (Recommended)
-        description: Your Zeabur AI Hub API key for using Gemini/GPT/Claude/DeepSeek via AI Hub (optional, can be configured later)
+        name: Zeabur AI Hub API Key (Optional)
+        description: "Optional — leave blank to skip. If skipped, the default model is anthropic/claude-opus-4-6 (requires your own API key). With AI Hub, you get access to Gemini, GPT, Claude, DeepSeek. Can be added later in the Variables tab."
     tags:
       - AI
       - Assistant
@@ -37,7 +41,7 @@ spec:
       # OpenClaw 🦞
       OpenClaw 🦞 (formerly Clawdbot, Moltbot) is a personal AI assistant that runs locally and connects to multiple messaging platforms via a WebSocket-based Gateway architecture.
 
-      ⚠️ This template uses `ghcr.io/openclaw/openclaw:2026.3.12`. OpenClaw 🦞 is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues.
+      ⚠️ This template uses `ghcr.io/openclaw/openclaw:2026.3.13-1`. OpenClaw 🦞 is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues.
 
       ⚠️ If you encounter any issues, feel free to check the [GitHub issues](https://github.com/openclaw/openclaw/issues) for solutions or to report new ones. For Zeabur platform-related issues, please contact Zeabur support.
 
@@ -411,6 +415,14 @@ spec:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Changelog
+      **2026/3/15**
+      - Upgrade image to `2026.3.13-1` — plugin-sdk memory fix (resolves OOM crashes), browser session hardening, cron session targeting, 50+ fixes across security, Telegram, Discord, Windows, macOS, and config validation
+      - Add `ENABLE_CONTROL_UI` deploy variable — controls gateway bind mode (`lan` vs `loopback`) and Control UI access flags; default `true`
+      - Add `NODE_OPTIONS=--max-old-space-size=2048` to prevent Node.js OOM on constrained servers
+      - Remove startup script bloat: HEARTBEAT.md init, heartbeat target auto-detection, CLI wrapper, redundant exports/permissions, MEMORY.md init (all handled natively by OpenClaw)
+      - Switch gateway start command from `node dist/index.js` to built-in `openclaw` binary
+      - Improve deploy variable descriptions with default model info and localized instructions (EN, zh-TW, zh-CN, ja, es, id)
+
       **2026/3/13**
       - Upgrade image to `2026.3.12` — Control UI dashboard v2, GPT-5.4/Claude fast mode, Ollama/vLLM/SGLang provider plugins, K8s deployment docs, 20+ security fixes (WebSocket origin validation, exec approval hardening, plugin auto-load lockdown), cron delivery tightening with `openclaw doctor --fix` migration, 60+ new features and 100+ fixes across 4 releases (2026.3.9–2026.3.12)
       - ⚠️ Breaking: cron delivery tightened — run `openclaw doctor --fix` in **Command** after upgrading to migrate legacy cron storage
@@ -509,7 +521,7 @@ spec:
         domainKey: PUBLIC_DOMAIN
         spec:
           source:
-            image: ghcr.io/openclaw/openclaw:2026.3.12
+            image: ghcr.io/openclaw/openclaw:2026.3.13-1
             command:
               - /bin/sh
               - -c
@@ -568,29 +580,15 @@ spec:
                 done
 
                 echo "=== Setting up openclaw command ==="
-                WORKDIR="$(pwd)"
-                mkdir -p /home/node/bin
-                cat > /home/node/bin/openclaw << SCRIPT
-                #!/bin/sh
-                exec node ${WORKDIR}/dist/index.js "\$@"
-                SCRIPT
-                chmod +x /home/node/bin/openclaw
-                ln -sf /home/node/bin/openclaw /usr/local/bin/openclaw
-                ln -sf /opt/openclaw/backup.sh /home/node/bin/backup
-                ln -sf /opt/openclaw/restore.sh /home/node/bin/restore
-                ln -sf /home/node/bin/backup /usr/local/bin/backup
-                ln -sf /home/node/bin/restore /usr/local/bin/restore
-                export PATH="/home/node/bin:$PATH"
-                export NODE_ENV="${NODE_ENV:-production}"
-                export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=1024}"
-                echo "openclaw command ready at /home/node/bin/openclaw"
+                ln -sf /opt/openclaw/backup.sh /usr/local/bin/backup
+                ln -sf /opt/openclaw/restore.sh /usr/local/bin/restore
+                echo "openclaw command ready at $(which openclaw)"
 
                 # Setup config directories
                 CONFIG_DIR="/home/node/.openclaw"
                 CONFIG_FILE="$CONFIG_DIR/openclaw.json"
                 PROVIDERS_DIR="$CONFIG_DIR/providers"
-                mkdir -p "$CONFIG_DIR" "$PROVIDERS_DIR"
-                chmod 700 "$CONFIG_DIR"
+                mkdir -p "$PROVIDERS_DIR"
 
                 # Check if API key is a real value (not an unresolved template variable like '${ZEABUR_AI_HUB_API_KEY}')
                 HAS_AI_HUB_KEY=false
@@ -606,20 +604,28 @@ spec:
                 # Create initial config (only if not exists)
                 if [ ! -f "$CONFIG_FILE" ]; then
                   echo "Creating initial config..."
+
+                  # Gateway flags based on Control UI mode (default: enabled)
+                  if [ "${ENABLE_CONTROL_UI}" = "false" ]; then
+                    GATEWAY_JSON='"auth": { "mode": "token" }'
+                  else
+                    GATEWAY_JSON='"auth": { "mode": "token" }, "trustedProxies": ["10.0.0.0/8", "172.16.0.0/12"], "controlUi": { "allowInsecureAuth": true, "dangerouslyAllowHostHeaderOriginFallback": true, "dangerouslyDisableDeviceAuth": true }'
+                  fi
+
                   if [ "$HAS_AI_HUB_KEY" = true ]; then
-                    cat > "$CONFIG_FILE" << 'EOF'
+                    cat > "$CONFIG_FILE" << EOF
                 {
-                  "gateway": { "auth": { "mode": "token" }, "trustedProxies": ["10.0.0.0/8", "172.16.0.0/12"], "controlUi": { "allowInsecureAuth": true, "dangerouslyAllowHostHeaderOriginFallback": true, "dangerouslyDisableDeviceAuth": true } },
+                  "gateway": { ${GATEWAY_JSON} },
                   "agents": { "defaults": { "model": { "primary": "zeabur-ai/glm-4.7-flash", "fallbacks": ["zeabur-ai/grok-4-fast-non-reasoning", "zeabur-ai/minimax-m2.5", "zeabur-ai/kimi-k2.5", "zeabur-ai/qwen-3-235b", "zeabur-ai/gpt-5-mini"] } } },
                   "models": {
-                    "providers": { "$include": "./providers/zeabur-ai-hub.json5" }
+                    "providers": { "\$include": "./providers/zeabur-ai-hub.json5" }
                   }
                 }
                 EOF
                   else
-                    cat > "$CONFIG_FILE" << 'EOF'
+                    cat > "$CONFIG_FILE" << EOF
                 {
-                  "gateway": { "auth": { "mode": "token" }, "trustedProxies": ["10.0.0.0/8", "172.16.0.0/12"], "controlUi": { "allowInsecureAuth": true, "dangerouslyAllowHostHeaderOriginFallback": true, "dangerouslyDisableDeviceAuth": true } }
+                  "gateway": { ${GATEWAY_JSON} }
                 }
                 EOF
                   fi
@@ -673,6 +679,54 @@ spec:
                     "
                   fi
 
+                  # Sync Control UI config with ENABLE_CONTROL_UI env var
+                  node -e "
+                    const fs = require('fs');
+                    const JSON5 = require('json5');
+                    const configPath = '$CONFIG_FILE';
+                    const enableUi = '${ENABLE_CONTROL_UI}' !== 'false';
+                    try {
+                      const config = JSON5.parse(fs.readFileSync(configPath, 'utf8'));
+                      if (!config.gateway) config.gateway = {};
+                      let changed = false;
+
+                      if (enableUi) {
+                        // Enable: add trustedProxies + controlUi flags
+                        if (!config.gateway.trustedProxies) {
+                          config.gateway.trustedProxies = ['10.0.0.0/8', '172.16.0.0/12'];
+                          changed = true;
+                        }
+                        const ui = config.gateway.controlUi || {};
+                        if (!ui.allowInsecureAuth || !ui.dangerouslyAllowHostHeaderOriginFallback || !ui.dangerouslyDisableDeviceAuth) {
+                          config.gateway.controlUi = { ...ui, allowInsecureAuth: true, dangerouslyAllowHostHeaderOriginFallback: true, dangerouslyDisableDeviceAuth: true };
+                          changed = true;
+                        }
+                      } else {
+                        // Disable: remove dangerous controlUi flags and trustedProxies
+                        if (config.gateway.controlUi?.allowInsecureAuth || config.gateway.controlUi?.dangerouslyAllowHostHeaderOriginFallback || config.gateway.controlUi?.dangerouslyDisableDeviceAuth) {
+                          delete config.gateway.controlUi.allowInsecureAuth;
+                          delete config.gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback;
+                          delete config.gateway.controlUi.dangerouslyDisableDeviceAuth;
+                          if (Object.keys(config.gateway.controlUi).length === 0) delete config.gateway.controlUi;
+                          changed = true;
+                        }
+                        if (config.gateway.trustedProxies) {
+                          delete config.gateway.trustedProxies;
+                          changed = true;
+                        }
+                      }
+
+                      if (changed) {
+                        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                        console.log('Control UI config synced (enabled=' + enableUi + ')');
+                      } else {
+                        console.log('Control UI config already in sync.');
+                      }
+                    } catch (err) {
+                      console.error('Warning: Failed to sync Control UI config:', err.message);
+                    }
+                  "
+
                   chmod 600 "$CONFIG_FILE" 2>/dev/null || true
                 fi
 
@@ -688,73 +742,6 @@ spec:
                   fi
                 fi
 
-                # Patch heartbeat config: auto-detect channel and set explicit delivery target
-                # This fixes cron proactive notifications which require a resolved delivery target.
-                # Without this, heartbeat defaults to target:"last" which resolves to "none" if
-                # no one has messaged the bot yet.
-                if [ -f "$CONFIG_FILE" ]; then
-                  node -e "
-                    const fs = require('fs');
-                    const JSON5 = require('json5');
-                    const configPath = '$CONFIG_FILE';
-                    try {
-                      const config = JSON5.parse(fs.readFileSync(configPath, 'utf8'));
-                      const channels = config.channels || {};
-                      const heartbeat = config.agents?.defaults?.heartbeat;
-
-                      // Skip if user already configured heartbeat target explicitly
-                      if (heartbeat?.target && heartbeat.target !== 'last') {
-                        console.log('Heartbeat target already set to: ' + heartbeat.target);
-                      } else {
-                        // Auto-detect first configured channel as heartbeat target
-                        const channelPriority = ['telegram', 'whatsapp', 'discord', 'slack', 'line'];
-                        let detected = null;
-                        for (const ch of channelPriority) {
-                          const chCfg = channels[ch];
-                          if (chCfg && (chCfg.enabled !== false)) {
-                            // Check channel has credentials configured
-                            if (ch === 'telegram' && chCfg.botToken) { detected = ch; break; }
-                            if (ch === 'whatsapp' && (chCfg.phoneNumberId || chCfg.enabled)) { detected = ch; break; }
-                            if (ch === 'discord' && chCfg.token) { detected = ch; break; }
-                            if (ch === 'slack' && chCfg.botToken) { detected = ch; break; }
-                            if (ch === 'line' && chCfg.channelAccessToken) { detected = ch; break; }
-                          }
-                        }
-                        if (detected) {
-                          if (!config.agents) config.agents = {};
-                          if (!config.agents.defaults) config.agents.defaults = {};
-                          config.agents.defaults.heartbeat = {
-                            ...(config.agents.defaults.heartbeat || {}),
-                            target: detected,
-                          };
-                          fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-                          console.log('Heartbeat target auto-set to: ' + detected);
-                        } else {
-                          console.log('No channel detected, heartbeat target unchanged (last)');
-                        }
-                      }
-                    } catch (err) {
-                      console.error('Warning: Failed to patch heartbeat config:', err.message);
-                    }
-                  "
-                fi
-
-                # Initialize workspace
-                OPENCLAW_WORKSPACE_DIR="${OPENCLAW_WORKSPACE_DIR:-/home/node/.openclaw/workspace}"
-                mkdir -p "${OPENCLAW_WORKSPACE_DIR}"
-                if [ ! -f "${OPENCLAW_WORKSPACE_DIR}/MEMORY.md" ]; then
-                  echo "# Memory" > "${OPENCLAW_WORKSPACE_DIR}/MEMORY.md"
-                fi
-
-                # Ensure HEARTBEAT.md has actionable content for cron notifications.
-                # OpenClaw skips heartbeat when HEARTBEAT.md is effectively empty (only
-                # comments/headers), which silently blocks cron-triggered notifications.
-                # Only write for NEW workspaces to avoid overwriting existing user config.
-                HEARTBEAT_FILE="${OPENCLAW_WORKSPACE_DIR}/HEARTBEAT.md"
-                if [ ! -f "$HEARTBEAT_FILE" ]; then
-                  printf '%s\n' '# HEARTBEAT.md' '' 'Check for pending notifications, cron job results, and system events.' 'If nothing needs attention, reply HEARTBEAT_OK.' > "$HEARTBEAT_FILE"
-                  echo "HEARTBEAT.md initialized with actionable content"
-                fi
 
 
             - path: /opt/openclaw/start_gateway.sh
@@ -765,9 +752,16 @@ spec:
                 GATEWAY_LOG="/tmp/openclaw-gateway.log"
                 PORT="${OPENCLAW_GATEWAY_PORT:-18789}"
 
+                # Derive bind mode from ENABLE_CONTROL_UI (default: lan)
+                if [ "${ENABLE_CONTROL_UI}" = "false" ]; then
+                  BIND="${OPENCLAW_GATEWAY_BIND:-loopback}"
+                else
+                  BIND="${OPENCLAW_GATEWAY_BIND:-lan}"
+                fi
+
                 while true; do
                   echo "=== Starting OpenClaw Gateway ==="
-                  node dist/index.js gateway --allow-unconfigured --bind "${OPENCLAW_GATEWAY_BIND:-lan}" --token "${OPENCLAW_GATEWAY_TOKEN}" 2>&1 | tee "$GATEWAY_LOG"
+                  openclaw gateway --allow-unconfigured --bind "${BIND}" --token "${OPENCLAW_GATEWAY_TOKEN}" 2>&1 | tee "$GATEWAY_LOG"
                   EXIT_CODE=$?
                   echo "=== Gateway exited (code: $EXIT_CODE), restarting in 1h... ==="
 
@@ -1171,7 +1165,7 @@ spec:
 
                 while true; do
                   echo "=== Starting OpenClaw Gateway (Tailscale) ==="
-                  node dist/index.js gateway --tailscale serve --allow-unconfigured 2>&1 | tee "$GATEWAY_LOG"
+                  openclaw gateway --tailscale serve --allow-unconfigured 2>&1 | tee "$GATEWAY_LOG"
                   EXIT_CODE=$?
                   echo "=== Gateway exited (code: $EXIT_CODE), restarting in 1h... ==="
 
@@ -1391,10 +1385,14 @@ spec:
               default: ${PASSWORD}
             ZEABUR_AI_HUB_API_KEY:
               default: ${ZEABUR_AI_HUB_API_KEY}
+            ENABLE_CONTROL_UI:
+              default: ${ENABLE_CONTROL_UI}
             OPENCLAW_DISABLE_BONJOUR:
               default: "1"
             OPENCLAW_TELEGRAM_DISABLE_AUTO_SELECT_FAMILY:
               default: "true"
+            NODE_OPTIONS:
+              default: "--max-old-space-size=2048"
           instructions:
             - type: PASSWORD
               title: Gateway Token
@@ -1408,10 +1406,13 @@ localization:
     variables:
       - key: PUBLIC_DOMAIN
         name: 網域
-        description: 您想要綁定 OpenClaw 的網域是？
+        description: 用來存取 OpenClaw Control UI 的網域（例如 my-openclaw）
+      - key: ENABLE_CONTROL_UI
+        name: 啟用 Control UI
+        description: "設為 'true' 透過公開網域啟用 Control UI（預設）。設為 'false' 僅本地連線（較安全）。"
       - key: ZEABUR_AI_HUB_API_KEY
-        name: Zeabur AI Hub API 金鑰（推薦）
-        description: 您的 Zeabur AI Hub API 金鑰，透過 AI Hub 使用 Gemini/GPT/Claude/DeepSeek（選填，可之後再設定）
+        name: Zeabur AI Hub API 金鑰（選填）
+        description: 選填 — 可留空跳過。若跳過，預設模型為 anthropic/claude-opus-4-6（需自行設定 API Key）。填入後可透過 AI Hub 使用 Gemini、GPT、Claude、DeepSeek。之後可在「環境變數」分頁新增或修改。
     readme: |
       # OpenClaw 🦞
       OpenClaw 🦞（原 Clawdbot、Moltbot）是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台。
@@ -1792,6 +1793,14 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 更新日誌
+      **2026/3/15**
+      - 升級映像檔至 `2026.3.13-1` — 修復 plugin-sdk 記憶體暴增（解決 OOM 崩潰）、瀏覽器 session 強化、cron session 目標、50+ 修復涵蓋安全性、Telegram、Discord、Windows、macOS 及設定驗證
+      - 新增 `ENABLE_CONTROL_UI` 部署變數 — 控制 gateway 綁定模式（`lan` vs `loopback`）及 Control UI 存取；預設為 `true`
+      - 新增 `NODE_OPTIONS=--max-old-space-size=2048` 防止低記憶體伺服器 OOM
+      - 移除啟動腳本冗餘項目：HEARTBEAT.md 初始化、heartbeat 目標自動偵測、CLI wrapper、多餘的 export/權限設定、MEMORY.md 初始化（皆由 OpenClaw 原生處理）
+      - Gateway 啟動指令從 `node dist/index.js` 改為內建的 `openclaw` 命令
+      - 改善部署變數說明，包含預設模型資訊及 6 種語言的本地化說明
+
       **2026/3/13**
       - 升級映像檔至 `2026.3.12` — Control UI 儀表板 v2、GPT-5.4/Claude 快速模式、Ollama/vLLM/SGLang provider 外掛、K8s 部署文件、20+ 安全修復（WebSocket origin 驗證、exec approval 強化、plugin 自動載入鎖定）、cron delivery 收緊並需要 `openclaw doctor --fix` 遷移，共 60+ 新功能及 100+ 修復，涵蓋 4 個版本（2026.3.9–2026.3.12）
       - ⚠️ 重大變更：cron delivery 已收緊 — 升級後請在**指令**中執行 `openclaw doctor --fix` 以遷移舊版 cron 儲存格式
@@ -1889,10 +1898,13 @@ localization:
     variables:
       - key: PUBLIC_DOMAIN
         name: 域名
-        description: 您想要绑定 OpenClaw 的域名是？
+        description: 用来访问 OpenClaw Control UI 的域名（例如 my-openclaw）
+      - key: ENABLE_CONTROL_UI
+        name: 启用 Control UI
+        description: "设为 'true' 通过公开域名启用 Control UI（默认）。设为 'false' 仅本地连接（更安全）。"
       - key: ZEABUR_AI_HUB_API_KEY
-        name: Zeabur AI Hub API 密钥（推荐）
-        description: 您的 Zeabur AI Hub API 密钥，通过 AI Hub 使用 Gemini/GPT/Claude/DeepSeek（选填，可之后再设定）
+        name: Zeabur AI Hub API 密钥（选填）
+        description: 选填 — 可留空跳过。若跳过，默认模型为 anthropic/claude-opus-4-6（需自行设置 API Key）。填入后可通过 AI Hub 使用 Gemini、GPT、Claude、DeepSeek。之后可在「变量」页签新增或修改。
     readme: |
       # OpenClaw 🦞
       OpenClaw 🦞（原 Clawdbot、Moltbot）是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台。
@@ -2273,6 +2285,14 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 更新日志
+      **2026/3/15**
+      - 升级镜像至 `2026.3.13-1` — 修复 plugin-sdk 内存暴增（解决 OOM 崩溃）、浏览器 session 强化、cron session 目标、50+ 修复涵盖安全性、Telegram、Discord、Windows、macOS 及配置验证
+      - 新增 `ENABLE_CONTROL_UI` 部署变量 — 控制 gateway 绑定模式（`lan` vs `loopback`）及 Control UI 访问；默认为 `true`
+      - 新增 `NODE_OPTIONS=--max-old-space-size=2048` 防止低内存服务器 OOM
+      - 移除启动脚本冗余项：HEARTBEAT.md 初始化、heartbeat 目标自动检测、CLI wrapper、多余的 export/权限设置、MEMORY.md 初始化（均由 OpenClaw 原生处理）
+      - Gateway 启动命令从 `node dist/index.js` 改为内置 `openclaw` 命令
+      - 改善部署变量说明，包含默认模型信息及 6 种语言的本地化说明
+
       **2026/3/13**
       - 升级镜像至 `2026.3.12` — Control UI 仪表板 v2、GPT-5.4/Claude 快速模式、Ollama/vLLM/SGLang provider 插件、K8s 部署文档、20+ 安全修复（WebSocket origin 验证、exec approval 强化、plugin 自动加载锁定）、cron delivery 收紧并需要 `openclaw doctor --fix` 迁移，共 60+ 新功能及 100+ 修复，涵盖 4 个版本（2026.3.9–2026.3.12）
       - ⚠️ 重大变更：cron delivery 已收紧 — 升级后请在**命令**中执行 `openclaw doctor --fix` 以迁移旧版 cron 存储格式
@@ -2370,10 +2390,13 @@ localization:
     variables:
       - key: PUBLIC_DOMAIN
         name: ドメイン
-        description: OpenClaw にバインドするドメインは？
+        description: OpenClaw Control UI にアクセスするためのドメイン（例：my-openclaw）
+      - key: ENABLE_CONTROL_UI
+        name: Control UI を有効化
+        description: "'true' で公開ドメイン経由の Control UI を有効化（デフォルト）。'false' でローカル接続のみ（より安全）。"
       - key: ZEABUR_AI_HUB_API_KEY
-        name: Zeabur AI Hub API キー（推奨）
-        description: Zeabur AI Hub API キー、AI Hub 経由で Gemini/GPT/Claude/DeepSeek を使用（任意、後で設定可能）
+        name: Zeabur AI Hub API キー（任意）
+        description: 任意 — 空欄でスキップできます。スキップした場合、デフォルトモデルは anthropic/claude-opus-4-6（別途 API キーが必要）です。AI Hub を使うと Gemini、GPT、Claude、DeepSeek を利用できます。後から「変数」タブで追加・変更可能です。
     readme: |
       # OpenClaw 🦞
       OpenClaw 🦞（旧 Clawdbot、Moltbot）は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォームに接続する個人用 AI アシスタントです。
@@ -2754,6 +2777,14 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 変更履歴
+      **2026/3/15**
+      - イメージを `2026.3.13-1` にアップグレード — plugin-sdk メモリ膨張修正（OOM クラッシュ解消）、ブラウザセッション強化、cron セッションターゲット、セキュリティ・Telegram・Discord・Windows・macOS・設定検証に関する 50 以上の修正
+      - `ENABLE_CONTROL_UI` デプロイ変数を追加 — gateway バインドモード（`lan` vs `loopback`）と Control UI アクセスを制御。デフォルト `true`
+      - `NODE_OPTIONS=--max-old-space-size=2048` を追加し、低メモリサーバーでの OOM を防止
+      - 起動スクリプトの冗長項目を削除：HEARTBEAT.md 初期化、heartbeat ターゲット自動検出、CLI ラッパー、不要な export/権限設定、MEMORY.md 初期化（すべて OpenClaw がネイティブに処理）
+      - Gateway 起動コマンドを `node dist/index.js` から内蔵 `openclaw` コマンドに変更
+      - デプロイ変数の説明を改善、デフォルトモデル情報と 6 言語のローカライズ対応
+
       **2026/3/13**
       - イメージを `2026.3.12` にアップグレード — Control UI ダッシュボード v2、GPT-5.4/Claude 高速モード、Ollama/vLLM/SGLang プロバイダープラグイン、K8s デプロイドキュメント、20 以上のセキュリティ修正（WebSocket origin 検証、exec approval 強化、plugin 自動ロードロックダウン）、cron delivery 引き締めと `openclaw doctor --fix` 移行、60 以上の新機能と 100 以上の修正、4 リリース分（2026.3.9–2026.3.12）
       - ⚠️ 破壊的変更：cron delivery が厳格化 — アップグレード後に**コマンド**で `openclaw doctor --fix` を実行してレガシー cron ストレージを移行してください
@@ -2851,10 +2882,13 @@ localization:
     variables:
       - key: PUBLIC_DOMAIN
         name: Dominio
-        description: ¿Qué dominio desea vincular a OpenClaw?
+        description: El dominio para acceder a OpenClaw Control UI (ej. my-openclaw)
+      - key: ENABLE_CONTROL_UI
+        name: Habilitar Control UI
+        description: "'true' para habilitar la Control UI vía dominio público (predeterminado). 'false' para solo conexiones locales (más seguro)."
       - key: ZEABUR_AI_HUB_API_KEY
-        name: Clave API de Zeabur AI Hub (Recomendado)
-        description: Su clave API de Zeabur AI Hub para usar Gemini/GPT/Claude/DeepSeek a través de AI Hub (opcional, puede configurarse después)
+        name: Clave API de Zeabur AI Hub (Opcional)
+        description: "Opcional — déjelo en blanco para omitir. Si se omite, el modelo predeterminado es anthropic/claude-opus-4-6 (requiere su propia clave API). Con AI Hub puede usar Gemini, GPT, Claude, DeepSeek. Puede añadirlo después en la pestaña Variables."
     readme: |
       # OpenClaw 🦞
       OpenClaw 🦞 (anteriormente Clawdbot, Moltbot) es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería a través de una arquitectura Gateway basada en WebSocket.
@@ -3235,6 +3269,14 @@ localization:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Registro de Cambios
+      **2026/3/15**
+      - Actualizar imagen a `2026.3.13-1` — corrección de memory leak en plugin-sdk (resuelve OOM), hardening de sesiones de navegador, targeting de sesiones cron, 50+ correcciones en seguridad, Telegram, Discord, Windows, macOS y validación de configuración
+      - Nueva variable de despliegue `ENABLE_CONTROL_UI` — controla el modo de bind del gateway (`lan` vs `loopback`) y acceso a Control UI; por defecto `true`
+      - Añadir `NODE_OPTIONS=--max-old-space-size=2048` para prevenir OOM en servidores con poca memoria
+      - Eliminar elementos redundantes del script de inicio: inicialización de HEARTBEAT.md, auto-detección de heartbeat target, CLI wrapper, exports/permisos innecesarios, init de MEMORY.md (todo manejado nativamente por OpenClaw)
+      - Cambiar comando de inicio del gateway de `node dist/index.js` al binario `openclaw` integrado
+      - Mejorar descripciones de variables de despliegue con info del modelo predeterminado e instrucciones en 6 idiomas
+
       **2026/3/13**
       - Actualizar imagen a `2026.3.12` — Control UI dashboard v2, modo rápido GPT-5.4/Claude, plugins de proveedor Ollama/vLLM/SGLang, documentación de despliegue K8s, 20+ correcciones de seguridad (validación de origen WebSocket, endurecimiento de exec approval, bloqueo de auto-carga de plugins), restricción de cron delivery con migración `openclaw doctor --fix`, 60+ nuevas funciones y 100+ correcciones en 4 versiones (2026.3.9–2026.3.12)
       - ⚠️ Cambio importante: cron delivery restringido — ejecute `openclaw doctor --fix` en **Comando** después de actualizar para migrar el almacenamiento cron heredado
@@ -3332,10 +3374,13 @@ localization:
     variables:
       - key: PUBLIC_DOMAIN
         name: Domain
-        description: Domain apa yang ingin Anda ikat ke OpenClaw?
+        description: Domain untuk mengakses OpenClaw Control UI (contoh my-openclaw)
+      - key: ENABLE_CONTROL_UI
+        name: Aktifkan Control UI
+        description: "'true' untuk mengaktifkan Control UI via domain publik (default). 'false' untuk hanya koneksi lokal (lebih aman)."
       - key: ZEABUR_AI_HUB_API_KEY
-        name: Kunci API Zeabur AI Hub (Direkomendasikan)
-        description: Kunci API Zeabur AI Hub Anda untuk menggunakan Gemini/GPT/Claude/DeepSeek melalui AI Hub (opsional, dapat dikonfigurasi nanti)
+        name: Kunci API Zeabur AI Hub (Opsional)
+        description: "Opsional — kosongkan untuk melewati. Jika dilewati, model default adalah anthropic/claude-opus-4-6 (memerlukan API key sendiri). Dengan AI Hub, Anda dapat menggunakan Gemini, GPT, Claude, DeepSeek. Dapat ditambahkan nanti di tab Variabel."
     readme: |
       # OpenClaw 🦞
       OpenClaw 🦞 (sebelumnya Clawdbot, Moltbot) adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan melalui arsitektur Gateway berbasis WebSocket.
@@ -3716,6 +3761,14 @@ localization:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Catatan Perubahan
+      **2026/3/15**
+      - Upgrade image ke `2026.3.13-1` — perbaikan memory leak plugin-sdk (mengatasi OOM crash), penguatan sesi browser, penargetan sesi cron, 50+ perbaikan keamanan, Telegram, Discord, Windows, macOS, dan validasi konfigurasi
+      - Tambah variabel deploy `ENABLE_CONTROL_UI` — mengontrol mode bind gateway (`lan` vs `loopback`) dan akses Control UI; default `true`
+      - Tambah `NODE_OPTIONS=--max-old-space-size=2048` untuk mencegah OOM di server dengan memori terbatas
+      - Hapus item redundan dari skrip startup: inisialisasi HEARTBEAT.md, auto-deteksi heartbeat target, CLI wrapper, export/permission yang tidak perlu, init MEMORY.md (semua ditangani secara native oleh OpenClaw)
+      - Ubah perintah startup gateway dari `node dist/index.js` ke binary `openclaw` bawaan
+      - Perbaiki deskripsi variabel deploy dengan info model default dan instruksi lokal dalam 6 bahasa
+
       **2026/3/13**
       - Upgrade image ke `2026.3.12` — Control UI dashboard v2, mode cepat GPT-5.4/Claude, plugin provider Ollama/vLLM/SGLang, dokumentasi deployment K8s, 20+ perbaikan keamanan (validasi origin WebSocket, penguatan exec approval, penguncian auto-load plugin), pengetatan cron delivery dengan migrasi `openclaw doctor --fix`, 60+ fitur baru dan 100+ perbaikan di 4 rilis (2026.3.9–2026.3.12)
       - ⚠️ Perubahan penting: cron delivery diperketat — jalankan `openclaw doctor --fix` di **Perintah** setelah upgrade untuk migrasi penyimpanan cron lama
