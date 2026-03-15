@@ -48,13 +48,19 @@ spec:
 
       ⚠️ This template requires a [Dedicated Server](https://zeabur.com/docs/dedicated-server) on Zeabur. It cannot run on shared clusters.
 
-      ⚠️ This template is pre-configured and ready to use - no need to run `openclaw onboard`. If you want to reconfigure, open **Command** in Zeabur dashboard and run:
-      ```bash
-      openclaw onboard --gateway-bind lan
-      ```
-      See the [Wizard Reference](https://docs.openclaw.ai/reference/wizard) for all available flags.
+      ⚠️ This template is pre-configured and ready to use - no need to run `openclaw onboard`. If you do run it, you will need to manually update the corresponding settings afterward. See the [official documentation](https://docs.openclaw.ai) for details.
 
       ---
+
+      ## Deploy Variables
+
+      You will be asked to fill in these variables when deploying:
+
+      | Variable | Required | Description |
+      |----------|----------|-------------|
+      | **Domain** | Yes | The subdomain for accessing OpenClaw (e.g. `my-openclaw` → `my-openclaw.zeabur.app`). Can be removed after switching to loopback mode. |
+      | **Enable Control UI** | Yes | `true` (default) — enables the web Control UI via your public domain. `false` — binds to loopback only, no public web access (more secure, use with Tailscale or supported channels like Telegram) |
+      | **Zeabur AI Hub API Key** | No | Leave blank to skip. Without it, the default model is `anthropic/claude-opus-4-6` (requires your own API key). With AI Hub, you get access to Gemini, GPT, Claude, DeepSeek out of the box. Can be added later in the service's **Variables** tab. |
 
       ## Recommended Resources
       - **Minimum**: 2 vCPU / 4 GB RAM
@@ -1417,20 +1423,26 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞（原 Clawdbot、Moltbot）是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台。
 
-      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.3.7`。OpenClaw 🦞 正在快速開發中，可能存在尚未發現的 bug。更改版本後也無法確保穩定性。
+      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.3.13-1`。OpenClaw 🦞 正在快速開發中，可能存在尚未發現的 bug。更改版本後也無法確保穩定性。
 
       ⚠️ 如果遇到任何問題，歡迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 尋找解決方案或回報新問題。Zeabur 平台相關問題請聯繫 Zeabur 支援。
 
 
       ⚠️ 此模板需要在 Zeabur 上使用[專用伺服器](https://zeabur.com/docs/dedicated-server)，無法在共享叢集上運行。
 
-      ⚠️ 本模板已預先設定好可直接使用，不需要執行 `openclaw onboard`。如果要重新設定，請在 Zeabur 控制台開啟**指令**執行：
-      ```bash
-      openclaw onboard --gateway-bind lan
-      ```
-      完整參數請參考 [Wizard Reference](https://docs.openclaw.ai/reference/wizard)。
+      ⚠️ 本模板已預先設定好可直接使用，不需要執行 `openclaw onboard`。如果執行了，需要自行修改對應的設定。請參考[官方文件](https://docs.openclaw.ai)。
 
       ---
+
+      ## 部署變數
+
+      部署時需填寫以下變數：
+
+      | 變數 | 必填 | 說明 |
+      |------|------|------|
+      | **網域** | 是 | 用來存取 OpenClaw 的子網域（例如 `my-openclaw` → `my-openclaw.zeabur.app`）。切換為 loopback 模式後可移除。 |
+      | **啟用 Control UI** | 是 | `true`（預設）— 透過公開網域啟用 Control UI。`false` — 僅綁定本地迴路，無公開網頁存取（較安全，搭配 Tailscale 或 Tailscale 或 Telegram 等支援的通訊頻道使用） |
+      | **Zeabur AI Hub API 金鑰** | 否 | 可留空跳過。若跳過，預設模型為 `anthropic/claude-opus-4-6`（需自行設定 API Key）。填入後可使用 Gemini、GPT、Claude、DeepSeek。之後可在服務的「環境變數」分頁新增。 |
 
       ## 建議資源配置
       - **最低配置**：2 vCPU / 4 GB RAM
@@ -1909,20 +1921,26 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞（原 Clawdbot、Moltbot）是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台。
 
-      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.3.7`。OpenClaw 🦞 正在快速开发中，可能存在尚未发现的 bug。更改版本后也无法确保稳定性。
+      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.3.13-1`。OpenClaw 🦞 正在快速开发中，可能存在尚未发现的 bug。更改版本后也无法确保稳定性。
 
       ⚠️ 如果遇到任何问题，欢迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 寻找解决方案或回报新问题。Zeabur 平台相关问题请联系 Zeabur 支持。
 
 
       ⚠️ 此模板需要在 Zeabur 上使用[专用服务器](https://zeabur.com/docs/dedicated-server)，无法在共享集群上运行。
 
-      ⚠️ 本模板已预先配置好可直接使用，不需要运行 `openclaw onboard`。如果要重新配置，请在 Zeabur 控制台打开**命令**执行：
-      ```bash
-      openclaw onboard --gateway-bind lan
-      ```
-      完整参数请参考 [Wizard Reference](https://docs.openclaw.ai/reference/wizard)。
+      ⚠️ 本模板已预先配置好可直接使用，不需要运行 `openclaw onboard`。如果运行了，需要自行修改对应的设置。请参考[官方文档](https://docs.openclaw.ai)。
 
       ---
+
+      ## 部署变量
+
+      部署时需填写以下变量：
+
+      | 变量 | 必填 | 说明 |
+      |------|------|------|
+      | **域名** | 是 | 用来访问 OpenClaw 的子域名（例如 `my-openclaw` → `my-openclaw.zeabur.app`）。切换为 loopback 模式后可移除。 |
+      | **启用 Control UI** | 是 | `true`（默认）— 通过公开域名启用 Control UI。`false` — 仅绑定本地回环，无公开网页访问（更安全，配合 Tailscale 或 Tailscale 或 Telegram 等支持的通讯频道使用） |
+      | **Zeabur AI Hub API 密钥** | 否 | 可留空跳过。若跳过，默认模型为 `anthropic/claude-opus-4-6`（需自行设置 API Key）。填入后可使用 Gemini、GPT、Claude、DeepSeek。之后可在服务的「变量」页签新增。 |
 
       ## 建议资源配置
       - **最低配置**：2 vCPU / 4 GB RAM
@@ -2401,20 +2419,26 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞（旧 Clawdbot、Moltbot）は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォームに接続する個人用 AI アシスタントです。
 
-      ⚠️ 本テンプレートは `ghcr.io/openclaw/openclaw:2026.3.7` を使用しています。OpenClaw 🦞 は急速に開発中のため、未発見のバグがある可能性があります。バージョンを変更した場合も安定性を保証できません。
+      ⚠️ 本テンプレートは `ghcr.io/openclaw/openclaw:2026.3.13-1` を使用しています。OpenClaw 🦞 は急速に開発中のため、未発見のバグがある可能性があります。バージョンを変更した場合も安定性を保証できません。
 
       ⚠️ 問題が発生した場合は、[GitHub issues](https://github.com/openclaw/openclaw/issues) で解決策を探したり、新しい問題を報告したりしてください。Zeabur プラットフォーム関連の問題については、Zeabur サポートにお問い合わせください。
 
 
       ⚠️ このテンプレートは Zeabur の[専用サーバー](https://zeabur.com/docs/dedicated-server)が必要です。共有クラスターでは実行できません。
 
-      ⚠️ 本テンプレートは事前設定済みですぐに使用できます。`openclaw onboard` を実行する必要はありません。再設定する場合は、Zeabur ダッシュボードの**コマンド**から実行してください：
-      ```bash
-      openclaw onboard --gateway-bind lan
-      ```
-      全フラグは [Wizard Reference](https://docs.openclaw.ai/reference/wizard) を参照してください。
+      ⚠️ 本テンプレートは事前設定済みですぐに使用できます。`openclaw onboard` を実行する必要はありません。実行した場合は、対応する設定を手動で修正する必要があります。詳細は[公式ドキュメント](https://docs.openclaw.ai)を参照してください。
 
       ---
+
+      ## デプロイ変数
+
+      デプロイ時に以下の変数を入力します：
+
+      | 変数 | 必須 | 説明 |
+      |------|------|------|
+      | **ドメイン** | はい | OpenClaw にアクセスするためのサブドメイン（例：`my-openclaw` → `my-openclaw.zeabur.app`）。loopback モードに切り替え後は削除可能。 |
+      | **Control UI を有効化** | はい | `true`（デフォルト）— 公開ドメイン経由で Control UI を有効化。`false` — ローカルループバックのみ、公開 Web アクセスなし（より安全、Tailscale や Tailscale や Telegram 等の対応チャンネルと併用） |
+      | **Zeabur AI Hub API キー** | いいえ | 空欄でスキップ可能。スキップした場合、デフォルトモデルは `anthropic/claude-opus-4-6`（別途 API キーが必要）。AI Hub を使うと Gemini、GPT、Claude、DeepSeek を利用可能。後から「変数」タブで追加できます。 |
 
       ## 推奨リソース
       - **最小構成**：2 vCPU / 4 GB RAM
@@ -2893,20 +2917,26 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞 (anteriormente Clawdbot, Moltbot) es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería a través de una arquitectura Gateway basada en WebSocket.
 
-      ⚠️ Esta plantilla usa `ghcr.io/openclaw/openclaw:2026.3.7`. OpenClaw 🦞 está en desarrollo rápido, por lo que puede haber errores no descubiertos. Cambiar de versión tampoco garantiza estabilidad.
+      ⚠️ Esta plantilla usa `ghcr.io/openclaw/openclaw:2026.3.13-1`. OpenClaw 🦞 está en desarrollo rápido, por lo que puede haber errores no descubiertos. Cambiar de versión tampoco garantiza estabilidad.
 
       ⚠️ Si encuentra algún problema, no dude en consultar los [GitHub issues](https://github.com/openclaw/openclaw/issues) para buscar soluciones o reportar nuevos problemas. Para problemas relacionados con la plataforma Zeabur, contacte al soporte de Zeabur.
 
 
       ⚠️ Esta plantilla requiere un [Servidor Dedicado](https://zeabur.com/docs/dedicated-server) en Zeabur. No se puede ejecutar en clústeres compartidos.
 
-      ⚠️ Esta plantilla está preconfigurada y lista para usar - no es necesario ejecutar `openclaw onboard`. Si desea reconfigurar, abra **Comando** en el panel de Zeabur y ejecute:
-      ```bash
-      openclaw onboard --gateway-bind lan
-      ```
-      Consulte [Wizard Reference](https://docs.openclaw.ai/reference/wizard) para todos los flags disponibles.
+      ⚠️ Esta plantilla está preconfigurada y lista para usar - no es necesario ejecutar `openclaw onboard`. Si lo ejecuta, deberá modificar manualmente la configuración correspondiente. Consulte la [documentación oficial](https://docs.openclaw.ai) para más detalles.
 
       ---
+
+      ## Variables de Despliegue
+
+      Se le pedirá que complete estas variables al desplegar:
+
+      | Variable | Requerida | Descripción |
+      |----------|-----------|-------------|
+      | **Dominio** | Sí | El subdominio para acceder a OpenClaw (ej. `my-openclaw` → `my-openclaw.zeabur.app`). Se puede eliminar después de cambiar al modo loopback. |
+      | **Habilitar Control UI** | Sí | `true` (predeterminado) — habilita la Control UI web vía dominio público. `false` — solo loopback, sin acceso web público (más seguro, usar con Tailscale o canales compatibles como Telegram) |
+      | **Clave API de Zeabur AI Hub** | No | Déjelo en blanco para omitir. Sin ella, el modelo predeterminado es `anthropic/claude-opus-4-6` (requiere su propia clave API). Con AI Hub puede usar Gemini, GPT, Claude, DeepSeek. Puede añadirlo después en la pestaña **Variables**. |
 
       ## Recursos Recomendados
       - **Mínimo**: 2 vCPU / 4 GB RAM
@@ -3385,20 +3415,26 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞 (sebelumnya Clawdbot, Moltbot) adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan melalui arsitektur Gateway berbasis WebSocket.
 
-      ⚠️ Template ini menggunakan `ghcr.io/openclaw/openclaw:2026.3.7`. OpenClaw 🦞 sedang dalam pengembangan cepat, jadi mungkin ada bug yang belum ditemukan. Mengubah versi juga tidak menjamin stabilitas.
+      ⚠️ Template ini menggunakan `ghcr.io/openclaw/openclaw:2026.3.13-1`. OpenClaw 🦞 sedang dalam pengembangan cepat, jadi mungkin ada bug yang belum ditemukan. Mengubah versi juga tidak menjamin stabilitas.
 
       ⚠️ Jika Anda mengalami masalah, silakan kunjungi [GitHub issues](https://github.com/openclaw/openclaw/issues) untuk mencari solusi atau melaporkan masalah baru. Untuk masalah terkait platform Zeabur, silakan hubungi dukungan Zeabur.
 
 
       ⚠️ Template ini memerlukan [Dedicated Server](https://zeabur.com/docs/dedicated-server) di Zeabur. Tidak dapat berjalan di kluster bersama.
 
-      ⚠️ Template ini sudah dikonfigurasi dan siap digunakan - tidak perlu menjalankan `openclaw onboard`. Jika ingin mengkonfigurasi ulang, buka **Perintah** di dashboard Zeabur dan jalankan:
-      ```bash
-      openclaw onboard --gateway-bind lan
-      ```
-      Lihat [Wizard Reference](https://docs.openclaw.ai/reference/wizard) untuk semua flag yang tersedia.
+      ⚠️ Template ini sudah dikonfigurasi dan siap digunakan - tidak perlu menjalankan `openclaw onboard`. Jika Anda menjalankannya, Anda perlu memperbarui pengaturan terkait secara manual. Lihat [dokumentasi resmi](https://docs.openclaw.ai) untuk detailnya.
 
       ---
+
+      ## Variabel Deploy
+
+      Anda akan diminta mengisi variabel berikut saat deploy:
+
+      | Variabel | Wajib | Deskripsi |
+      |----------|-------|-----------|
+      | **Domain** | Ya | Subdomain untuk mengakses OpenClaw (contoh `my-openclaw` → `my-openclaw.zeabur.app`). Dapat dihapus setelah beralih ke mode loopback. |
+      | **Aktifkan Control UI** | Ya | `true` (default) — mengaktifkan Control UI web via domain publik. `false` — hanya loopback, tanpa akses web publik (lebih aman, gunakan dengan Tailscale atau channel yang didukung seperti Telegram) |
+      | **Kunci API Zeabur AI Hub** | Tidak | Kosongkan untuk melewati. Tanpa ini, model default adalah `anthropic/claude-opus-4-6` (memerlukan API key sendiri). Dengan AI Hub, Anda dapat menggunakan Gemini, GPT, Claude, DeepSeek. Dapat ditambahkan nanti di tab **Variabel**. |
 
       ## Sumber Daya yang Direkomendasikan
       - **Minimum**: 2 vCPU / 4 GB RAM
