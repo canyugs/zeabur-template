@@ -41,7 +41,7 @@ spec:
       # OpenClaw 🦞
       OpenClaw 🦞 (formerly Clawdbot, Moltbot) is a personal AI assistant that runs locally and connects to multiple messaging platforms via a WebSocket-based Gateway architecture.
 
-      ⚠️ This template uses `ghcr.io/openclaw/openclaw:2026.3.13-1`. OpenClaw 🦞 is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues.
+      ⚠️ This template uses `ghcr.io/openclaw/openclaw:2026.4.11`. OpenClaw 🦞 is in rapid development, so there may be undiscovered bugs. Changing versions may also cause stability issues.
 
       ⚠️ If you encounter any issues, feel free to check the [GitHub issues](https://github.com/openclaw/openclaw/issues) for solutions or to report new ones. For Zeabur platform-related issues, please contact Zeabur support.
 
@@ -421,6 +421,22 @@ spec:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Changelog
+      **2026/4/12**
+      - Upgrade image to `2026.4.11` — Memory Dreaming grounded REM backfill with historical replay and diary view (timeline navigation, backfill/reset controls), Control UI webchat structured chat bubbles and `[embed ...]` rich output tag, video_generate URL-only asset delivery with typed providerOptions and reference audio inputs, Microsoft Teams reaction support, Feishu document comment sessions with richer context, plugin manifests activation/setup descriptors, Ollama cached context-window metadata, Docker gateway auto-bind to `0.0.0.0` (improved container networking), 15+ security fixes (SSRF bypass, dotenv injection blocking, cross-origin redirect hardening, command injection prevention), and 20+ bug fixes across WhatsApp, Telegram, OpenAI/Codex OAuth, audio transcription, and agent failover
+
+      **2026/4/6**
+      - Upgrade image to `2026.4.5` — video/music generation tools (`video_generate`, `music_generate`) with xAI/Runway/Alibaba Wan/Google Lyria/MiniMax providers, ComfyUI workflow plugin, new Qwen/Fireworks AI/StepFun/Amazon Bedrock Mantle providers, Control UI 12-language localization, Memory Dreaming (experimental background recall promotion), prompt cache stability improvements, Claude CLI loopback MCP bridge, ACPX embedded runtime, ClawHub skill install from Control UI, structured plan progress events, legacy config alias removal (run `openclaw doctor --fix`), 100+ security/channel/provider fixes
+      - ⚠️ Breaking: legacy config aliases removed (`talk.voiceId`, `hooks.internal.handlers`, channel `allow` toggles, etc.) — run `openclaw doctor --fix` after upgrading
+
+      **2026/4/1**
+      - Upgrade image to `2026.3.31` — background task flow control plane (SQLite-backed task ledger, `openclaw flows` CLI), QQ Bot bundled channel plugin, Matrix streaming/proxy/history/thread replies, remote MCP HTTP/SSE server support, LINE outbound media, Slack exec approval routing, WhatsApp emoji reactions, Pi/Codex native web search, configurable overload failover, 60+ fixes across Slack, Discord, Telegram, Docker, Control UI, and plugin SDK
+
+      **2026/3/27**
+      - Upgrade image to `2026.3.24` — Gateway OpenAI-compatible API endpoints (`/v1/models`, `/v1/embeddings`), Microsoft Teams SDK migration with streaming replies, video generation infrastructure, gateway channel startup isolation, Telegram forum topic and photo dimension fixes, Docker fresh-install setup fix, sandbox media dispatch security hardening, and 60+ fixes across WhatsApp, Discord, Slack, Feishu, and plugin SDK
+
+      **2026/3/23**
+      - Upgrade image to `2026.3.22` — gateway SIGTERM shutdown hardening, Telegram reply context & topic announce delivery fixes, memory tools independent registration, provider runtime lazy boundary fix, security hardening across exec approvals, pairing, and network discovery
+
       **2026/3/15**
       - Upgrade image to `2026.3.13-1` — plugin-sdk memory fix (resolves OOM crashes), browser session hardening, cron session targeting, 50+ fixes across security, Telegram, Discord, Windows, macOS, and config validation
       - Add `ENABLE_CONTROL_UI` deploy variable — controls gateway bind mode (`lan` vs `loopback`) and Control UI access flags; default `true`
@@ -527,7 +543,7 @@ spec:
         domainKey: PUBLIC_DOMAIN
         spec:
           source:
-            image: ghcr.io/openclaw/openclaw:2026.3.13-1
+            image: ghcr.io/openclaw/openclaw:2026.4.11
             command:
               - /bin/sh
               - -c
@@ -1018,13 +1034,13 @@ spec:
                 # Environment variables:
                 #   TS_AUTHKEY   (required)  Tailscale auth key. Script skips if unset.
                 #                            Get one at: https://login.tailscale.com/admin/settings/keys
-                #   TS_VERSION   (optional)  Tailscale version to install. Default: 1.82.5
+                #   TS_VERSION   (optional)  Tailscale version to install. Default: 1.94.2
                 #   TS_HOSTNAME  (optional)  Hostname on tailnet. Default: openclaw
 
                 echo "=== Tailscale Setup ==="
 
                 # --- Config variables ---
-                TS_VERSION="${TS_VERSION:-1.82.5}"
+                TS_VERSION="${TS_VERSION:-1.94.2}"
                 TS_HOSTNAME="${TS_HOSTNAME:-openclaw}"
                 BIN_DIR="$HOME/bin"
                 STATE_DIR="$HOME/.tailscale/state"
@@ -1075,6 +1091,10 @@ spec:
                   rm -rf "$TMPDIR"
                   echo "Tailscale $TS_VERSION installed to $BIN_DIR"
                 fi
+
+                # Symlink to /usr/local/bin so gateway can find tailscale in PATH
+                ln -sf "$BIN_DIR/tailscale" /usr/local/bin/tailscale
+                ln -sf "$BIN_DIR/tailscaled" /usr/local/bin/tailscaled
 
                 # --- 3. Start tailscaled ---
                 mkdir -p "$HOME/.tailscale/state"
@@ -1423,7 +1443,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞（原 Clawdbot、Moltbot）是一個個人 AI 助手，可在本地運行並透過 WebSocket Gateway 架構連接多個訊息平台。
 
-      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.3.13-1`。OpenClaw 🦞 正在快速開發中，可能存在尚未發現的 bug。更改版本後也無法確保穩定性。
+      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.4.11`。OpenClaw 🦞 正在快速開發中，可能存在尚未發現的 bug。更改版本後也無法確保穩定性。
 
       ⚠️ 如果遇到任何問題，歡迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 尋找解決方案或回報新問題。Zeabur 平台相關問題請聯繫 Zeabur 支援。
 
@@ -1805,6 +1825,22 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 更新日誌
+      **2026/4/12**
+      - 升級映像檔至 `2026.4.11` — Memory Dreaming 新增 grounded REM 回填與歷史重播及日記檢視（時間軸導覽、回填/重置控制），Control UI webchat 結構化聊天氣泡與 `[embed ...]` 富內容標籤，video_generate 僅 URL 資產傳遞、typed providerOptions 與參考音訊輸入，Microsoft Teams 反應支援，飛書文件評論會話強化，插件 manifest 新增啟動/設定描述符，Ollama 快取 context-window 元資料，Docker gateway 自動綁定 `0.0.0.0`（改善容器網路），15+ 安全修復（SSRF 繞過、dotenv 注入封鎖、跨域重定向強化、命令注入防護），以及 20+ 修復涵蓋 WhatsApp、Telegram、OpenAI/Codex OAuth、音訊轉錄及 agent 容錯
+
+      **2026/4/6**
+      - 升級映像檔至 `2026.4.5` — 影片/音樂生成工具（`video_generate`、`music_generate`），支援 xAI/Runway/阿里 Wan/Google Lyria/MiniMax provider、ComfyUI workflow 插件、新增 Qwen/Fireworks AI/StepFun/Amazon Bedrock Mantle provider、Control UI 12 語言在地化、Memory Dreaming（實驗性背景記憶晉升）、prompt cache 穩定性改善、Claude CLI loopback MCP bridge、ACPX 內嵌 runtime、Control UI 內 ClawHub skill 安裝、結構化計畫進度事件、移除 legacy config alias（需執行 `openclaw doctor --fix`），以及 100+ 安全/頻道/provider 修復
+      - ⚠️ Breaking：已移除 legacy config alias（`talk.voiceId`、`hooks.internal.handlers`、channel `allow` 等）— 升級後請執行 `openclaw doctor --fix`
+
+      **2026/4/1**
+      - 升級映像檔至 `2026.3.31` — 背景任務流程控制平面（SQLite 支援的任務帳本、`openclaw flows` CLI）、QQ Bot 內建頻道插件、Matrix 串流/代理/歷史/執行緒回覆、遠端 MCP HTTP/SSE 伺服器支援、LINE 外發媒體、Slack exec 審核路由、WhatsApp 表情符號回應、Pi/Codex 原生網頁搜尋、可設定的過載容錯切換，以及 60+ 修復涵蓋 Slack、Discord、Telegram、Docker、Control UI 及 plugin SDK
+
+      **2026/3/27**
+      - 升級映像檔至 `2026.3.24` — Gateway OpenAI 相容 API 端點（`/v1/models`、`/v1/embeddings`）、Microsoft Teams SDK 遷移與串流回覆、影片生成基礎設施、gateway 頻道啟動隔離、Telegram 論壇主題與照片尺寸修復、Docker 全新安裝修復、sandbox 媒體分發安全強化，以及 60+ 修復涵蓋 WhatsApp、Discord、Slack、飛書及 plugin SDK
+
+      **2026/3/23**
+      - 升級映像檔至 `2026.3.22` — gateway SIGTERM shutdown 強化、Telegram 回覆上下文與 topic 推播修復、memory 工具獨立註冊、provider runtime lazy boundary 修復、exec approvals / pairing / 網路探索安全強化
+
       **2026/3/15**
       - 升級映像檔至 `2026.3.13-1` — 修復 plugin-sdk 記憶體暴增（解決 OOM 崩潰）、瀏覽器 session 強化、cron session 目標、50+ 修復涵蓋安全性、Telegram、Discord、Windows、macOS 及設定驗證
       - 新增 `ENABLE_CONTROL_UI` 部署變數 — 控制 gateway 綁定模式（`lan` vs `loopback`）及 Control UI 存取；預設為 `true`
@@ -1921,7 +1957,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞（原 Clawdbot、Moltbot）是一个个人 AI 助手，可在本地运行并通过 WebSocket Gateway 架构连接多个消息平台。
 
-      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.3.13-1`。OpenClaw 🦞 正在快速开发中，可能存在尚未发现的 bug。更改版本后也无法确保稳定性。
+      ⚠️ 本模板使用 `ghcr.io/openclaw/openclaw:2026.4.11`。OpenClaw 🦞 正在快速开发中，可能存在尚未发现的 bug。更改版本后也无法确保稳定性。
 
       ⚠️ 如果遇到任何问题，欢迎到 [GitHub issues](https://github.com/openclaw/openclaw/issues) 寻找解决方案或回报新问题。Zeabur 平台相关问题请联系 Zeabur 支持。
 
@@ -2303,6 +2339,22 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 更新日志
+      **2026/4/12**
+      - 升级镜像至 `2026.4.11` — Memory Dreaming 新增 grounded REM 回填与历史重播及日记视图（时间轴导航、回填/重置控制），Control UI webchat 结构化聊天气泡与 `[embed ...]` 富内容标签，video_generate 仅 URL 资产交付、typed providerOptions 与参考音频输入，Microsoft Teams 反应支持，飞书文档评论会话增强，插件 manifest 新增激活/设置描述符，Ollama 缓存 context-window 元数据，Docker gateway 自动绑定 `0.0.0.0`（改善容器网络），15+ 安全修复（SSRF 绕过、dotenv 注入封锁、跨域重定向强化、命令注入防护），以及 20+ 修复涵盖 WhatsApp、Telegram、OpenAI/Codex OAuth、音频转录及 agent 容错
+
+      **2026/4/6**
+      - 升级镜像至 `2026.4.5` — 视频/音乐生成工具（`video_generate`、`music_generate`），支持 xAI/Runway/阿里 Wan/Google Lyria/MiniMax provider、ComfyUI workflow 插件、新增 Qwen/Fireworks AI/StepFun/Amazon Bedrock Mantle provider、Control UI 12 语言本地化、Memory Dreaming（实验性后台记忆晋升）、prompt cache 稳定性改善、Claude CLI loopback MCP bridge、ACPX 内嵌 runtime、Control UI 内 ClawHub skill 安装、结构化计划进度事件、移除 legacy config alias（需执行 `openclaw doctor --fix`），以及 100+ 安全/频道/provider 修复
+      - ⚠️ Breaking：已移除 legacy config alias（`talk.voiceId`、`hooks.internal.handlers`、channel `allow` 等）— 升级后请执行 `openclaw doctor --fix`
+
+      **2026/4/1**
+      - 升级镜像至 `2026.3.31` — 后台任务流程控制平面（SQLite 支持的任务账本、`openclaw flows` CLI）、QQ Bot 内置频道插件、Matrix 流式/代理/历史/线程回复、远程 MCP HTTP/SSE 服务器支持、LINE 外发媒体、Slack exec 审核路由、WhatsApp 表情符号回应、Pi/Codex 原生网页搜索、可配置的过载容错切换，以及 60+ 修复涵盖 Slack、Discord、Telegram、Docker、Control UI 及 plugin SDK
+
+      **2026/3/27**
+      - 升级镜像至 `2026.3.24` — Gateway OpenAI 兼容 API 端点（`/v1/models`、`/v1/embeddings`）、Microsoft Teams SDK 迁移与流式回复、视频生成基础设施、gateway 频道启动隔离、Telegram 论坛主题与照片尺寸修复、Docker 全新安装修复、sandbox 媒体分发安全强化，以及 60+ 修复涵盖 WhatsApp、Discord、Slack、飞书及 plugin SDK
+
+      **2026/3/23**
+      - 升级镜像至 `2026.3.22` — gateway SIGTERM shutdown 强化、Telegram 回复上下文与 topic 推送修复、memory 工具独立注册、provider runtime lazy boundary 修复、exec approvals / pairing / 网络探索安全强化
+
       **2026/3/15**
       - 升级镜像至 `2026.3.13-1` — 修复 plugin-sdk 内存暴增（解决 OOM 崩溃）、浏览器 session 强化、cron session 目标、50+ 修复涵盖安全性、Telegram、Discord、Windows、macOS 及配置验证
       - 新增 `ENABLE_CONTROL_UI` 部署变量 — 控制 gateway 绑定模式（`lan` vs `loopback`）及 Control UI 访问；默认为 `true`
@@ -2419,7 +2471,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞（旧 Clawdbot、Moltbot）は、ローカルで実行され、WebSocket ベースの Gateway アーキテクチャを介して複数のメッセージングプラットフォームに接続する個人用 AI アシスタントです。
 
-      ⚠️ 本テンプレートは `ghcr.io/openclaw/openclaw:2026.3.13-1` を使用しています。OpenClaw 🦞 は急速に開発中のため、未発見のバグがある可能性があります。バージョンを変更した場合も安定性を保証できません。
+      ⚠️ 本テンプレートは `ghcr.io/openclaw/openclaw:2026.4.11` を使用しています。OpenClaw 🦞 は急速に開発中のため、未発見のバグがある可能性があります。バージョンを変更した場合も安定性を保証できません。
 
       ⚠️ 問題が発生した場合は、[GitHub issues](https://github.com/openclaw/openclaw/issues) で解決策を探したり、新しい問題を報告したりしてください。Zeabur プラットフォーム関連の問題については、Zeabur サポートにお問い合わせください。
 
@@ -2801,6 +2853,22 @@ localization:
       - GitHub：https://github.com/openclaw/openclaw
 
       ## 変更履歴
+      **2026/4/12**
+      - イメージを `2026.4.11` にアップグレード — Memory Dreaming に grounded REM バックフィルと歴史的再生・日記ビュー（タイムラインナビゲーション、バックフィル/リセット制御）を追加、Control UI webchat に構造化チャットバブルと `[embed ...]` リッチ出力タグ、video_generate に URL のみの資産配信・typed providerOptions・参照音声入力、Microsoft Teams リアクション対応、Feishu ドキュメントコメントセッション強化、プラグイン manifest に起動/セットアップ記述子、Ollama の context-window メタデータキャッシュ、Docker gateway の `0.0.0.0` 自動バインド（コンテナネットワーク改善）、15 以上のセキュリティ修正（SSRF バイパス、dotenv インジェクション防止、クロスオリジンリダイレクト強化、コマンドインジェクション防護）、WhatsApp・Telegram・OpenAI/Codex OAuth・音声文字起こし・エージェントフェイルオーバーにわたる 20 以上の修正
+
+      **2026/4/6**
+      - イメージを `2026.4.5` にアップグレード — 動画/音楽生成ツール（`video_generate`、`music_generate`）、xAI/Runway/Alibaba Wan/Google Lyria/MiniMax プロバイダー対応、ComfyUI ワークフロープラグイン、Qwen/Fireworks AI/StepFun/Amazon Bedrock Mantle プロバイダー追加、Control UI 12 言語ローカライズ、Memory Dreaming（実験的バックグラウンド記憶昇格）、プロンプトキャッシュ安定性改善、Claude CLI ループバック MCP ブリッジ、ACPX 組み込みランタイム、Control UI からの ClawHub スキルインストール、構造化プラン進捗イベント、レガシー設定エイリアス削除（`openclaw doctor --fix` の実行が必要）、100 以上のセキュリティ/チャンネル/プロバイダー修正
+      - ⚠️ Breaking：レガシー設定エイリアスが削除されました（`talk.voiceId`、`hooks.internal.handlers`、チャンネル `allow` トグル等）— アップグレード後に `openclaw doctor --fix` を実行してください
+
+      **2026/4/1**
+      - イメージを `2026.3.31` にアップグレード — バックグラウンドタスクフロー制御プレーン（SQLite ベースのタスク台帳、`openclaw flows` CLI）、QQ Bot バンドルチャンネルプラグイン、Matrix ストリーミング/プロキシ/履歴/スレッド返信、リモート MCP HTTP/SSE サーバーサポート、LINE アウトバウンドメディア、Slack exec 承認ルーティング、WhatsApp 絵文字リアクション、Pi/Codex ネイティブウェブ検索、設定可能なオーバーロードフェイルオーバー、Slack・Discord・Telegram・Docker・Control UI・plugin SDK にわたる 60 以上の修正
+
+      **2026/3/27**
+      - イメージを `2026.3.24` にアップグレード — Gateway OpenAI 互換 API エンドポイント（`/v1/models`、`/v1/embeddings`）、Microsoft Teams SDK 移行とストリーミング応答、動画生成インフラ、gateway チャンネル起動分離、Telegram フォーラムトピック・写真サイズ修正、Docker 新規インストール修正、sandbox メディアディスパッチセキュリティ強化、WhatsApp・Discord・Slack・Feishu・plugin SDK にわたる 60 以上の修正
+
+      **2026/3/23**
+      - イメージを `2026.3.22` にアップグレード — gateway SIGTERM shutdown 強化、Telegram 返信コンテキスト・トピック配信修正、memory ツール独立登録、provider runtime lazy boundary 修正、exec approvals / pairing / ネットワーク探索のセキュリティ強化
+
       **2026/3/15**
       - イメージを `2026.3.13-1` にアップグレード — plugin-sdk メモリ膨張修正（OOM クラッシュ解消）、ブラウザセッション強化、cron セッションターゲット、セキュリティ・Telegram・Discord・Windows・macOS・設定検証に関する 50 以上の修正
       - `ENABLE_CONTROL_UI` デプロイ変数を追加 — gateway バインドモード（`lan` vs `loopback`）と Control UI アクセスを制御。デフォルト `true`
@@ -2917,7 +2985,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞 (anteriormente Clawdbot, Moltbot) es un asistente personal de IA que se ejecuta localmente y se conecta a múltiples plataformas de mensajería a través de una arquitectura Gateway basada en WebSocket.
 
-      ⚠️ Esta plantilla usa `ghcr.io/openclaw/openclaw:2026.3.13-1`. OpenClaw 🦞 está en desarrollo rápido, por lo que puede haber errores no descubiertos. Cambiar de versión tampoco garantiza estabilidad.
+      ⚠️ Esta plantilla usa `ghcr.io/openclaw/openclaw:2026.4.11`. OpenClaw 🦞 está en desarrollo rápido, por lo que puede haber errores no descubiertos. Cambiar de versión tampoco garantiza estabilidad.
 
       ⚠️ Si encuentra algún problema, no dude en consultar los [GitHub issues](https://github.com/openclaw/openclaw/issues) para buscar soluciones o reportar nuevos problemas. Para problemas relacionados con la plataforma Zeabur, contacte al soporte de Zeabur.
 
@@ -3299,6 +3367,22 @@ localization:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Registro de Cambios
+      **2026/4/12**
+      - Actualizar imagen a `2026.4.11` — Memory Dreaming con relleno REM fundamentado y reproducción histórica más vista de diario (navegación por línea de tiempo, controles de relleno/reinicio), burbujas de chat estructuradas en webchat de Control UI y etiqueta de salida enriquecida `[embed ...]`, entrega de activos solo URL en video_generate con providerOptions tipados y entradas de audio de referencia, soporte de reacciones en Microsoft Teams, sesiones de comentarios de documentos mejoradas en Feishu, descriptores de activación/configuración en manifiestos de plugins, metadatos de context-window en caché para Ollama, enlace automático a `0.0.0.0` en Docker gateway (red de contenedor mejorada), 15+ correcciones de seguridad (bypass SSRF, bloqueo de inyección dotenv, endurecimiento de redirección cross-origin, prevención de inyección de comandos), y 20+ correcciones en WhatsApp, Telegram, OpenAI/Codex OAuth, transcripción de audio y failover de agente
+
+      **2026/4/6**
+      - Actualizar imagen a `2026.4.5` — herramientas de generación de video/música (`video_generate`, `music_generate`) con proveedores xAI/Runway/Alibaba Wan/Google Lyria/MiniMax, plugin de workflow ComfyUI, nuevos proveedores Qwen/Fireworks AI/StepFun/Amazon Bedrock Mantle, localización de Control UI en 12 idiomas, Memory Dreaming (promoción experimental de memoria en segundo plano), mejoras en estabilidad de prompt cache, puente MCP loopback de Claude CLI, runtime embebido ACPX, instalación de skills ClawHub desde Control UI, eventos de progreso de plan estructurado, eliminación de alias de configuración legacy (ejecutar `openclaw doctor --fix`), y 100+ correcciones de seguridad/canales/proveedores
+      - ⚠️ Breaking: alias de configuración legacy eliminados (`talk.voiceId`, `hooks.internal.handlers`, toggles `allow` de canales, etc.) — ejecutar `openclaw doctor --fix` después de actualizar
+
+      **2026/4/1**
+      - Actualizar imagen a `2026.3.31` — plano de control de flujo de tareas en segundo plano (libro de tareas respaldado por SQLite, CLI `openclaw flows`), plugin de canal QQ Bot incluido, streaming/proxy/historial/respuestas en hilo de Matrix, soporte de servidor remoto MCP HTTP/SSE, medios salientes de LINE, enrutamiento de aprobación exec de Slack, reacciones de emoji en WhatsApp, búsqueda web nativa de Pi/Codex, failover de sobrecarga configurable, y 60+ correcciones en Slack, Discord, Telegram, Docker, Control UI y plugin SDK
+
+      **2026/3/27**
+      - Actualizar imagen a `2026.3.24` — Endpoints API compatibles con OpenAI del Gateway (`/v1/models`, `/v1/embeddings`), migración del SDK de Microsoft Teams con respuestas en streaming, infraestructura de generación de video, aislamiento de inicio de canales del gateway, correcciones de temas de foro y dimensiones de fotos en Telegram, corrección de instalación nueva de Docker, fortalecimiento de seguridad en despacho de medios del sandbox, y 60+ correcciones en WhatsApp, Discord, Slack, Feishu y plugin SDK
+
+      **2026/3/23**
+      - Actualizar imagen a `2026.3.22` — hardening del shutdown SIGTERM del gateway, correcciones en contexto de respuesta de Telegram y entrega de topic announce, registro independiente de herramientas memory, corrección del lazy boundary del runtime del provider, fortalecimiento de seguridad en exec approvals, pairing y descubrimiento de red
+
       **2026/3/15**
       - Actualizar imagen a `2026.3.13-1` — corrección de memory leak en plugin-sdk (resuelve OOM), hardening de sesiones de navegador, targeting de sesiones cron, 50+ correcciones en seguridad, Telegram, Discord, Windows, macOS y validación de configuración
       - Nueva variable de despliegue `ENABLE_CONTROL_UI` — controla el modo de bind del gateway (`lan` vs `loopback`) y acceso a Control UI; por defecto `true`
@@ -3415,7 +3499,7 @@ localization:
       # OpenClaw 🦞
       OpenClaw 🦞 (sebelumnya Clawdbot, Moltbot) adalah asisten AI pribadi yang berjalan secara lokal dan terhubung ke berbagai platform perpesanan melalui arsitektur Gateway berbasis WebSocket.
 
-      ⚠️ Template ini menggunakan `ghcr.io/openclaw/openclaw:2026.3.13-1`. OpenClaw 🦞 sedang dalam pengembangan cepat, jadi mungkin ada bug yang belum ditemukan. Mengubah versi juga tidak menjamin stabilitas.
+      ⚠️ Template ini menggunakan `ghcr.io/openclaw/openclaw:2026.4.11`. OpenClaw 🦞 sedang dalam pengembangan cepat, jadi mungkin ada bug yang belum ditemukan. Mengubah versi juga tidak menjamin stabilitas.
 
       ⚠️ Jika Anda mengalami masalah, silakan kunjungi [GitHub issues](https://github.com/openclaw/openclaw/issues) untuk mencari solusi atau melaporkan masalah baru. Untuk masalah terkait platform Zeabur, silakan hubungi dukungan Zeabur.
 
@@ -3797,6 +3881,22 @@ localization:
       - GitHub: https://github.com/openclaw/openclaw
 
       ## Catatan Perubahan
+      **2026/4/12**
+      - Upgrade image ke `2026.4.11` — Memory Dreaming dengan backfill REM grounded dan replay historis serta tampilan diary (navigasi timeline, kontrol backfill/reset), gelembung chat terstruktur di webchat Control UI dan tag output kaya `[embed ...]`, pengiriman aset hanya URL di video_generate dengan providerOptions bertipe dan input audio referensi, dukungan reaksi Microsoft Teams, sesi komentar dokumen Feishu yang lebih kaya, deskriptor aktivasi/pengaturan di manifest plugin, metadata context-window Ollama yang di-cache, bind otomatis gateway Docker ke `0.0.0.0` (jaringan container lebih baik), 15+ perbaikan keamanan (bypass SSRF, pemblokiran injeksi dotenv, penguatan redirect cross-origin, pencegahan injeksi perintah), dan 20+ perbaikan di WhatsApp, Telegram, OpenAI/Codex OAuth, transkripsi audio, dan failover agent
+
+      **2026/4/6**
+      - Upgrade image ke `2026.4.5` — alat pembuatan video/musik (`video_generate`, `music_generate`) dengan provider xAI/Runway/Alibaba Wan/Google Lyria/MiniMax, plugin workflow ComfyUI, provider baru Qwen/Fireworks AI/StepFun/Amazon Bedrock Mantle, lokalisasi Control UI 12 bahasa, Memory Dreaming (promosi memori latar belakang eksperimental), peningkatan stabilitas prompt cache, Claude CLI loopback MCP bridge, ACPX embedded runtime, instalasi skill ClawHub dari Control UI, event progres rencana terstruktur, penghapusan alias konfigurasi legacy (jalankan `openclaw doctor --fix`), dan 100+ perbaikan keamanan/channel/provider
+      - ⚠️ Breaking: alias konfigurasi legacy dihapus (`talk.voiceId`, `hooks.internal.handlers`, toggle `allow` channel, dll.) — jalankan `openclaw doctor --fix` setelah upgrade
+
+      **2026/4/1**
+      - Upgrade image ke `2026.3.31` — control plane alur tugas latar belakang (buku besar tugas berbasis SQLite, CLI `openclaw flows`), plugin channel QQ Bot bawaan, streaming/proxy/riwayat/balasan thread Matrix, dukungan server remote MCP HTTP/SSE, media keluar LINE, routing persetujuan exec Slack, reaksi emoji WhatsApp, pencarian web native Pi/Codex, failover overload yang dapat dikonfigurasi, dan 60+ perbaikan di Slack, Discord, Telegram, Docker, Control UI, dan plugin SDK
+
+      **2026/3/27**
+      - Upgrade image ke `2026.3.24` — Endpoint API Gateway kompatibel OpenAI (`/v1/models`, `/v1/embeddings`), migrasi SDK Microsoft Teams dengan reply streaming, infrastruktur pembuatan video, isolasi startup channel gateway, perbaikan topik forum Telegram & dimensi foto, perbaikan instalasi baru Docker, penguatan keamanan dispatch media sandbox, dan 60+ perbaikan di WhatsApp, Discord, Slack, Feishu, dan plugin SDK
+
+      **2026/3/23**
+      - Upgrade image ke `2026.3.22` — penguatan shutdown SIGTERM gateway, perbaikan konteks reply Telegram & pengiriman topic announce, registrasi independen memory tools, perbaikan lazy boundary runtime provider, penguatan keamanan exec approvals, pairing, dan network discovery
+
       **2026/3/15**
       - Upgrade image ke `2026.3.13-1` — perbaikan memory leak plugin-sdk (mengatasi OOM crash), penguatan sesi browser, penargetan sesi cron, 50+ perbaikan keamanan, Telegram, Discord, Windows, macOS, dan validasi konfigurasi
       - Tambah variabel deploy `ENABLE_CONTROL_UI` — mengontrol mode bind gateway (`lan` vs `loopback`) dan akses Control UI; default `true`
